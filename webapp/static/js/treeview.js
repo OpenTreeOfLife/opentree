@@ -705,7 +705,7 @@ function showObjectProperties( objInfo, options ) {
 
         /* Show ALL taxonomic sources (taxonomies + IDs) for this node.
          * N.B. In ArguSON "v3", these can be either CURIEs or URLs:
-         *   ["ncbi:123", "gbif:456", "http://dx.doi.org/10.1186/1471-2148-14-23"]
+         *   ["ncbi:123", "gbif:456", "https://doi.org/10.1186/1471-2148-14-23"]
          * https://github.com/OpenTreeOfLife/germinator/wiki/%22Arguson%22-format
          */
         var itsTaxon = fullNode.taxon;
@@ -991,7 +991,7 @@ function showObjectProperties( objInfo, options ) {
                                 break;
 
                             case 'H2007':
-                                displayVal = '<a href="http://dx.doi.org/10.6084/m9.figshare.915439#'+ sourceInfo.taxSourceId +'" '
+                                displayVal = '<a href="https://doi.org/10.6084/m9.figshare.915439#'+ sourceInfo.taxSourceId +'" '
                                               + 'title="Hibbett 2007 updated" target="_blank">Hibbett et al. 2007 updated: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
@@ -1021,7 +1021,7 @@ function showObjectProperties( objInfo, options ) {
                                 break;
 
                             case 'STUDY713':
-                                displayVal = '<a href="http://dx.doi.org/10.1186/1471-2148-10-352#'+ sourceInfo.taxSourceId +'" '
+                                displayVal = '<a href="https://doi.org/10.1186/1471-2148-10-352#'+ sourceInfo.taxSourceId +'" '
                                               + 'title="Schäferhoff et al. 2010" target="_blank">Schäferhoff et al. 2010: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 

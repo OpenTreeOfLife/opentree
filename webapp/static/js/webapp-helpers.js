@@ -190,5 +190,5 @@ function DOItoURL( doi ) {
     }
     // This is a candidate; try to convert it to URL form
     var bareDOI = $.trim( possibleDOIs[0] );
-    return ('http://dx.doi.org/'+ bareDOI);
+    return ('https://doi.org/'+ bareDOI);
 }

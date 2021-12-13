@@ -3752,7 +3752,12 @@ var studyScoringRules = {
                 }
 
                 // compare the two DOIs, to see if the (minimal) DOI matches
-                var DOIParts = $.trim(DOI).split('http://dx.doi.org/');
+                // can we split using modern CrossRef DOI standards?
+                var DOIParts = $.trim(DOI).split('https://doi.org/');
+                if (DOIParts.length === 1) {
+                    // try again with legacy format
+                    DOIParts = $.trim(DOI).split('http://dx.doi.org/');
+                }
                 var strippedDOI;
                 if (DOIParts.length === 1) {
                     strippedDOI = DOIParts[0];
@@ -8942,7 +8947,6 @@ function updateDOIFromLookup(evt) {
 }
 
 var minimalDOIPattern = new RegExp('10\\..+')
-//var urlDOIPattern = new RegExp('http://dx.doi.org/10[.\\d]{2,}\\b')
 var urlPattern = new RegExp('http(s?)://\\S+');
 function formatDOIAsURL() {
     var oldValue = viewModel.nexml['^ot:studyPublication']['@href'];
@@ -8987,7 +8991,7 @@ function DOItoURL( doi ) {
     }
     // This is a candidate; try to convert it to URL form
     var bareDOI = $.trim( possibleDOIs[0] );
-    return ('http://dx.doi.org/'+ bareDOI);
+    return ('https://doi.org/'+ bareDOI);
 }
 function testDOIForDuplicates( doi ) {
     // REMINDER: This is usually a full DOI, but not always. Test any valid URL!

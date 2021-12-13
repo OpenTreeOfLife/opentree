@@ -359,7 +359,6 @@ function createStudyFromForm( evt ) {
 
 /* Adapt DOI grooming and dupe-check from study-curation (edit) page */
 var minimalDOIPattern = new RegExp('10\\..+')
-//var urlDOIPattern = new RegExp('http://dx.doi.org/10[.\\d]{2,}\\b')
 var urlPattern = new RegExp('http(s?)://\\S+');
 function formatDOIAsURL() {
     var oldValue = $.trim($('input[name=publication-DOI]').val());
@@ -376,7 +375,7 @@ function formatDOIAsURL() {
     
     // this is a candidate; try to convert it to URL form
     var bareDOI = $.trim( possibleDOIs[0] );
-    var newValue = 'http://dx.doi.org/'+ bareDOI;
+    var newValue = 'https://doi.org/'+ bareDOI;
     $('input[name=publication-DOI]').val( newValue );
 }
 function testDOIForDuplicates( ) {
