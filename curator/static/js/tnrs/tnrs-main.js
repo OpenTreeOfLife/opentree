@@ -189,7 +189,6 @@ function convertToNamesetModel( listText ) {
                 var taxonID = (items.length > 2) ? items[2] : null;
                 var sources = (items.length > 3) ? items[3].split(';') : null;
                 // add this information in the expected nameset form
-                console.log("...adding label '"+ label +"'...");
                 var nameInfo = {
                     "id": ("name"+ localNameNumber++),
                     "originalLabel": label,
