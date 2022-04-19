@@ -137,14 +137,20 @@ function convertToNamesetModel( listText ) {
     var nameset = getNewNamesetModel();  // we'll add name pairs to this
     // attempt to parse the delimited text provided
     var parseResults = Papa.parse(listText, papaParseConfig);
+    var parseErrorMessage = "";
     if (parseResults.meta.aborted) {
         console.error("Delimited text parsing ABORTED!");
-        return nameset;  // probably still empty
+        parseErrorMessage += "Delimited text parsing ABORTED!\n\n";
     }
     // still here? then we at least have some names (or headers) to return
     $.each(parseResults.errors, function(i, parseError) {
         console.error("  Parsing error on line "+ parseError.row +": "+ parseError.code +" ("+ parseError.message +")");
+        parseErrorMessage += "  Parsing error on line "+ parseError.row +": "+ parseError.code +" ("+ parseError.message +")\n";
     });
+    if (parseResults.meta.aborted) {
+        showErrorMessage(parseErrorMessage);
+        return nameset;  // probably still empty
+    }
 
     // now apply labels and keep count of any duplicate labels
     var foundLabels = [ ];
