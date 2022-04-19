@@ -144,7 +144,7 @@ function convertToNamesetModel( listText ) {
     // still here? then we at least have some names (or headers) to return
     $.each(parseResults.errors, function(i, parseError) {
         console.error("  Parsing error on line "+ parseError.row +": "+ parseError.code +" ("+ parseError.message +")");
-    }
+    });
 
     // now apply labels and keep count of any duplicate labels
     var foundLabels = [ ];
