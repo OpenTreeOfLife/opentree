@@ -123,7 +123,7 @@ function convertToNamesetModel( listText ) {
     var nameset = getNewNamesetModel();  // we'll add name pairs to this
     console.log( listText );
     // test a variety of delimiters to use with this text
-    var lineDelimiters = ['\n','\r'];
+    var lineDelimiters = ['\n','\r'];  // TODO: Also support Windows '\r\n'?
     var lineDelimFound = null;
     $.each(lineDelimiters, function(i, delim) {
         if (!lineDelimFound) {
