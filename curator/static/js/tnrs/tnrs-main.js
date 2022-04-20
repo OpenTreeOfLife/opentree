@@ -123,7 +123,8 @@ var papaParseConfig = {
      * For all settings and default values, see <https://www.papaparse.com/docs#config>
      */
     delimiter: "",	// auto-detect
-	newline: "",	// auto-detect
+    delimitersToGuess: [', ', ',', '\t', '|', ';', Papa.RECORD_SEP, Papa.UNIT_SEP],
+    newline: "",	// auto-detect
     escapeChar: "\\",
     skipEmptyLines: 'greedy',  // skip empty AND whitespace-only lines
     //complete: fn  // callback function to receive parse results
@@ -427,7 +428,6 @@ function loadListFromChosenFile( vm, evt ) {
             var fr = new FileReader();
             fr.onload = function( evt ) {
                 var listText = evt.target.result;
-                console.log( listText );
                 // test a variety of delimiters to find multiple items
                 var names = [ ];
                 var multipleNamesFound = false;
@@ -654,7 +654,7 @@ function loadNamesetFromChosenFile( vm, evt ) {
                 fr.onload = function( evt ) {
                     var data = evt.target.result;
                     var nameset = null;
-                    console.log( data );
+                    // console.log( data );
                     if (context === 'BULK_TNRS') {
                         console.error("Unexpected context 'BULK_TNRS' for flat-file nameset!");
                     } else {  // presumably 'STUDY_OTU_MAPPING'
