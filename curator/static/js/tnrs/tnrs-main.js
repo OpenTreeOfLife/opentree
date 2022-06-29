@@ -56,6 +56,7 @@ if (window.location.pathname.indexOf("/curator/tnrs/") === 0) {
     context = 'STUDY_OTU_MAPPING';
 } else {
     context = '???';
+    console.error("Unknown context for TNRS! should be BULK_TNRS or STUDY_OTU_MAPPING");
 }
 
 /* Return the data model for a new nameset (our JSON representation) */
