@@ -70,7 +70,7 @@ body {
                  value="{{= URL(a='curator', c='collection', f='index')}}">
           <a id="cancel-collection-edits" class="btn btn-link" href="#">Cancel</a>
           <button class="btn btn-danger pull-right"
-            onclick="ejjjjjfgpromptForDeleteComments(); return false;">Delete Collection</button>
+            onclick="promptForDeleteComments(); return false;">Delete Collection</button>
         {{ else: }}
          {{ if userCanEdit: }}
           <a class="btn btn-info pull-right sticky-login" href="{{=URL('collection', 'edit/'+ collectionID)}}"
