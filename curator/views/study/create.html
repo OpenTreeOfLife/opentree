@@ -19,7 +19,9 @@ body {
 
     <!-- WAS import-option-TREEBASE -->
     <label for="import-from-TREEBASE" class="featured-label">
-        <input type="radio" id="import-from-TREEBASE" name="import-from-location" value="IMPORT_FROM_TREEBASE" />
+        <input type="radio" id="import-from-TREEBASE" name="import-from-location" value="IMPORT_FROM_TREEBASE" 
+         disabled="disabled"
+         onclick="showInfoMessage('TreeBASE import is currently disabled, pending a decision about the future of the TreeBASE project. Hopefully this feature will return!'); return false;" />
         Data for this study exists in TreeBASE
     </label>
     <div id="import-method-TREEBASE_ID" class="featured-label-child">
