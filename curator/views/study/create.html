@@ -18,11 +18,11 @@ body {
   <form id="import-from-locations" class="form-inline" style="padding: 12px 0;" action=".">
 
     <!-- WAS import-option-TREEBASE -->
-    <label for="import-from-TREEBASE" class="featured-label">
+    <label for="import-from-TREEBASE" class="featured-label"
+           onclick="showInfoMessage('TreeBASE import is currently disabled, pending a decision about the future of the TreeBASE project. Hopefully this feature will return!'); return false;" >
         <input type="radio" id="import-from-TREEBASE" name="import-from-location" value="IMPORT_FROM_TREEBASE" 
-         disabled="disabled"
-         onclick="showInfoMessage('TreeBASE import is currently disabled, pending a decision about the future of the TreeBASE project. Hopefully this feature will return!'); return false;" />
-        Data for this study exists in TreeBASE <span style="color: #933;">This feature is currently disabled.</span>
+         disabled="disabled" />
+        Data for this study exists in TreeBASE <span style="color: #933;"> &nbsp; [NOTE: This feature is currently disabled.]</span>
     </label>
     <div id="import-method-TREEBASE_ID" class="featured-label-child">
         <input class="span4" type="text" name="treebase-id" placeholder="Enter its TreeBASE ID" 
