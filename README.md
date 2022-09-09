@@ -36,8 +36,25 @@ The included **requirements.txt** file lists known-good versions of all the requ
 python modules for opentree, plus a few convenience modules. To [install these modules 
 using pip](http://www.pip-installer.org/en/latest/cookbook.html#requirements-files), 
 
+The file **requirements.in** captures our intentions, typically following the
+latest version of each module unless frozen to address bugs or incompatibilities.
+
 <pre>
+# create a python3 venv inside the top-level folder
+cd ~/repos/webapp-tree-viewer
+export VENV="$(pwd)/venv"
+python3 -m venv $VENV
+
+# install the pinned set of known-good modules
 pip install -r requirements.txt
+
+# OR during development, try to update these using `requirements.in`
+pip install -r requirements.in
+
+# capture the resulting versions for production deploymentsl
+$VENV/bin/pip freeze -r requirements.in > requirements.txt
+# capture and save the full dependency tree for all modules
+$VENV/bin/pipdeptree > pipdeptree.out
 </pre>
 
 The contents of the webapp subdirectory are a web2py application.  Make a symbolic 
