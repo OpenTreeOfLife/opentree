@@ -1,16 +1,16 @@
-opentree
-========
+webapp-tree-viewer
+==================
 
-This is the repository for the Open Tree of Life web applications, one of many subsystems making up the Open Tree of Life project code.
+This is the repository for the Open Tree of Life synthetic-tree viewer, one of many subsystems making up the Open Tree of Life project code. Previously, this was bundled in a common repo with the study-curation app, but we're breaking these apart as part of our conversion from web2py to Pyramid.
 
-For Open Tree of Life documentation, see [the germinator repository's wiki](https://github.com/OpenTreeOfLife/germinator/wiki). The 'deployment system' and web API documentation sources that formerly resided in this repository now live in the [germinator repository](https://github.com/OpenTreeOfLife/germinator).
+For Open Tree of Life documentation, see [the germinator repository's wiki](https://github.com/OpenTreeOfLife/germinator/wiki).
 
 The following instructions have not been reviewed in a long time. For local installation a better place to start might be [this wiki page](https://github.com/OpenTreeOfLife/opentree/wiki/Installing-a-local-curator-and-tree-browser-test-server).
 
 Installation
 ============
-See the phylografter instructions for
-more details about using web2py.
+
+**TBD - pending changes in converting from web2py to the Pyramid framework.**
 
 We strongly recommend using a virtual environment to manage the version of
 Python and installed modules. We're currently running opentree with Python
@@ -136,44 +136,7 @@ http://www.web2py.com/examples/default/download MTH used version 2.4.2 of web2py
 Subdirectories
 --------------
 
-mockup
-: JAR's hand-written html that mock up the design of the site.
-
-smasher
-: construction of synthetic taxonomy. See https://github.com/OpenTreeOfLife/opentree/wiki/Open-Tree-Taxonomy for details
-
-webapp/controllers
-: python code executed by web2py when a URL is successfully mapped to a controller.
-
-webapp/modules
-: python code that can be imported and used by the webpp, but is not exposed as controller
-
-webapp/models
-: code that describes the database structure used by the web app
-
-webapp/views
-: templates for the page content that is rendered in response to a query. The view is typically specific to a few controllers in the web app
-
-webapp/static
-: static content to be returned by the web app. Contains css, images and js subdirectories for commonly used items.
-
-webapp/private
-: the location to be used for storing installation-specific configuration information.
-
-webapp/cron
-: directory that stores commands to be executed periodically by the web2py framework when the app is running.
-
-webapp/databases
-: the location of the database files used by web2py.
-
-webapp/languages
-: web2py code for internationalization
-
-webapp/cache, webapp/databases, webapp/errors, webapp/sessions, webapp/uploads
-: directories used by web2py to store content associated with user's activities. Content here should not need to be committed to version control.
-
-curator/*
-: similar subdirectories to those in webapp/* above
+**TBD - pending changes in converting from web2py to the Pyramid framework.**
 
 Acknowledgements
 ----------------
