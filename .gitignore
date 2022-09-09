@@ -4,6 +4,7 @@
 *.class
 tmp
 *.tmp
+venv/
 backup/
 smasher/tax/gbif
 smasher/tax/ncbi

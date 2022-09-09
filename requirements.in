@@ -1,0 +1,9 @@
+requests
+python-dateutil==2.2
+locket==0.1.1
+bleach
+jwcrypto==0.9.1
+python_jwt
+pyramid==2.0
+pipdeptree
+cookiecutter
