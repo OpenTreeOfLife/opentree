@@ -37,6 +37,7 @@
 var JSZip = require('jszip'),
     FileSaver = require('file-saver'),
     Blob = require('blob-polyfill'),
+    Papa = require('papaparse'),
     assert = require('assert');
 
 /* These variables should already be defined in the main HTML page. We should
@@ -116,47 +117,51 @@ var getNewNamesetModel = function(options) {
     */
     return obj;
 };
+
+var papaParseConfig = {
+    /* Try to accomodate different delimiters, line endings, etc.
+     * For all settings and default values, see <https://www.papaparse.com/docs#config>
+     */
+    delimiter: "",	// auto-detect
+    delimitersToGuess: [', ', ',', '\t', '|', ';', Papa.RECORD_SEP, Papa.UNIT_SEP],
+    newline: "",	// auto-detect
+    escapeChar: "\\",
+    skipEmptyLines: 'greedy',  // skip empty AND whitespace-only lines
+    //complete: fn  // callback function to receive parse results
+    //error: fn     // callback if an error was encountered
+    header: false   // detect optional header row and remove after parsing?
+}
 function convertToNamesetModel( listText ) {
     /* Test for proper delimited text (TSV or CSV, with a pair of names on each line).
      * The first value on each line is a vernacular label, the second its mapped taxon name.
      */
     var nameset = getNewNamesetModel();  // we'll add name pairs to this
-    console.log( listText );
-    // test a variety of delimiters to use with this text
-    var lineDelimiters = ['\n','\r'];
-    var lineDelimFound = null;
-    $.each(lineDelimiters, function(i, delim) {
-        if (!lineDelimFound) {
-            if (listText.split(delim).length > 1) {
-                lineDelimFound = delim;
-            }
-        }
+    // attempt to parse the delimited text provided
+    var parseResults = Papa.parse(listText, papaParseConfig);
+    var parseErrorMessage = "";
+    if (parseResults.meta.aborted) {
+        console.error("Delimited text parsing ABORTED!");
+        parseErrorMessage += "Delimited text parsing ABORTED!\n\n";
+    }
+    // still here? then we at least have some names (or headers) to return
+    $.each(parseResults.errors, function(i, parseError) {
+        console.error("  Parsing error on line "+ parseError.row +": "+ parseError.code +" ("+ parseError.message +")");
+        parseErrorMessage += "  Parsing error on line "+ parseError.row +": "+ parseError.code +" ("+ parseError.message +")\n";
     });
-    var itemDelimiters = [',','\t'];
-    var itemDelimFound = null;
-    $.each(itemDelimiters, function(i, delim) {
-        if (!itemDelimFound) {
-            if (listText.split(delim).length > 1) {
-                itemDelimFound = delim;
-            }
-        }
-    });
-    if ((!lineDelimFound) || (!itemDelimFound)) {
+    if (parseResults.meta.aborted) {
+        showErrorMessage(parseErrorMessage);
         return nameset;  // probably still empty
     }
+
     // now apply labels and keep count of any duplicate labels
     var foundLabels = [ ];
     var dupeLabelsFound = 0;
-    var lines = listText.split(lineDelimFound);
-    // filter out empty empty lines, etc.
-    lines = $.grep(lines, function(line, i) {
-        return $.trim(line) !== "";
-    });
-    console.warn( lines.length +" lines found with line delimiter '"+ lineDelimFound +"'");
+    var rows = parseResults.data;  // an array of parsed rows (each an array of values)
+    console.warn( rows.length +" lines found with line delimiter '"+ parseResults.meta.linebreak +"'");
+
     var localNameNumber = 0;  // these are not imported, so local integers are find
-    $.each(lines, function(i, line) {
-        var items = line.split(itemDelimFound);
-        // filter out empty empty labels and taxa
+    $.each(rows, function(i, items) {
+        // filter out empty items (eg, labels and taxa) on this row
         items = $.grep(items, function(item, i) {
             return $.trim(item) !== "";
         });
@@ -165,7 +170,7 @@ function convertToNamesetModel( listText ) {
             case 1:
                 return true;  // skip to next line
             default:
-                // we assume the same fields as in out nameset output files
+                // we assume the same fields as in our nameset output files
                 var label = $.trim(items[0]);   // its original, vernacular label
                 if (label === 'ORIGINAL LABEL') {
                     // skip the header row, if found
@@ -185,7 +190,6 @@ function convertToNamesetModel( listText ) {
                 var taxonID = (items.length > 2) ? items[2] : null;
                 var sources = (items.length > 3) ? items[3].split(';') : null;
                 // add this information in the expected nameset form
-                console.log("...adding label '"+ label +"'...");
                 var nameInfo = {
                     "id": ("name"+ localNameNumber++),
                     "originalLabel": label,
@@ -424,7 +428,6 @@ function loadListFromChosenFile( vm, evt ) {
             var fr = new FileReader();
             fr.onload = function( evt ) {
                 var listText = evt.target.result;
-                console.log( listText );
                 // test a variety of delimiters to find multiple items
                 var names = [ ];
                 var multipleNamesFound = false;
@@ -651,7 +654,7 @@ function loadNamesetFromChosenFile( vm, evt ) {
                 fr.onload = function( evt ) {
                     var data = evt.target.result;
                     var nameset = null;
-                    console.log( data );
+                    // console.log( data );
                     if (context === 'BULK_TNRS') {
                         console.error("Unexpected context 'BULK_TNRS' for flat-file nameset!");
                     } else {  // presumably 'STUDY_OTU_MAPPING'
