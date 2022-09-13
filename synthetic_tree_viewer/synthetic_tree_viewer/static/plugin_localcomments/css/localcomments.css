@@ -1,0 +1,166 @@
+/* style for local (URL-based) comments */
+div.plugin_localcomments {
+    /* border: 1px dashed pink; */
+    margin-bottom: 12px;
+}
+div.plugin_localcomments .byline {
+    background-color: #ddd;
+    color: #777;
+    margin: 0px;
+    padding: 2px 8px;
+}
+div.plugin_localcomments .byline .badge {
+    background-color: #999;
+    color: #fff;
+    margin-left: 5px;
+}
+div.plugin_localcomments .deleted .controls,
+div.plugin_localcomments .byline .controls {
+    padding-left: 20px;
+}
+.plugin_localcomments form {
+    margin-bottom: 12px;
+}
+.plugin_localcomments ul {
+    list-style: none;
+    padding-left: 5px;
+    margin: 0;
+}
+.plugin_localcomments div.msg-wrapper {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+.plugin_localcomments ul .issue > .msg-wrapper {
+}
+.plugin_localcomments .body {
+    font-size: 110%;
+    padding: 4px 8px 0;
+}
+.plugin_localcomments .issue-supporting-reference {
+    padding-bottom: 12px;
+}
+.plugin_localcomments ul .issue {
+    margin-bottom: 4px;
+}
+.plugin_localcomments ul .issue .topic-title {
+    padding: 4px 10px;
+    color: #fff;
+    background-color: #444;
+    font-weight: bold;
+    font-size: 120%;
+    overflow: hidden;
+}
+.plugin_localcomments .msg-footer {
+    padding: 4px;
+    text-align: right;
+}
+.plugin_localcomments ul .issue .topic-title a {
+    font-weight: normal;
+    font-size: 90%;
+    float: right;
+    color: #fff;
+}
+.plugin_localcomments ul .issue .topic-title a:hover {
+    color: #fff;
+}
+
+.plugin_localcomments ul .issue > ul,
+.plugin_localcomments ul .issue > div.reply {
+    padding-left: 10px;
+    border-left: 6px solid #ddd;
+    margin-top: -6px;
+    padding-top: 6px;
+    margin-bottom: 6px;
+}
+.plugin_localcomments ul div.deleted {
+    color: #933;
+    margin-top: 5px;
+}
+.plugin_localcomments ul div.reply {
+    padding-left: 24px;
+}
+.plugin_localcomments div.reply textarea {
+    clear: both;
+    height: 50px;
+    width: 98%;
+    margin: 0 0 4px 0;
+}
+.plugin_localcomments ul div.reply textarea {
+    width: 97%;
+    margin: 4px 0;
+}
+.plugin_localcomments div.reply input[type='text'] {
+    width: 38%;
+    vertical-align: baseline;
+}
+.plugin_localcomments div.reply #issue_title,
+.plugin_localcomments div.reply #reference_url {
+    display: block;
+    width: 98%;
+}
+.plugin_localcomments ul div.reply #issue_title {
+    display: none;
+}
+div.localcomments_moderation {
+}
+div.localcomments_moderation #moderation-header {
+}
+div.localcomments_moderation table caption {
+    display: none;
+}
+
+/* emulate Bootstrap's .table-striped, with more flexible striping */
+div.localcomments_moderation tr.odd td,
+div.localcomments_moderation tr.odd th {
+    background-color: #F9F9F9;
+}
+div.localcomments_moderation tr.even td,
+div.localcomments_moderation tr.even th {
+    background-color: #FFFFFF;
+}
+div.localcomments_moderation tr.feedback-summary td {
+    white-space: nowrap;
+    overflow: hidden;
+}
+div.localcomments_moderation tr.feedback-summary td.body-excerpt {
+    width: 700px;
+    max-width: 700px;
+}
+div.localcomments_moderation tr.feedback-summary td.body-excerpt,
+div.localcomments_moderation tr.feedback-summary td.author-name {
+    /* white-space: normal; */
+    overflow: hidden; 
+    text-overflow: ellipsis;
+}
+div.localcomments_moderation tr.feedback-summary td.type-and-toggle-icons {
+    white-space: normal;
+}
+div.localcomments_moderation tr.feedback-summary .feedback-toggle {
+    display: none;
+    cursor: pointer;
+}
+div.localcomments_moderation tr.feedback-summary:hover .feedback-toggle {
+    display: block;
+}
+div.localcomments_moderation tr.feedback-details {
+    display: none;
+}
+div.localcomments_moderation tr.feedback-details td {
+    border-top: 1px solid transparent;
+}
+div.localcomments_moderation .feedback-body {
+    border-radius: 5px;
+    border: 1px solid #eed;
+    background-color: #ffe;
+    color: #442;
+    white-space: pre-wrap;
+    margin: 0 12px 4px 18px;
+    padding: 4px 12px;
+/* alternate spacing to cover the one-line excerpt above 
+    margin: -32px 12px 4px 41px;
+    padding: 2px 8px;
+*/
+}

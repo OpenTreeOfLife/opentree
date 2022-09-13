@@ -1,0 +1,30 @@
+<html>
+<head>
+<title>Node start point select form</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!--script src="jquery-1.7.2.min.js"></script>
+<script src="loadtaxdata.js"></script>
+<script>
+    $(document).ready(setup());
+</script-->
+<script src="loadtreedata.js"></script>
+<link rel="stylesheet" type="text/css" href="format.css" />
+</head>
+<body>
+
+<form method="LINK" action="nameresults.html">
+    <p id="nameSearch">
+        Search for taxonomic names (separate names with commas):<br/>
+        <input name="nodename"><input type="submit" value="Find names">
+    </p>
+</form>
+<form method="POST" action=>
+    <p id="treeSearch">
+        Enter a tree string to perform TNRS name-matching on its tips:<br/>
+        <textarea cols=60 rows=5 name="treeString"></textarea><br/>
+        <input type="submit" value="Match tip names" onClick="loadTreeData(this.form)">
+    </p>
+</form>
+
+</body>
+</html>

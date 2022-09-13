@@ -1,0 +1,47 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+
+} input {
+    display: inline;
+    
+} form {
+    display: inline;
+
+} .results {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+} .results ul {
+    list-style: none;
+    padding: 0 0 0 12px;
+    margin: 0;
+    margin: 0 0 1.5em 0;
+
+} .results ul li {
+    display: block;
+    padding: 2px 0 2px 0;
+    margin: 0;
+
+} .results ul li span {
+    display: inline-block;
+    position: relative;
+    width: 8em;
+    padding: 0 0 0 1em;
+    
+} .results ul li span.matchname {
+    width: 10em;
+    
+} .highlight {
+    background: #fcf4ff;
+
+} .label {
+    font-weight: bold;
+    font-size: 0.9em;
+    color: #999;
+    padding: 0em 0 0.5em 0;
+
+} #treesearch {
+    padding: 1em 0 0 0;
+
+}

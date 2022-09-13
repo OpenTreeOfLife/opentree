@@ -1,0 +1,135 @@
+{
+    "2014-04-14T00Z": {
+        "===": "These 'comments' will be ignored by the app.",
+        "version": "v1",
+        "===": "Based on file mod-date shown in http://files.opentreeoflife.org/trees/",
+        "OTT_version": "ott2.6",
+        "tree_count": null,
+        "total_OTU_count": null,
+        "tip_count": null
+    },
+    "2014-09-14T00Z": {
+        "version": "v2",
+        "===": "tree_count and tip_count from graph/about service",
+        "OTT_version": "ott2.8draft5",
+        "tree_count": 484,
+        "total_OTU_count": null,
+        "tip_count": 2339516
+    },
+    "2015-05-06T00Z": {
+        "version": "v3",
+        "OTT_version": "ott2.8draft5",
+        "tree_count": 478,
+        "===": "revised downward from 63393 by JAR 2016-01-29",
+        "total_OTU_count": 41580,
+        "tip_count": 2339460
+    },
+    "2015-10-24T00Z": {
+        "===": "tree_count and tip_count from https://api.opentreeoflife.org/v2/tree_of_life/about",
+        "===": "total_OTU_count calculated from Processed_newicks/*.tre",
+        "version": "v4",
+        "OTT_version": "ott2.9draft12",
+        "tree_count": 482,
+        "total_OTU_count": 41029,
+        "tip_count": 2424255
+    },
+    "2016-03-28T20Z": {
+        "===": "tree_count and tip_count from https://devapi.opentreeoflife.org/v3/tree_of_life/about",
+        "===": "total_OTU_count calculated with otc-count-leaves ../opentree5.0/exemplified_phylo/taxonomy.tre",
+        "version": "v5.0",
+        "OTT_version": "ott2.9draft12",
+        "tree_count": 511,
+        "total_OTU_count": 41226,
+        "tip_count": 2424255
+    },
+    "2016-08-02T00Z": {
+        "===": "tree_count and tip_count from https://devapi.opentreeoflife.org/v3/tree_of_life/about",
+        "===": "total_OTU_count calculated with otc-count-leaves ../opentree6.1/exemplified_phylo/taxonomy.tre",
+        "version": "v6.1",
+        "OTT_version": "ott2.9draft12",
+        "tree_count": 677,
+        "total_OTU_count": 45397,
+        "tip_count": 2424255
+    },
+    "2016-09-11T00Z": {
+        "===": "tree_count and tip_count from https://devapi.opentreeoflife.org/v3/tree_of_life/about",
+        "===": "total_OTU_count calculated with otc-count-leaves ../opentree6.1/exemplified_phylo/taxonomy.tre",
+        "version": "v7.0",
+        "OTT_version": "ott2.10draft11",
+        "tree_count": 680,
+        "total_OTU_count": 44608,
+        "tip_count": 2146904
+    },
+    "2016-11-29T00Z": {
+        "===": "tree_count and tip_count from https://devapi.opentreeoflife.org/v3/tree_of_life/about",
+        "===": "total_OTU_count calculated with otc-count-leaves ../opentree8.0/exemplified_phylo/taxonomy.tre",
+        "version": "v8.0",
+        "OTT_version": "ott2.10draft11",
+        "tree_count": 779,
+        "total_OTU_count": 53012,
+        "tip_count": 2131472
+    },
+    "2017-03-22T11Z": {
+        "===": "tree_count and tip_count from https://devapi.opentreeoflife.org/v3/tree_of_life/about",
+        "===": "total_OTU_count found in http://files.opentreeoflife.org/synthesis/opentree9.1/output/labelled_supertree/index.html",
+        "version": "v9.1",
+        "OTT_version": "ott3.0draft6",
+        "tree_count": 819,
+        "total_OTU_count": 55226,
+        "tip_count": 2637204
+    },
+    "2018-01-09T00Z": {
+        "===": "tree_count and tip_count from https://devapi.opentreeoflife.org/v3/tree_of_life/about",
+        "===": "total_OTU_count found in http://files.opentreeoflife.org/synthesis/opentree10.2/output/labelled_supertree/index.html",
+        "version": "v10.2",
+        "OTT_version": "ott3.0draft6",
+        "tree_count": 954,
+        "total_OTU_count": 62664,
+        "tip_count": 2641222
+    },
+    "2018-07-02T00Z": {
+        "===": "tree_count and tip_count from https://devapi.opentreeoflife.org/v3/tree_of_life/about",
+        "===": "total_OTU_count found in http://files.opentreeoflife.org/synthesis/opentree10.3/output/labelled_supertree/index.html",
+        "version": "v10.3",
+        "OTT_version": "ott3.0draft6",
+        "tree_count": 974,
+        "total_OTU_count": 65739,
+        "tip_count": 2641229
+    },
+    "2018-09-24T00Z": {
+        "===": "tree_count and tip_count from https://devapi.opentreeoflife.org/v3/tree_of_life/about",
+        "===": "total_OTU_count found in http://files.opentreeoflife.org/synthesis/opentree10.3/output/labelled_supertree/index.html",
+        "version": "v10.4",
+        "OTT_version": "ott3.0draft6",
+        "tree_count": 987,
+        "total_OTU_count": 65662,
+        "tip_count": 2640941
+    },
+    "2019-10-09T00Z": {
+        "===": "tree_count and tip_count from https://nexttree.opentreeoflife.org/v3/tree_of_life/about",
+        "===": "total_OTU_count found in https://files.opentreeoflife.org/synthesis/opentree11.4/opentree11.4/labelled_supertree/index.html",
+        "version": "v11.4",
+        "OTT_version": "ott3.1draft2",
+        "tree_count": 1212,
+        "total_OTU_count": 87682,
+        "tip_count": 2852504
+    },
+    "2019-12-29T00Z": {
+        "===": "tree_count and tip_count from https://nexttree.opentreeoflife.org/v3/tree_of_life/about",
+        "===": "total_OTU_count found in https://files.opentreeoflife.org/synthesis/opentree12.3/opentree12.3/labelled_supertree/index.html",
+        "version": "v12.3",
+        "OTT_version": "ott3.2draft9",
+        "tree_count": 1216,
+        "total_OTU_count": 87740,
+        "tip_count": 2391916
+    },
+    "2021-06-18T00Z": {
+        "===": "tree_count from https://files.opentreeoflife.org/synthesis/opentree13.4/output/index.html",
+        "===": "total_OTU_count and tip_count found in https://files.opentreeoflife.org/synthesis/opentree13.4/output/labelled_supertree/index.html",
+        "version": "v13.4",
+        "OTT_version": "ott3.3draft1",
+        "tree_count": 1239,
+        "total_OTU_count": 94028,
+        "tip_count": 2392042
+    }
+}
