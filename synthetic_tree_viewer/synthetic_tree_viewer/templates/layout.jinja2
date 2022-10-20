@@ -1,13 +1,4 @@
 <!DOCTYPE html>
-{%
-from applications.opentree.modules.opentreewebapputil import get_user_display_name,
-                                                             get_conf,
-                                                             get_domain_banner_text,
-                                                             get_domain_banner_hovertext,
-                                                             get_currently_deployed_opentree_branch,
-                                                             latest_CrossRef_URL
-%}
-
 <script src="{{ URL('static','js/webapp-helpers.js') }}"></script>
 
 <html lang="en">
@@ -515,32 +506,33 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                     _href="http://opentreeoflife.org/")}}
               </div>
             </div>
-            {{block left_sidebar}}
+            {% block left_sidebar %}
+            {% endblock %}
             <h3>Left Sidebar</h3>
             <p></p>
         </div>
         {% endif %}
 
         <div class="{{ middle_columns}}">
-            {{block center}}
+            {% block center %}
             {{include}}
-            {{end}}
+            {% endblock %}
         </div>
 
-        {{if right_sidebar_enabled:}}
+        {% if right_sidebar_enabled: %}
         <div class="span3">
-            {{block right_sidebar}}
+            {% block right_sidebar %}
             <h3>Right Sidebar</h3>
             <p></p>
-            {{end}}
+            {% endblock %}
         </div>
-        {{pass}}
+        {% endif %}
     </section>
 
 </div><!-- /.container -->
 
-{{ if 'nudgingToLatestSyntheticTree' in locals(): }}
-  {{ if nudgingToLatestSyntheticTree: }}
+{% if 'nudgingToLatestSyntheticTree' in locals(): %}
+  {% if nudgingToLatestSyntheticTree: %}
     <div id="nudged-to-latest-synthetic-tree" class="alert alert-info" style="position: absolute; margin: 6px 30px;">
         <strong>Note:</strong> The requested synthetic tree version ('{{  incomingDomSource}}') is no longer available.
         This view reflects <a href="{{  URL('about', 'synthesis-release') }}">the latest version
@@ -548,21 +540,21 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
 
         <button type="button" id="closeflash" class="close" data-dismiss="alert">×</button>
     </div>
-  {{ pass }}
-{{ pass }}
+  {% endif %}
+{% endif %}
 
 <!-- Footer ================================================== -->
 <footer class="footer" id="footer">
   <div class="container">
     <div class="footer-content">
-        {{block footer}} <!-- this is default footer -->
+        {% block footer %} <!-- this is default footer -->
         <div id="fundedBy" class="pull-left">
             {{ T('Open Tree of Life is funded by NSF (AVAToL)')}}
             </div>
         <div id="poweredBy" class="pull-right">
             <a href="#" onclick="toggleServerDetailsPopup(); return false;">Show/hide server details</a>
             &bull;
-            <a href="/opentree/about/licenses" IGNOREME="{{ = URL('opentree', 'about','licenses') }}" rel="jslicense">License information</a>
+            <a href="/opentree/about/licenses" IGNOREME="{{ URL('opentree', 'about','licenses') }}" rel="jslicense">License information</a>
             &bull;
             {{ T('Powered by')}}
             <a href="http://www.web2py.com/" target="_blank" >web2py</a>
@@ -573,17 +565,18 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                <dt id="deployed-branch">deployed branch of opentree webapps:</dt>
                    <dd><strong style="color: #888;">{{  get_currently_deployed_opentree_branch(request) }}
                    </strong></dd>
-            {{ # format non-sensitive config data for display
-               conf = get_conf(request)
-               for sec in conf.sections(): }}
-               <dt>{{  sec }}</dt>
-                   {{ for itm in conf.items(sec): }}
-                   <dd><strong style="color: #888;">{{  itm[0] }}</strong>: {{  itm[1] }}</dd>
-                   {{ pass }}
-            {{ pass }}
+{# format non-sensitive config data for display 
+            {% conf = get_conf(request)
+               for sec in conf.sections(): %}
+               <dt>{{ sec }}</dt>
+                   {% for itm in conf.items(sec): %}
+                   <dd><strong style="color: #888;">{{ itm[0] }}</strong>: {{itm[1] }}</dd>
+                   {% endfor %}
+            {% endfor %}
+#}
             </dl>
         </div>
-        {{end}}
+        {% endblock %}
     </div>
   </div>
 </footer>
