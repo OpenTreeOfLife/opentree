@@ -1,8 +1,13 @@
 <!DOCTYPE html>
-<script src="{{ request.static_url('viewer:static/js/webapp-helpers.js') }}"></script>
-
+<script src="{{ request.static_url('synthetic_tree_viewer:static/js/webapp-helpers.js') }}"></script>
 <html lang="en">
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css" />
+
+  <script src="{{ request.static_url('synthetic_tree_viewer:static/js/jquery.js') }}"></script>
+  <link href="{{ request.static_path('synthetic_tree_viewer:static/css/calendar.css') }}" rel="stylesheet">
+  <script src="{{ request.static_url('synthetic_tree_viewer:static/js/calendar.js') }}"></script>
+  <script src="{{ request.static_url('synthetic_tree_viewer:static/js/web2py.js') }}"></script>
+
   <head>
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -25,8 +30,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ project_name }}</title>
-    <link href="{{ request.static_path('viewer:static/css/bootstrap.css') }}" rel="stylesheet">
-    <link href="{{ request.static_path('viewer:static/css/bootstrap-responsive.css') }}" rel="stylesheet">
+    <link href="{{ request.static_path('synthetic_tree_viewer:static/css/bootstrap.css') }}" rel="stylesheet">
+    <link href="{{ request.static_path('synthetic_tree_viewer:static/css/bootstrap-responsive.css') }}" rel="stylesheet">
     {# response.files.append(URL('static','css/bootstrap.css')) #}
     {# response.files.append(URL('static','css/bootstrap-responsive.css')) #}
     <style type="text/css">
@@ -78,16 +83,16 @@
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
       {# response.files.append(URL('static','js/html5shiv.js')) #}
-      <script src="{{ request.static_url('viewer:static/js/html5shiv.js') }}"></script>
+      <script src="{{ request.static_url('synthetic_tree_viewer:static/js/html5shiv.js') }}"></script>
     <![endif]-->
 
     {#response.files.append(URL('static','plugin_layouts/opentree/default.css'))#}
     {#response.files.append(URL('static','plugin_layouts/superfish.js'))#}
-    <link href="{{ request.static_path('viewer:static/plugin_layouts/opentree/default.css') }}" rel="stylesheet">
-    <script src="{{ request.static_url('viewer:static/plugin_layouts/superfish.js') }}"></script>
+    <link href="{{ request.static_path('synthetic_tree_viewer:static/plugin_layouts/opentree/default.css') }}" rel="stylesheet">
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/plugin_layouts/superfish.js') }}"></script>
     <!-- css for comments -->
     {#response.files.append(URL('static','plugin_localcomments/css/localcomments.css'))#}
-    <link href="{{ request.static_path('viewer:static/plugin_localcomments/css/localcomments.css') }}" rel="stylesheet">
+    <link href="{{ request.static_path('synthetic_tree_viewer:static/plugin_localcomments/css/localcomments.css') }}" rel="stylesheet">
 
     <!-- js dependencies for argus -->
     {% if treemachine_domain %}  <!-- TODO: add a proper test here, to omit while in /opentree/appadmin -->
@@ -101,12 +106,12 @@
         var doTNRSForAutocomplete_url = "{{ doTNRSForAutocomplete_url}}";
         var singlePropertySearchForStudies_url = "{{ singlePropertySearchForStudies_url}}";
         var singlePropertySearchForTrees_url = "{{ singlePropertySearchForTrees_url}}";
-      {% if 'nudgingToLatestSyntheticTree' in locals() %}
+      {% if 'nudgingToLatestSyntheticTree' %}
         // notify the user if we've nudged an old synth-tree URL to the latest (in synth-tree view only)
         // N.B. This JS variable is currently unused! See static alert '#nudged-to-latest-synthetic-tree' below.
         var nudgingToLatestSyntheticTree = {{ nudgingToLatestSyntheticTree and 'true' or 'false'}};
       {% endif %}
-      {% if 'showLegendOnLoad' in locals() %}
+      {% if 'showLegendOnLoad' %}
         // support the option to show the synth-tree view's legend when the page is fully loaded
         var showLegendOnLoad = {{ showLegendOnLoad and 'true' or 'false'}};
       {% else %}
@@ -120,19 +125,19 @@
     {#response.files.append(URL('static','js/json2.js'))#}
     {#response.files.append(URL('static','js/argus/raphael-min.js'))#}
     {#response.files.append(URL('static','js/argus/drawtree.js'))#}
-    <script src="{{ request.static_url('viewer:static/js/json2.js') }}"></script>
-    <script src="{{ request.static_url('viewer:static/js/argus/raphael-min.js') }}"></script>
-    <script src="{{ request.static_url('viewer:static/js/argus/drawtree.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/json2.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/argus/raphael-min.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/argus/drawtree.js') }}"></script>
 
     <!-- js for history management -->
     {#response.files.append(URL('static','js/jquery.history.js'))#}
-    <script src="{{ request.static_url('viewer:static/js/jquery.history.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/jquery.history.js') }}"></script>
 
     <!-- jquery splitter plugin -->
     {#response.files.append(URL('static','js/jquery.splitter-0.6.js'))#}
-    <script src="{{ request.static_url('viewer:static/js/jquery.splitter-0.6.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/jquery.splitter-0.6.js') }}"></script>
     {#response.files.append(URL('static','css/jquery.splitter.css'))#}
-    <link href="{{ request.static_path('viewer:static/plugin_localcomments/css/jquery.splitter.css') }}" rel="stylesheet">
+    <link href="{{ request.static_path('synthetic_tree_viewer:static/css/jquery.splitter.css') }}" rel="stylesheet">
 
     <!-- js for Bootstrap components -->
   {% if False %}
@@ -149,22 +154,22 @@
     {{response.files.append(URL('static','js/bootstrap-carousel.js'))}}
     {{response.files.append(URL('static','js/bootstrap-typeahead.js'))}}
   {% endif  %}
-    <script src="{{ request.static_url('viewer:static/js/bootstrap-transition.js') }}"></script>
-    <script src="{{ request.static_url('viewer:static/js/bootstrap-alert.js') }}"></script>
-    <script src="{{ request.static_url('viewer:static/js/bootstrap-modal.js') }}"></script>
-    <script src="{{ request.static_url('viewer:static/js/bootstrap-dropdown.js') }}"></script>
-    <script src="{{ request.static_url('viewer:static/js/bootstrap-scrollspy.js') }}"></script>
-    <script src="{{ request.static_url('viewer:static/js/bootstrap-tab.js') }}"></script>
-    <script src="{{ request.static_url('viewer:static/js/bootstrap-tooltip.js') }}"></script>
-    <script src="{{ request.static_url('viewer:static/js/bootstrap-popover.js') }}"></script>
-    <script src="{{ request.static_url('viewer:static/js/bootstrap-button.js') }}"></script>
-    <script src="{{ request.static_url('viewer:static/js/bootstrap-collapse.js') }}"></script>
-    <script src="{{ request.static_url('viewer:static/js/bootstrap-carousel.js') }}"></script>
-    <script src="{{ request.static_url('viewer:static/js/bootstrap-typeahead.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-transition.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-alert.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-modal.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-dropdown.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-scrollspy.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-tab.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-tooltip.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-popover.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-button.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-collapse.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-carousel.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-typeahead.js') }}"></script>
 
     <!-- js improved date parsing & formatting -->
     {#response.files.append(URL('static','js/moment.min.js'))#}
-    <script src="{{ request.static_url('viewer:static/js/moment.min.js') }}"></script>
+    <script src="{{ request.static_url('synthetic_tree_viewer:static/js/moment.min.js') }}"></script>
 
     <!-- support for web2py AJAX (incl. link to static/js/jquery.js) -->
     {# TODO? include 'web2py_ajax.html' #}
@@ -447,8 +452,9 @@
             <span class="icon-bar"></span>
         </a>
 
-        <a class="brand" href="/opentree" style="font-weight: 400; color: #bbb; padding-right: 10px;">
-            <img style="margin: -12px 4px -8px -2px;" src="/opentree/static/images/mini-opentree-logo.png">
+        <a class="brand" href="/" style="font-weight: 400; color: #bbb; padding-right: 10px;">
+            <img style="margin: -12px 4px -8px -2px;" 
+                 src="{{ request.static_url('synthetic_tree_viewer:static/images/mini-opentree-logo.png') }}">
             Open Tree of Life
         </a>
 

@@ -1,8 +1,6 @@
 def includeme(config):
-    config.add_static_view('static', 'viewer:static', cache_max_age=3600)
+    config.add_static_view('static', 'synthetic_tree_viewer:static', cache_max_age=3600)
     # match all explicit URLs before the default tree view
-    config.add_route('home', '/')
-
     config.add_route('about', '/about')
     config.add_route('about_open_tree_of_life', '/about/open-tree-of-life')
     config.add_route('about_progress', '/about/progress')
@@ -17,3 +15,4 @@ def includeme(config):
 
     # default synth-tree view (with catch-all path)
     config.add_route('tree_view', '/{full_path:.*}')
+    config.add_route('home', '/')

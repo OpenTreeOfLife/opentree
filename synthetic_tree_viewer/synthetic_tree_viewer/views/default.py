@@ -24,6 +24,9 @@ def tree_view(request):
         'registry': request.registry,
         'currently_deployed_opentree_branch': 'TEST-BRANCH-NAME', # TODO get_currently_deployed_opentree_branch(request)
         #'route_url': request.route_url,  # FUNCTIONS DON'T WORK HERE!?
+        'treemachine_domain': "test.blah.foo",  # TODO
+        'nudgingToLatestSyntheticTree': False,  # TODO
+        'showLegendOnLoad': True,  # TODO
         'domain_banner_text': "TEST BANNER",  # TODO get_domain_banner_text(request)
         'domain_banner_hovertext': "<div>Some banner details</div>",  # TODO XML(get_domain_banner_hovertext(request))
         'conf': { },  # TODO conf = get_conf(request)
