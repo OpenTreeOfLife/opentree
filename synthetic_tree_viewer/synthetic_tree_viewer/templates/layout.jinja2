@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<script src="{{ URL('static','js/webapp-helpers.js') }}"></script>
+<script src="{{ request.static_url('viewer:static/js/webapp-helpers.js') }}"></script>
 
 <html lang="en">
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css" />
@@ -24,9 +24,11 @@
 
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ response.title or request.application}}</title>
-    {{response.files.append(URL('static','css/bootstrap.css'))}}
-    {{response.files.append(URL('static','css/bootstrap-responsive.css'))}}
+    <title>{{ project_name }}</title>
+    <link href="{{ request.static_path('viewer:static/css/bootstrap.css') }}" rel="stylesheet">
+    <link href="{{ request.static_path('viewer:static/css/bootstrap-responsive.css') }}" rel="stylesheet">
+    {# response.files.append(URL('static','css/bootstrap.css')) #}
+    {# response.files.append(URL('static','css/bootstrap-responsive.css')) #}
     <style type="text/css">
         // Fix for broken submenus on mobile devices
         .dropdown-backdrop{
@@ -75,16 +77,20 @@
 
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
-      {{response.files.append(URL('static','js/html5shiv.js'))}}
+      {# response.files.append(URL('static','js/html5shiv.js')) #}
+      <script src="{{ request.static_url('viewer:static/js/html5shiv.js') }}"></script>
     <![endif]-->
 
-    {{response.files.append(URL('static','plugin_layouts/opentree/default.css'))}}
-    {{response.files.append(URL('static','plugin_layouts/superfish.js'))}}
+    {#response.files.append(URL('static','plugin_layouts/opentree/default.css'))#}
+    {#response.files.append(URL('static','plugin_layouts/superfish.js'))#}
+    <link href="{{ request.static_path('viewer:static/plugin_layouts/opentree/default.css') }}" rel="stylesheet">
+    <script src="{{ request.static_url('viewer:static/plugin_layouts/superfish.js') }}"></script>
     <!-- css for comments -->
-    {{response.files.append(URL('static','plugin_localcomments/css/localcomments.css'))}}
+    {#response.files.append(URL('static','plugin_localcomments/css/localcomments.css'))#}
+    <link href="{{ request.static_path('viewer:static/plugin_localcomments/css/localcomments.css') }}" rel="stylesheet">
 
     <!-- js dependencies for argus -->
-    {% if globals().get('treemachine_domain',False) %}  <!-- TODO: add a proper test here, to omit while in /opentree/appadmin -->
+    {% if treemachine_domain %}  <!-- TODO: add a proper test here, to omit while in /opentree/appadmin -->
     <script type="text/javascript">
         // make important domains available to client-side code
         var treemachine_domain = "{{ treemachine_domain}}";
@@ -111,18 +117,25 @@
     {% endif  %}
 
     {# JSON support for older browsers (esp. IE7) #}
-    {{response.files.append(URL('static','js/json2.js'))}}
-    {{response.files.append(URL('static','js/argus/raphael-min.js'))}}
-    {{response.files.append(URL('static','js/argus/drawtree.js'))}}
+    {#response.files.append(URL('static','js/json2.js'))#}
+    {#response.files.append(URL('static','js/argus/raphael-min.js'))#}
+    {#response.files.append(URL('static','js/argus/drawtree.js'))#}
+    <script src="{{ request.static_url('viewer:static/js/json2.js') }}"></script>
+    <script src="{{ request.static_url('viewer:static/js/argus/raphael-min.js') }}"></script>
+    <script src="{{ request.static_url('viewer:static/js/argus/drawtree.js') }}"></script>
 
     <!-- js for history management -->
-    {{response.files.append(URL('static','js/jquery.history.js'))}}
+    {#response.files.append(URL('static','js/jquery.history.js'))#}
+    <script src="{{ request.static_url('viewer:static/js/jquery.history.js') }}"></script>
 
     <!-- jquery splitter plugin -->
-    {{response.files.append(URL('static','js/jquery.splitter-0.6.js'))}}
-    {{response.files.append(URL('static','css/jquery.splitter.css'))}}
+    {#response.files.append(URL('static','js/jquery.splitter-0.6.js'))#}
+    <script src="{{ request.static_url('viewer:static/js/jquery.splitter-0.6.js') }}"></script>
+    {#response.files.append(URL('static','css/jquery.splitter.css'))#}
+    <link href="{{ request.static_path('viewer:static/plugin_localcomments/css/jquery.splitter.css') }}" rel="stylesheet">
 
     <!-- js for Bootstrap components -->
+  {% if False %}
     {{response.files.append(URL('static','js/bootstrap-transition.js'))}}
     {{response.files.append(URL('static','js/bootstrap-alert.js'))}}
     {{response.files.append(URL('static','js/bootstrap-modal.js'))}}
@@ -135,12 +148,26 @@
     {{response.files.append(URL('static','js/bootstrap-collapse.js'))}}
     {{response.files.append(URL('static','js/bootstrap-carousel.js'))}}
     {{response.files.append(URL('static','js/bootstrap-typeahead.js'))}}
+  {% endif  %}
+    <script src="{{ request.static_url('viewer:static/js/bootstrap-transition.js') }}"></script>
+    <script src="{{ request.static_url('viewer:static/js/bootstrap-alert.js') }}"></script>
+    <script src="{{ request.static_url('viewer:static/js/bootstrap-modal.js') }}"></script>
+    <script src="{{ request.static_url('viewer:static/js/bootstrap-dropdown.js') }}"></script>
+    <script src="{{ request.static_url('viewer:static/js/bootstrap-scrollspy.js') }}"></script>
+    <script src="{{ request.static_url('viewer:static/js/bootstrap-tab.js') }}"></script>
+    <script src="{{ request.static_url('viewer:static/js/bootstrap-tooltip.js') }}"></script>
+    <script src="{{ request.static_url('viewer:static/js/bootstrap-popover.js') }}"></script>
+    <script src="{{ request.static_url('viewer:static/js/bootstrap-button.js') }}"></script>
+    <script src="{{ request.static_url('viewer:static/js/bootstrap-collapse.js') }}"></script>
+    <script src="{{ request.static_url('viewer:static/js/bootstrap-carousel.js') }}"></script>
+    <script src="{{ request.static_url('viewer:static/js/bootstrap-typeahead.js') }}"></script>
 
     <!-- js improved date parsing & formatting -->
-    {{response.files.append(URL('static','js/moment.min.js'))}}
+    {#response.files.append(URL('static','js/moment.min.js'))#}
+    <script src="{{ request.static_url('viewer:static/js/moment.min.js') }}"></script>
 
     <!-- support for web2py AJAX (incl. link to static/js/jquery.js) -->
-    {% include 'web2py_ajax.html' %}
+    {# TODO? include 'web2py_ajax.html' #}
 
     <script type="text/javascript">
         // some behavior should be on *every* page (after jQuery)
@@ -396,13 +423,7 @@
     (left_sidebar_enabled and 1 or 0)+(right_sidebar_enabled and 1 or 0)]
     #}
 
-    <!-- Fav and touch icons (TODO: add these files to site root!)
-    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114-precomposed.png">
-      <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/apple-touch-icon-72-precomposed.png">
-                    <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-57-precomposed.png">
-    -->
-                                   <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="shortcut icon" href="/favicon.ico">
   </head>
 
 <body>
@@ -411,9 +432,9 @@
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
 
-{% if get_domain_banner_text(request) %}
-  <div class="ribbon-banner">{{  get_domain_banner_text(request) }}</div>
-  <p class="ribbon-banner-details">{{  XML(get_domain_banner_hovertext(request)) }}</p>
+{% if domain_banner_text %}
+  <div class="ribbon-banner">{{  domain_banner_text }}</div>
+  <p class="ribbon-banner-details">{{  domain_banner_hovertext }}</p>
 {% endif %}
   <div class="navbar navbar-inverse navbar-static-top" role="navigation">
     <div class="navbar-inner">
@@ -433,26 +454,26 @@
 
         <div class="nav-collapse collapse">
                     <ul class="nav">
-              <!--<li class="active"><a href="{{  URL('default','index') }}">Home</a></li>-->
+              <!--<li class="active"><a href="{{ request.route_url('home') }}">Home</a></li>-->
               <li><a href="/curator">Add / browse trees</a></li>
-              <li><a href="{{  URL('contact','index') }}">Feedback</a></li>
+              <li><a href="{{ request.route_url('contact') }}">Feedback</a></li>
               <li class="dropdown">
-                <a href="{{  URL('about','open-tree-of-life') }}" class="dropdown-toggle" data-toggle="dropdown">
+                <a href="{{  request.route_url('about') }}" class="dropdown-toggle" data-toggle="dropdown">
                       About  <b class="caret"></b>
                   </a>
                 <ul class="dropdown-menu">
-                <li><a href="{{  URL('about','open-tree-of-life') }}">Open Tree of Life</a></li>
-                      <li><a href="{{  URL('about','references') }}">Bibliographic references</a></li>
-                      <li><a href="{{  URL('about', 'progress') }}">Progress</a></li>
-                      <li><a href="{{  URL('about', 'synthesis-release') }}">Latest synthesis release</a></li>
-                      <li><a href="{{  URL('about', 'taxonomy-version') }}">Latest taxonomy release</a></li>
+                <li><a href="{{  request.route_url('about_open_tree_of_life') }}">Open Tree of Life</a></li>
+                      <li><a href="{{  request.route_url('about_references') }}">Bibliographic references</a></li>
+                      <li><a href="{{  request.route_url('about_progress') }}">Progress</a></li>
+                      <li><a href="{{  request.route_url('about_synthesis_release', release="") }}">Latest synthesis release</a></li>
+                      <li><a href="{{  request.route_url('about_taxonomy_version', version="") }}">Latest taxonomy release</a></li>
                       <!--
-                      <li><a href="{{  URL('about','the-source-tree-manager') }}">The source tree manager</a></li>
+                      <li><a href="{{  request.route_url('about','the-source-tree-manager') }}">The source tree manager</a></li>
                       -->
                       <li><a href="https://github.com/OpenTreeOfLife/germinator/wiki/Open-Tree-of-Life-Web-APIs" target="_blank">API documentation</a></li>
-                      <li><a href="{{  URL('about','developer-resources') }}">Developer resources</a></li>
-                      <li><a href="{{  URL('about','privacy-policy') }}">Privacy policy</a></li>
-                      <li><a href="{{  URL('about','licenses') }}">Licenses</a></li>
+                      <li><a href="{{  request.route_url('about_developer_resources') }}">Developer resources</a></li>
+                      <li><a href="{{  request.route_url('about_privacy_policy') }}">Privacy policy</a></li>
+                      <li><a href="{{  request.route_url('about_licenses') }}">Licenses</a></li>
                 </ul>
               </li>
             </ul>
@@ -531,17 +552,15 @@
 
 </div><!-- /.container -->
 
-{% if 'nudgingToLatestSyntheticTree' in locals(): %}
-  {% if nudgingToLatestSyntheticTree: %}
+  {% if nudgingToLatestSyntheticTree %}
     <div id="nudged-to-latest-synthetic-tree" class="alert alert-info" style="position: absolute; margin: 6px 30px;">
         <strong>Note:</strong> The requested synthetic tree version ('{{  incomingDomSource}}') is no longer available.
-        This view reflects <a href="{{  URL('about', 'synthesis-release') }}">the latest version
+        This view reflects <a href="{{  request.route_url('about', 'synthesis-release') }}">the latest version
         (<strong>{{  draftTreeName}}</strong>).</a>
 
         <button type="button" id="closeflash" class="close" data-dismiss="alert">×</button>
     </div>
   {% endif %}
-{% endif %}
 
 <!-- Footer ================================================== -->
 <footer class="footer" id="footer">
@@ -549,23 +568,23 @@
     <div class="footer-content">
         {% block footer %} <!-- this is default footer -->
         <div id="fundedBy" class="pull-left">
-            {{ T('Open Tree of Life is funded by NSF (AVAToL)')}}
+            Open Tree of Life is funded by NSF (AVAToL)
             </div>
         <div id="poweredBy" class="pull-right">
             <a href="#" onclick="toggleServerDetailsPopup(); return false;">Show/hide server details</a>
             &bull;
-            <a href="/opentree/about/licenses" IGNOREME="{{ URL('opentree', 'about','licenses') }}" rel="jslicense">License information</a>
+            <a href="/opentree/about/licenses" IGNOREME="{{ request.route_url('about_licenses') }}" rel="jslicense">License information</a>
             &bull;
-            {{ T('Powered by')}}
+            Powered by
             <a href="http://www.web2py.com/" target="_blank" >web2py</a>
         </div>
         <div id="server-details" style="display: none; clear: both; margin: 4px 0; background-color: #f5f5f5; padding: 6px 8px; border-radius: 8px;">
             Configuration for the <strong>{{  request.application }}</strong> web2py app:
             <dl>
                <dt id="deployed-branch">deployed branch of opentree webapps:</dt>
-                   <dd><strong style="color: #888;">{{  get_currently_deployed_opentree_branch(request) }}
+                   <dd><strong style="color: #888;">{{  currently_deployed_opentree_branch }}
                    </strong></dd>
-{# format non-sensitive config data for display 
+{# TODO format non-sensitive config data for display 
             {% conf = get_conf(request)
                for sec in conf.sections(): %}
                <dt>{{ sec }}</dt>
