@@ -27,7 +27,7 @@ def tree_view(request):
         'treemachine_domain': "test.blah.foo",  # TODO
         'nudgingToLatestSyntheticTree': False,  # TODO
         'showLegendOnLoad': True,  # TODO
-        'domain_banner_text': "TEST BANNER",  # TODO get_domain_banner_text(request)
-        'domain_banner_hovertext': "Some <b>banner</b> details<br/> for the visitor to read.",  # TODO XML(get_domain_banner_hovertext(request))
+        'domain_banner_text': get_domain_banner_text(request),
+        'domain_banner_hovertext': get_domain_banner_hovertext(request),
         'conf': { },  # TODO conf = get_conf(request)
         }
