@@ -438,8 +438,8 @@
     <!-- End Google Tag Manager (noscript) -->
 
 {% if domain_banner_text %}
-  <div class="ribbon-banner">{{  domain_banner_text }}</div>
-  <p class="ribbon-banner-details">{{  domain_banner_hovertext }}</p>
+  <div class="ribbon-banner">{{  domain_banner_text }}
+  </div><p class="ribbon-banner-details">{{-  domain_banner_hovertext|safe -}}</p>
 {% endif %}
   <div class="navbar navbar-inverse navbar-static-top" role="navigation">
     <div class="navbar-inner">
