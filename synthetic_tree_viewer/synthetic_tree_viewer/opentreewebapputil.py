@@ -1,4 +1,5 @@
 # adapted from web2py (applications.opentree.modules.opentreewebapputil)
+import os
 
 def get_user_display_name():
     # TODO
@@ -30,9 +31,24 @@ def get_domain_banner_hovertext(request):
                          "untested. The production site (the place to",
                          "do real work) is <a href='https://tree.opentreeoflife.org/'>tree.opentreeoflife.org</a>."])
 
-def get_currently_deployed_opentree_branch():
-    # TODO
-    pass
+def get_currently_deployed_opentree_branch(request):
+    """Read local git configuration and return the current branch"""
+    # Backtrack to the real (vs. symlinked) filesystem path for this app
+    this_file_dir = os.getcwd()
+    infilepath = os.path.join(this_file_dir, '..', '.git', 'HEAD')
+    branch_name = 'NOT FOUND (app is not inside a git repo?)'
+    try:
+        infile = open(infilepath)
+        for line in infile:
+            if 'ref:' in line:
+                # FOR EXAMPLE:
+                #   ref: refs/heads/mystery-branch\n
+                branch_name = line.split('/')[-1].strip()
+                break
+        infile.close()
+    except:
+        pass
+    return branch_name
 
 def latest_CrossRef_URL():
     # TODO

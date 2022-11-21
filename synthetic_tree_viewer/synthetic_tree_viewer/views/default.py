@@ -22,7 +22,7 @@ def tree_view(request):
         #'session': request.session,
         'response': request.response,
         'registry': request.registry,
-        'currently_deployed_opentree_branch': 'TEST-BRANCH-NAME', # TODO get_currently_deployed_opentree_branch(request)
+        'currently_deployed_opentree_branch': get_currently_deployed_opentree_branch(request),
         #'route_url': request.route_url,  # FUNCTIONS DON'T WORK HERE!?
         'treemachine_domain': "test.blah.foo",  # TODO
         'nudgingToLatestSyntheticTree': False,  # TODO
