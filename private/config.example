@@ -1,0 +1,62 @@
+# Copy this file to "config" (and replace tokens below) to make it active
+#
+# DO NOT CHANGE the formatting of assignment lines (removing spaces, etc) in
+# this file! The 'config.example' files are used by our deployment scripts to
+# build the final config for each web2py app. Changes here might keep it
+# from being built properly.
+[security]
+secure_sessions_with_HTTPS = false
+
+# paths for the study/status page (DEPRECATED)
+[paths]
+#nexsonsdir = /usr/share/open-tree/avatol_nexsons
+#study_to_status_script = /usr/share/open-tree/avatol_nexsons/nexson2treemach/study_nexson_to_status_html.py
+
+[apis]
+# Settings for a registered app on GitHub, for example on devtree:
+# <https://github.com/settings/apps/open-tree-tree-explorer-dev>
+github_app_id = YOUR_APP_ID_HERE
+github_client_id = YOUR_CLIENT_ID_HERE
+github_redirect_uri = YOUR_REDIRECT_URI_HERE
+# DON'T INCLUDE 'github_client_secret' value here. For better security, this is
+# loaded from a separate file and added to config data on-the-fly.
+#
+# github_app_installation_id can be found from the installing organization's page, e.g.
+# <https://github.com/organizations/OpenTreeOfLife/settings/installations>
+# (the installation ID is in the URL of the Configure button here)
+github_app_installation_id = YOUR_APP_INSTALLATION_ID_HERE
+
+# List public-facing base URL for treemachine and taxomachine services
+# (NOTE that these are used by both server- and client-side code)
+[domains]
+treemachine = http://opentree.myserver.org
+taxomachine = http://opentree.myserver.org
+oti = http://opentree.myserver.org
+opentree_api = http://opentree.myserver.org
+collections_api_base_url = https://devapi.opentreeoflife.org
+favorites_api_base_url = https://devapi.opentreeoflife.org
+# Cached versions of some APIs will speed up repeated calls (see below).
+# These use a simple web2py cache implemented in phylesystem-api
+CACHED_treemachine = https://opentree.myserver.org/cached
+CACHED_taxomachine = https://opentree.myserver.org/cached
+CACHED_oti = https://opentree.myserver.org/cached
+
+# Building on the URLs above, complete the public-facing URL for all methods
+# (again, these should work from both server- and client-side code)
+#
+# NOTE: In our example setup, all service methods are proxied through Apache as
+# URLs within the main opentree site. So we assume that partial paths '/db/data/' 
+# are handled in the ProxyPass statement.
+[method_urls]
+getDraftTreeID_url = {CACHED_treemachine_domain}/v3/tree_of_life/about
+getSyntheticTree_url = {CACHED_treemachine_domain}/v3/tree_of_life/subtree
+getDraftSubtree_url = {treemachine_domain}/v3/tree_of_life/subtree
+doTNRSForAutocomplete_url = {taxomachine_domain}/v3/tnrs/autocomplete_name
+getContextsJSON_url = {CACHED_taxomachine_domain}/v3/tnrs/contexts
+getSynthesisSourceList_url = {CACHED_treemachine_domain}/v3/tree_of_life/about
+findAllStudies_url = {CACHED_oti_domain}/v3/studies/find_studies
+singlePropertySearchForStudies_url = {oti_domain}/v3/studies/find_studies
+singlePropertySearchForTrees_url = {oti_domain}/v3/studies/find_trees
+getTaxonInfo_url = {taxomachine_domain}/v3/taxonomy/taxon_info
+# Include one phylesystem-api method to download NexSON from Bibliographic References page
+API_load_study_GET_url = {opentree_api_domain}/v3/study/{STUDY_ID}
