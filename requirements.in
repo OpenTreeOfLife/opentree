@@ -7,3 +7,4 @@ python_jwt
 pyramid==2.0
 pipdeptree
 cookiecutter
+ConfigParser

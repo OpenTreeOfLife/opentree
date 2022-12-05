@@ -29,5 +29,5 @@ def tree_view(request):
         'showLegendOnLoad': True,  # TODO
         'domain_banner_text': get_domain_banner_text(request),
         'domain_banner_hovertext': get_domain_banner_hovertext(request),
-        'conf': { },  # TODO conf = get_conf(request)
+        'conf': get_conf(request)
         }
