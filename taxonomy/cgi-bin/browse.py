@@ -1,4 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/python3
+
+# UPDATED to use system python3. ASSUMES that requests module has been installed.
 
 # Brutally primitive reference taxonomy browser.
 # Basically just a simple shim on the taxomachine 'taxon' method.
@@ -26,7 +28,8 @@ dev_amendment_url_template =        'https://github.com/OpenTreeOfLife/amendment
 
 import os
 import sys
-import cgi, cgitb, StringIO
+import cgi, cgitb, html
+from io import StringIO
 
 import requests
 import json
@@ -40,7 +43,7 @@ headers = {
 
 def browse(id=None, name=None, limit=None, api_base=None):
     global _AMENDMENT_REPO_URL_TEMPLATE
-    output = StringIO.StringIO()
+    output = StringIO()
 
     if api_base == None:
         server_name = os.environ.get('SERVER_NAME')
@@ -48,7 +51,7 @@ def browse(id=None, name=None, limit=None, api_base=None):
         if server_name != None and 'devtree' in server_name:
             server_name = server_name.replace('devtree', 'devapi')
             api_base = 'https://%s/' % server_name
-            output.write('using API server %s\n' % server_name)
+            output.write('using API server %s' % server_name)
         else:
             api_base = default_api_base_url
 
@@ -89,9 +92,9 @@ def report_invalid_arg(output, info):
     start_el(output, 'h1')
     output.write('Open Tree taxonomy: <strong class="error">invalid argument</strong>')
     end_el(output, 'h1')
-    output.write('<p class="error">There was a problem with the name or ID provided:</p>\n')
+    output.write('<p class="error">There was a problem with the name or ID provided:</p>')
     start_el(output, 'pre', 'error')
-    output.write(cgi.escape(json.dumps(info, sort_keys=True, indent=4)))
+    output.write(html.escape(json.dumps(info, sort_keys=True, indent=4)))
     end_el(output, 'pre')
 
 def browse_by_name(name, limit, api_base, output):
@@ -101,10 +104,10 @@ def browse_by_name(name, limit, api_base, output):
         return None
     matches = result[u'matches']
     if len(matches) == 0:
-        output.write('no TNRS matches for %s\n' % cgi.escape(name))
+        output.write('no TNRS matches for %s' % html.escape(name))
         return None
     elif len(matches) > 1:
-        output.write('Matches for %s: \n' % cgi.escape(name))
+        output.write('Matches for %s: ' % html.escape(name))
         start_el(output, 'ul')
         for match in matches:
             taxon = match[u'taxon']
@@ -132,12 +135,12 @@ def look_up_name(name, api_base):
 
 def browse_by_id(id, limit, api_base, output):
     info = get_taxon_info(id, 'ott_id', api_base)
-    #print json.dumps(info, sort_keys=True, indent=4)
+    #print(json.dumps(info, sort_keys=True, indent=5))
     display_taxon_info(info, limit, output, api_base)
 
 def browse_by_qid(id, limit, api_base, output):
     info = get_taxon_info(id, 'source_id', api_base)
-    #print json.dumps(info, sort_keys=True, indent=4)
+    #print(json.dumps(info, sort_keys=True, indent=4))
     display_taxon_info(info, limit, output, api_base)
 
 def get_taxon_info(id, property, api_base):
@@ -151,8 +154,8 @@ def get_taxon_info(id, property, api_base):
         return error_report(response)
 
 def display_taxon_info(info, limit, output, api_base):
-    included_children_output = StringIO.StringIO()
-    suppressed_children_output = StringIO.StringIO()
+    included_children_output = StringIO()
+    suppressed_children_output = StringIO()
 
     # Search box
     output.write('<form action="browse"><p align="right"><input type="text" name="name" placeholder="name or id"/></p></form>')
@@ -166,7 +169,7 @@ def display_taxon_info(info, limit, output, api_base):
         start_el(output, 'p', 'legend')
         version = get_taxonomy_version(api_base)
         output.write('The current taxonomy version is <a target="_blank" href="https://tree.opentreeoflife.org/about/taxonomy-version/%s">%s (click for more information)</a>. ' % (version, version,))
-        output.write('See the OTT documentation for <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/taxon-flags.md#taxon-flags">an explanation of the taxon flags used</a> below, e.g., <span class="flag">extinct</span>\n')
+        output.write('See the OTT documentation for <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/taxon-flags.md#taxon-flags">an explanation of the taxon flags used</a> below, e.g., <span class="flag">extinct</span>')
         end_el(output, 'p')
 
         output.write('<h3>Taxon details</h3>')
@@ -174,7 +177,7 @@ def display_taxon_info(info, limit, output, api_base):
         display_basic_info(info, output)
         output.write(' (OTT id %s)' % id)
         synth_tree_url = "/opentree/argus/ottol@%s" % id
-        output.write('<br/><a target="_blank" href="%s">View this taxon in the current synthetic tree</a>' % cgi.escape(synth_tree_url))
+        output.write('<br/><a target="_blank" href="%s">View this taxon in the current synthetic tree</a>' % html.escape(synth_tree_url))
 
         end_el(output, 'p')
 
@@ -186,7 +189,7 @@ def display_taxon_info(info, limit, output, api_base):
             if len(synonyms) > 0:
                 output.write('<h3>Synonym(s)</h3>')
                 start_el(output, 'p', 'synonyms')
-                output.write("%s\n" % ', '.join(map(link_to_name, synonyms)))
+                output.write("%s" % ', '.join(map(link_to_name, synonyms)))
                 end_el(output, 'p')
         if u'lineage' in info:
             first = True
@@ -200,10 +203,10 @@ def display_taxon_info(info, limit, output, api_base):
                     output.write(' &gt; ')
                 output.write(link_to_taxon(ancestor[u'ott_id'], ancestor[u'name']))
                 first = False
-            output.write('\n')
+            output.write('')
             end_el(output, 'p')
         else:
-            output.write('missing lineage field %s\n', info.keys())
+            output.write('missing lineage field %s', info.keys())
         any_included = False
         any_suppressed = False
         if limit == None: limit = 200
@@ -256,7 +259,7 @@ def display_taxon_info(info, limit, output, api_base):
                                                        (len(children)-limit)),
                                                       limit=100000))
                 end_el(output, 'p')
-        output.write("\n")
+        output.write("")
     else:
         report_invalid_arg(output, info)
 
@@ -307,7 +310,7 @@ def display_basic_info(info, output):
     start_el(output, 'span', 'flags')
     output.write('%s ' % ', '.join(map(lambda f:'<span class="flag">%s</span>' % f.lower(), info[u'flags'])))
     end_el(output, 'span')
-    output.write('\n')
+    output.write('')
 
 def source_link(source_id):
     global _AMENDMENT_REPO_URL_TEMPLATE
@@ -343,10 +346,10 @@ def source_link(source_id):
                     prefix = type_to_singular_prefix.get(id_parts[0])
                     node_id = parts[1]
                     formatted_id = '%s:%s' % (prefix, node_id)
-                    return '<a href="%s">%s</a>' % (cgi.escape(url), cgi.escape(formatted_id))
+                    return '<a href="%s">%s</a>' % (html.escape(url), html.escape(formatted_id))
 
     if url != None:
-        return '<a href="%s">%s</a>' % (cgi.escape(url), cgi.escape(source_id))
+        return '<a href="%s">%s</a>' % (html.escape(url), html.escape(source_id))
     else:
         return source_id
 
@@ -366,10 +369,10 @@ def link_to_taxon(id, text, limit=None):
         option = ''
     else:
         option = '&limit=%s' % limit
-    return '<a href="browse?id=%s%s">%s</a>' % (id, option, style_name(cgi.escape(text)))
+    return '<a href="browse?id=%s%s">%s</a>' % (id, option, style_name(html.escape(text)))
 
 def link_to_name(name):
-    name = cgi.escape(name)
+    name = html.escape(name)
     return '<a href="browse?name=%s">%s</a>' % (name, style_name(name))
 
 def style_name(ename):
@@ -482,6 +485,6 @@ if __name__ == '__main__':
     output.write(local_stylesheet)
     end_el(output, 'head')
     start_el(output, 'body')
-    print browse(id, name, limit, api_base).encode('utf-8')
+    output.write(browse(id, name, limit, api_base))
     end_el(output, 'body')
     end_el(output, 'html')
