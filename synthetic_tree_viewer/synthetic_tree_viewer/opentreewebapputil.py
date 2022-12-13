@@ -9,8 +9,7 @@ def get_conf(request):
     global _CONF_OBJ_DICT
 
     app_name = request.registry.package_name
-    c = _CONF_OBJ_DICT.get(app_name)
-    if c is None:
+    if _CONF_OBJ_DICT.get(app_name) is None:
         from configparser import ConfigParser
         conf = ConfigParser()
         # DON'T convert property names to lower-case!
@@ -37,7 +36,7 @@ def get_conf(request):
             err_msg = "Webapp config file ({}) is broken or incomplete (missing [apis] section)".format(config_file_found)
             print(err_msg)
             raise Exception(err_msg)
-    return c
+    return _CONF_OBJ_DICT.get(app_name)
 
 def get_user_display_name():
     # TODO
@@ -87,3 +86,101 @@ def get_currently_deployed_opentree_branch(request):
 def latest_CrossRef_URL():
     # TODO
     pass
+
+def get_opentree_services_domains(request):
+    '''
+    Reads the local configuration to get the domains and returns a dictionary
+        with keys:
+            treemachine_domain
+            taxomachine_domain
+            oti_domain
+            opentree_api_domain
+        the values of the domain will contain the port (when needed)
+
+    This is mainly useful for debugging because it lets developers use local
+        instances of the service by tweaking private/conf (see private/conf.example)
+    '''
+    conf = get_conf(request)
+    domain_pairs = conf.items('domains')
+    domains = dict()
+    for name, url in domain_pairs:
+        domains[ "%s_domain" % name ] = url
+    return domains
+
+def get_opentree_services_method_urls(request):
+    '''
+    Reads the local configuration to build on domains and return a dictionary
+        with keys for all domains AND their service methods, whose values are
+        URLs combining domain and partial paths
+
+    This is useful for debugging and for adapting to different ways of
+        configuring services, eg, proxied through a single domain
+        (see private/conf.example)
+    '''
+    domains = get_opentree_services_domains(request)
+
+    conf = get_conf(request)
+    url_pairs = conf.items('method_urls')
+    method_urls = domains.copy()
+    for mname, murl in url_pairs:
+        # replace any domain tokens, eg, 'treemachine_domain'
+        for dname, durl in domains.items():
+            murl = murl.replace('{%s}' % dname, durl)
+        method_urls[ mname ] = murl
+
+    return method_urls
+
+def get_user_display_name():
+    # Determine the best possible name to show for the current logged-in user.
+    # This is for display purposes and credit in study Nexson. It's a bit
+    # convoluted due to GitHub's various and optional name fields.
+    ###from gluon import current
+    ###auth = current.session.auth or None
+    ###if (not auth) or (not auth.get('user', None)):
+        ###return 'ANONYMOUS'
+    ###if auth.user.name:
+        #### this is a preset display name
+        ###return auth.user.name
+    #### N.B. that auth.user.first_name and auth.user.last_name fields are not
+    #### reliable in our apps! They're included for web2py compatibility, but we
+    #### defer to the GitHub User API and use the 'name' field for this.
+    ###if auth.user.username:
+        #### compact userid is our last resort
+        ###return auth.user.username
+    #### no name or id found (this should never happen)
+    ###return 'UNKNOWN'
+    return 'TODO: Display Name'
+
+def fetch_current_TNRS_context_names(request):
+    try:
+        # fetch the latest contextName values as JSON from remote site
+        import requests
+
+        method_dict = get_opentree_services_method_urls(request)
+        fetch_url = method_dict['getContextsJSON_url']
+        if fetch_url.startswith('//'):
+            # Prepend scheme to a scheme-relative URL
+            fetch_url = "https:%s" % fetch_url
+
+        # as usual, this needs to be a POST (pass empty fetch_args)
+        contextnames_json = requests.post(url=fetch_url, data='').json()
+        # start with LIFE group (incl. 'All life'), and add any other ordered suggestions
+        ordered_group_names = unique_ordered_list(['LIFE','PLANTS','ANIMALS'] + [g for g in contextnames_json])
+        context_names = [ ]
+        for gname in ordered_group_names:
+            # allow for eventual removal or renaming of expected groups
+            if gname in contextnames_json:
+                context_names += [n for n in contextnames_json[gname] ]
+
+        # draftTreeName = str(ids_json['draftTreeName']).encode('utf-8')
+        return (context_names)
+
+    except Exception as e:
+        # throw 403 or 500 or just leave it
+        return ('ERROR', e.message)
+
+def unique_ordered_list(seq):
+    seen = set()
+    seen_add = seen.add
+    return [ x for x in seq if x not in seen and not seen_add(x)]
+

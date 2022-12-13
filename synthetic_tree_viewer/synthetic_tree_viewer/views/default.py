@@ -10,6 +10,7 @@ def tree_view(request):
         get_domain_banner_hovertext,
         get_currently_deployed_opentree_branch,
         latest_CrossRef_URL,
+        fetch_current_TNRS_context_names,
         )
     #node_id = request.matchdict['node_id']
     # examine the full path to customize this view
@@ -29,5 +30,6 @@ def tree_view(request):
         'showLegendOnLoad': True,  # TODO
         'domain_banner_text': get_domain_banner_text(request),
         'domain_banner_hovertext': get_domain_banner_hovertext(request),
-        'conf': get_conf(request)
+        'conf': get_conf(request),
+        'taxonSearchContextNames': fetch_current_TNRS_context_names(request),
         }
