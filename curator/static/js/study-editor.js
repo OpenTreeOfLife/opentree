@@ -2084,6 +2084,9 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
         case 'synth':
             referenceTreeName = 'Synthetic Tree of Life';
             break;
+        case 'STUDYID_TREEID':
+            referenceTreeName = 'TODO - TODO';
+            break;
         default:
             hideModalScreen()
             console.error('fetchTreeConflictStatus(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
@@ -2165,6 +2168,9 @@ function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
     );
 }
 function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID, options) {
+    /* NB - This is typically (always?) called from an onclick handler, so
+     * arguments are probably wrong/missing. (This is handled downstream.)
+     */
     if (!options) options = {SHOW_SPINNER: true};
     /* TODO: Reconsider this, if we can do it quickly and maintain SELECT value
     if (treeViewerIsInUse) {
