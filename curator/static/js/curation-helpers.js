@@ -828,7 +828,12 @@ function updateNewCollTreeUI() {
     }
 }
 
-/* Sensible autocomplete behavior requires the use of timeouts
+/* Look up study and tree IDs easily.
+ *
+ * This logic was originally used only in the collection editor, but
+ * we need to generalize it for use in other contexts like conflict reporting.
+ *
+ * NB - Sensible autocomplete behavior requires the use of timeouts
  * and sanity checks for unchanged content, etc.
  */
 clearTimeout(studyLookupTimeoutID);  // in case there's a lingering search from last page!
@@ -866,6 +871,30 @@ function setStudyLookupFuse(e) {
     } else {
         hopefulStudyLookupName = null;
     }
+}
+
+function getPhylesystemLookupContext() {
+    /* Check for open (and topmost) popup, then active tab
+     *
+     * NB - It's entirely possible to open the source-tree viewer, then
+     * the collection editor on top of that. Choose wisely!
+     */
+    if ($('#tree-collection-viewer').is(":visible")) {
+        return 'COLLECTION_EDITOR_ADD_TREE';
+    }
+
+    if ($('#tree-viewer').is(":visible")) {
+        return 'PHYLOGRAM_CONFLICT_CHOOSE_TREE2';
+    }
+
+    var $tabBar = $('ul.nav-tabs:eq(0)');
+    var activeTabName = $.trim($tabBar.find('li.active a').text());
+    if (activeTabName.indexOf('Analyses') === 0) {
+        return 'ANALYSES_CONFLICT_CHOOSE_TREE2';
+    }
+
+    console.error("getPhylesystemLookupContext(): UNKNOWN context!");
+    return null;
 }
 
 var showingResultsForStudyLookupText = '';
