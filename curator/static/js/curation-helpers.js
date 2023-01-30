@@ -1060,14 +1060,14 @@ function searchForMatchingStudy() {
                 $lookupResults.html('');
                 $lookupResults.hide();
                 // replace input field with static indicator (and trigger to search again?)
-                $('.study-lookup-active').hide();
-                $('#study-lookup-indicator')
+                $container.find('.study-lookup-active').hide();
+                $container.find('[id=study-lookup-indicator]')
                     .attr({'href': $link.attr('href'), 'title': $link.attr('title')})
                     .html( $link.html() );
-                $('.study-lookup-passive').show();
+                $container.find('.study-lookup-passive').show();
                 // Load + enable tree lookup
-                $('select[name=tree-lookup]').val('');
-                $('select[name=tree-lookup]').attr('disabled','disabled');
+                $container.find('select[name=tree-lookup]').val('');
+                $container.find('select[name=tree-lookup]').attr('disabled','disabled');
                 updateNewCollTreeUI();
                 $.ajax({
                     global: false,  // suppress web2py's aggressive error handling
@@ -1117,7 +1117,7 @@ function searchForMatchingStudy() {
                                     var foundStudy = responseObj['matched_studies'][0];
                                     var foundTrees = foundStudy['matched_trees'];
                                     // TODO: Remove all but the prompting OPTION element
-                                    var $treeSelector = $('select[name=tree-lookup]');
+                                    var $treeSelector = $container.find('select[name=tree-lookup]');
                                     $treeSelector.find('option').remove();
                                     if (foundTrees.length === 0) {
                                         // no such study
@@ -1183,18 +1183,18 @@ function searchForMatchingStudy() {
 function resetStudyLookup() {
     // Clear/disable tree lookup
     var context = getPhylesystemLookupContext();
-    var $treeSelector = $('select[name=tree-lookup]');
+    var $treeSelector = $container.find('select[name=tree-lookup]');
     $treeSelector.find('option').remove();
-    var $promptOption = $('<option disabled="disabled" value="">Find the study above first</option>');
+    var $promptOption = $container.find('<option disabled="disabled" value="">Find the study above first</option>');
     $treeSelector.append( $promptOption );
-    $('select[name=tree-lookup]').val('');
-    $('select[name=tree-lookup]').attr('disabled','disabled');
+    $container.find('select[name=tree-lookup]').val('');
+    $container.find('select[name=tree-lookup]').attr('disabled','disabled');
 
     // Toggle the study-lookup widget (vs. indicator)
-    $('.study-lookup-passive').hide();
-    $('.study-lookup-active').show();
+    $container.find('.study-lookup-passive').hide();
+    $container.find('.study-lookup-active').show();
     // N.B. The icon element will shift if its display is set to block
-    $('i.study-lookup-active').css('display', 'inline-block');
+    $container.find('i.study-lookup-active').css('display', 'inline-block');
 
     updateNewCollTreeUI();
 }
@@ -1203,7 +1203,6 @@ function createNewTreeCollection() {
     /* NOTE: This initial collection JSON matches the current server-side implementation
      * in peyotl (see peyotl.collections.get_empty_collection)
      */
-    var context = getPhylesystemLookupContext();
     var newCollection = {
         "url": "",
         "name": "",
