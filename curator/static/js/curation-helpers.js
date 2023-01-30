@@ -779,6 +779,20 @@ function getFullGitHubURLForCollection(collection) {
 }
 
 function updateNewCollTreeUI() {
+    // find the correct UI components for the current context
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+    switch(context) {
+        case 'COLLECTION_EDITOR_ADD_TREE':
+            break;
+        case 'PHYLOGRAM_CONFLICT_CHOOSE_TREE2':
+            break;
+        case 'ANALYSES_CONFLICT_CHOOSE_TREE2':
+            break;
+        default:  // missing/unknown context!
+            return;
+    }
     // update by-lookup widgets
     var $addByLookupPanel = $('#new-collection-tree-by-lookup');
     var $submitByLookupButton = $addByLookupPanel.find('button').eq(0);
@@ -897,33 +911,69 @@ function getPhylesystemLookupContext() {
     return null;
 }
 
+function getPhylesystemLookupPanel( context ) {
+    // find the nearest containing element for all phylesystem-lookup widgets
+    context = context || getPhylesystemLookupContext();
+    var $container;    // parent element for study+tree lookup UI
+    switch(context) {
+        case 'COLLECTION_EDITOR_ADD_TREE':
+            $container = $('#new-collection-tree-by-lookup');
+            break;
+        case 'PHYLOGRAM_CONFLICT_CHOOSE_TREE2':
+            $container = $('#tree-phylogram-options');
+            break;
+        case 'ANALYSES_CONFLICT_CHOOSE_TREE2':
+            $container = $('#analyses-tree-chooser');
+            break;
+        default:  // missing/unknown context!
+            console.error("getPhylesystemLookupPanel(): UNKNOWN context '"+ context +"'!");
+            return null;
+    }
+}
+
 var showingResultsForStudyLookupText = '';
 function searchForMatchingStudy() {
     // clear any pending lookup timeout and ID
     clearTimeout(studyLookupTimeoutID);
     studyLookupTimeoutID = null;
 
-    var $input = $('input[name=study-lookup]');
-    if ($input.length === 0) {
-        $('#study-lookup-results').html('');
+    // find the correct UI components for the current context
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+    switch(context) {
+        case 'COLLECTION_EDITOR_ADD_TREE':
+            break;
+        case 'PHYLOGRAM_CONFLICT_CHOOSE_TREE2':
+            break;
+        case 'ANALYSES_CONFLICT_CHOOSE_TREE2':
+            break;
+        default:  // missing/unknown context!
+            return;
+    }
+    var $studynameinput = $container.find('input[name=study-lookup]');    // search text field
+    var $lookupResults = $container.find('[id=study-lookup-results]');     // display matching stuff
+
+    if ($studynameinput.length === 0) {
+        $container.find('#study-lookup-results').html('');
         console.log("Input field not found!");
         return false;
     }
-    var searchText = $.trim( $input.val() );
+    var searchText = $.trim( $studynameinput.val() );
     var searchTokens = tokenizeSearchTextKeepingQuotes(searchText);
 
     if ((searchTokens.length === 0) ||
         (searchTokens.length === 1 && searchTokens[0].length < 2)) {
-        $('#study-lookup-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
+        $container.find('').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
         return false;
     }
 
     // stash the search-text used to generate these results
     showingResultsForStudyLookupText = searchText;
-    $('#study-lookup-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
-    $('#study-lookup-results').show();
-    $('#study-lookup-results').dropdown('toggle');
-    $('#study-lookup-results').html('');
+    $lookupResults.html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
+    $lookupResults.show();
+    $lookupResults.dropdown('toggle');
+    $lookupResults.html('');
 
     var maxResults = 5;
     var visibleResults = 0;
@@ -984,7 +1034,7 @@ function searchForMatchingStudy() {
         $.each(matchingStudies, function(i, studyInfo) {
             if (visibleResults > maxResults) {
                 // Add one final prompt
-                $('#study-lookup-results').append(
+                $lookupResults.append(
                     '<li class="disabled"><a href=""><span class="muted">Add more search text to see hidden matches.</span></a></li>'
                 );
                 return false;
@@ -998,7 +1048,7 @@ function searchForMatchingStudy() {
             visibleResults++;
         });
 
-        $('#study-lookup-results a')
+        $lookupResults.find('a')
             .click(function(e) {
                 var $link = $(this);
                 if ($link.attr('href') === '') return false;
@@ -1007,8 +1057,8 @@ function searchForMatchingStudy() {
                 // update hidden field
                 $('input[name=study-lookup-id]').val( studyID );
                 // hide menu and reset search field
-                $('#study-lookup-results').html('');
-                $('#study-lookup-results').hide();
+                $lookupResults.html('');
+                $lookupResults.hide();
                 // replace input field with static indicator (and trigger to search again?)
                 $('.study-lookup-active').hide();
                 $('#study-lookup-indicator')
@@ -1096,7 +1146,9 @@ function searchForMatchingStudy() {
                                         $treeSelector.append( $newOption );
                                     });
                                     $treeSelector.attr('disabled', null);
-                                    updateNewCollTreeUI();
+                                    if (context == '') {
+                                        updateNewCollTreeUI();
+                                    }
                                     return;
 
                                 default:
@@ -1119,17 +1171,18 @@ function searchForMatchingStudy() {
                 });
 
             });
-        $('#study-lookup-results').dropdown('toggle');
+        $lookupResults.dropdown('toggle');
     }
     if (visibleResults === 0) {
-        $('#study-lookup-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
-        $('#study-lookup-results').dropdown('toggle');
+        $lookupResults.html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
+        $lookupResults.dropdown('toggle');
     };
 
     return false;
 }
 function resetStudyLookup() {
     // Clear/disable tree lookup
+    var context = getPhylesystemLookupContext();
     var $treeSelector = $('select[name=tree-lookup]');
     $treeSelector.find('option').remove();
     var $promptOption = $('<option disabled="disabled" value="">Find the study above first</option>');
@@ -1150,6 +1203,7 @@ function createNewTreeCollection() {
     /* NOTE: This initial collection JSON matches the current server-side implementation
      * in peyotl (see peyotl.collections.get_empty_collection)
      */
+    var context = getPhylesystemLookupContext();
     var newCollection = {
         "url": "",
         "name": "",
