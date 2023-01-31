@@ -50,13 +50,15 @@ var render_markdown_url;
 
 // sometimes we use this script in other pages; let's check!
 var context;
-if (window.location.pathname.indexOf("/curator/tnrs/") === 0) {
+if (window.location.pathname.indexOf("/curator/tnrs") === 0) {
     context = 'BULK_TNRS';
 } else if (window.location.pathname.indexOf("/curator/study/edit/") === 0) {
     context = 'STUDY_OTU_MAPPING';
+} else if (window.location.pathname.indexOf("/curator/study/view/") === 0) {
+    context = 'STUDY_READ_ONLY';
 } else {
     context = '???';
-    console.error("Unknown context for TNRS! should be BULK_TNRS or STUDY_OTU_MAPPING");
+    console.error("Unknown context for TNRS! should be one of BULK_TNRS | STUDY_READ_ONLY | STUDY_OTU_MAPPING");
 }
 
 /* Return the data model for a new nameset (our JSON representation) */
@@ -2359,9 +2361,8 @@ $(document).ready(function() {
         case 'STUDY_OTU_MAPPING':
             console.log("Anything to do on ready?");
             break;
-        case '???':
         default:
-            // do nothing for now (possibly study View page)
+            // do nothing for now (probably looking at the read-only study view)
             break;
     }
 });
