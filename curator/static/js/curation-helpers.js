@@ -930,6 +930,7 @@ function getPhylesystemLookupPanel( context ) {
             console.error("getPhylesystemLookupPanel(): UNKNOWN context '"+ context +"'!");
             return null;
     }
+    return $container;
 }
 
 var showingResultsForStudyLookupText = '';
