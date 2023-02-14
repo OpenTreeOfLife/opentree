@@ -1186,6 +1186,8 @@ function searchForMatchingStudy() {
 function resetStudyLookup() {
     // Clear/disable tree lookup
     var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
     var $treeSelector = $container.find('select[name=tree-lookup]');
     $treeSelector.find('option').remove();
     var $promptOption = $container.find('<option disabled="disabled" value="">Find the study above first</option>');
