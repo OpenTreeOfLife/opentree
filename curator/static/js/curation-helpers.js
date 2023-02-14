@@ -894,7 +894,9 @@ function getPhylesystemLookupContext() {
      * NB - It's entirely possible to open the source-tree viewer, then
      * the collection editor on top of that. Choose wisely!
      */
-    if ($('#tree-collection-viewer').is(":visible")) {
+    if ($('#tree-collection-viewer').is(":visible") ||
+       $('div#Home [id=tree-collection-viewer]').length === 1) {
+        // we're editing a collection, either in a popup modal OR the full-page editor
         return 'COLLECTION_EDITOR_ADD_TREE';
     }
 
@@ -1185,6 +1187,8 @@ function searchForMatchingStudy() {
 function resetStudyLookup() {
     // Clear/disable tree lookup
     var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
     var $treeSelector = $container.find('select[name=tree-lookup]');
     $treeSelector.find('option').remove();
     var $promptOption = $container.find('<option disabled="disabled" value="">Find the study above first</option>');
