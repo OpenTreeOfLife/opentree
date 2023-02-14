@@ -893,7 +893,9 @@ function getPhylesystemLookupContext() {
      * NB - It's entirely possible to open the source-tree viewer, then
      * the collection editor on top of that. Choose wisely!
      */
-    if ($('#tree-collection-viewer').is(":visible")) {
+    if ($('#tree-collection-viewer').is(":visible") ||
+       $('div#Home [id=tree-collection-viewer]').length === 1) {
+        // we're editing a collection, either in a popup modal OR the full-page editor
         return 'COLLECTION_EDITOR_ADD_TREE';
     }
 
