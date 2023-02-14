@@ -1191,7 +1191,7 @@ function resetStudyLookup() {
     var $container = getPhylesystemLookupPanel( context );
     var $treeSelector = $container.find('select[name=tree-lookup]');
     $treeSelector.find('option').remove();
-    var $promptOption = $container.find('<option disabled="disabled" value="">Find the study above first</option>');
+    var $promptOption = $('<option disabled="disabled" value="">Find the study above first</option>');
     $treeSelector.append( $promptOption );
     $container.find('select[name=tree-lookup]').val('');
     $container.find('select[name=tree-lookup]').attr('disabled','disabled');
