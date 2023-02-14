@@ -1061,6 +1061,7 @@ function searchForMatchingStudy() {
                 // update hidden field
                 $('input[name=study-lookup-id]').val( studyID );
                 // hide menu and reset search field
+                clearTimeout(studyLookupTimeoutID);
                 $lookupResults.html('');
                 $lookupResults.hide();
                 // replace input field with static indicator (and trigger to search again?)
