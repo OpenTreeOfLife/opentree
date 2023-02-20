@@ -756,7 +756,7 @@ function loadSelectedStudy() {
              */
             viewModel.elementTypes = {
                 'edge': {
-                    highestOrdinalNumber: null,
+                    idsInUse: [ ],
                     gatherAll: function(nexml) {
                         // return an array of all matching elements
                         var allEdges = [];
@@ -768,7 +768,7 @@ function loadSelectedStudy() {
                     }
                 },
                 'node': {
-                    highestOrdinalNumber: null,
+                    idsInUse: [ ],
                     gatherAll: function(nexml) {
                         // return an array of all matching elements
                         var allNodes = [];
@@ -780,7 +780,7 @@ function loadSelectedStudy() {
                     }
                 },
                 'otu': {
-                    highestOrdinalNumber: null,
+                    idsInUse: [ ],
                     gatherAll: function(nexml) {
                         // return an array of all matching elements
                         var allOTUs = [];
@@ -791,14 +791,14 @@ function loadSelectedStudy() {
                     }
                 },
                 'otus': {   // a collection of otu elements
-                    highestOrdinalNumber: null,
+                    idsInUse: [ ],
                     gatherAll: function(nexml) {
                         // return an array of all matching elements
                         return makeArray(nexml.otus);
                     }
                 },
                 'tree': {
-                    highestOrdinalNumber: null,
+                    idsInUse: [ ],
                     gatherAll: function(nexml) {
                         // return an array of all matching elements
                         var allTrees = [];
@@ -812,26 +812,26 @@ function loadSelectedStudy() {
                     }
                 },
                 'trees': {   // a collection of tree elements
-                    highestOrdinalNumber: null,
+                    idsInUse: [ ],
                     gatherAll: function(nexml) {
                         // return an array of all matching elements
                         return makeArray(nexml.trees);
                     }
                 },
                 'annotation': {  // an annotation event
-                    highestOrdinalNumber: null,
+                    idsInUse: [ ],
                     gatherAll: function(nexml) {
                         return makeArray(nexml['^ot:annotationEvents']['annotation']);
                     }
                 },
                 'agent': {  // an annotation agent
-                    highestOrdinalNumber: null,
+                    idsInUse: [ ],
                     gatherAll: function(nexml) {
                         return makeArray(nexml['^ot:agents']['agent']);
                     }
                 },
                 'message': {  // an annotation message
-                    highestOrdinalNumber: null,
+                    idsInUse: [ ],
                     gatherAll: getAllAnnotationMessagesInStudy
                 },
 
@@ -5568,23 +5568,23 @@ function setElementIDHints() {
     // creation of new NexSON elements on the server.
     var $form = $('#tree-import-form');
     $form.find('[name=idPrefix]').val('');  // clear this field
-    $form.find('[name=firstAvailableEdgeID]').val( getNextElementOrdinalNumber('edge') );
-    $form.find('[name=firstAvailableNodeID]').val( getNextElementOrdinalNumber('node') );
-    $form.find('[name=firstAvailableOTUID]').val( getNextElementOrdinalNumber('otu') );
-    $form.find('[name=firstAvailableOTUsID]').val( getNextElementOrdinalNumber('otus') );
-    $form.find('[name=firstAvailableTreeID]').val( getNextElementOrdinalNumber('tree') );
-    $form.find('[name=firstAvailableTreesID]').val( getNextElementOrdinalNumber('trees') );
-    $form.find('[name=firstAvailableAnnotationID]').val( getNextElementOrdinalNumber('annotation') );
-    $form.find('[name=firstAvailableAgentID]').val( getNextElementOrdinalNumber('agent') );
-    $form.find('[name=firstAvailableMessageID]').val( getNextElementOrdinalNumber('message') );
+    $form.find('[name=firstAvailableEdgeID]').val( getUniqueElementIDNumber('edge') );
+    $form.find('[name=firstAvailableNodeID]').val( getUniqueElementIDNumber('node') );
+    $form.find('[name=firstAvailableOTUID]').val( getUniqueElementIDNumber('otu') );
+    $form.find('[name=firstAvailableOTUsID]').val( getUniqueElementIDNumber('otus') );
+    $form.find('[name=firstAvailableTreeID]').val( getUniqueElementIDNumber('tree') );
+    $form.find('[name=firstAvailableTreesID]').val( getUniqueElementIDNumber('trees') );
+    $form.find('[name=firstAvailableAnnotationID]').val( getUniqueElementIDNumber('annotation') );
+    $form.find('[name=firstAvailableAgentID]').val( getUniqueElementIDNumber('agent') );
+    $form.find('[name=firstAvailableMessageID]').val( getUniqueElementIDNumber('message') );
     // and again for nameset-upload form
     var $form = $('#nameset-import-form');
     $form.find('[name=idPrefix]').val('');  // clear this field
-    $form.find('[name=firstAvailableOTUID]').val( getNextElementOrdinalNumber('otu') );
-    $form.find('[name=firstAvailableOTUsID]').val( getNextElementOrdinalNumber('otus') );
-    $form.find('[name=firstAvailableAnnotationID]').val( getNextElementOrdinalNumber('annotation') );
-    $form.find('[name=firstAvailableAgentID]').val( getNextElementOrdinalNumber('agent') );
-    $form.find('[name=firstAvailableMessageID]').val( getNextElementOrdinalNumber('message') );
+    $form.find('[name=firstAvailableOTUID]').val( getUniqueElementIDNumber('otu') );
+    $form.find('[name=firstAvailableOTUsID]').val( getUniqueElementIDNumber('otus') );
+    $form.find('[name=firstAvailableAnnotationID]').val( getUniqueElementIDNumber('annotation') );
+    $form.find('[name=firstAvailableAgentID]').val( getUniqueElementIDNumber('agent') );
+    $form.find('[name=firstAvailableMessageID]').val( getUniqueElementIDNumber('message') );
 }
 
 function returnFromNewTreeSubmission( jqXHR, textStatus ) {
@@ -5712,9 +5712,6 @@ function replaceViewModelNexson( nexml ) {
 
     // "lookups" should be purged of all stale ids
     clearFastLookup('ALL');
-
-    // reset highest-ID markers (these might have changed)
-    clearAllHighestIDs();
 
     // refresh the complete curation UI, via ticklers
     nudgeTickler('ALL');
@@ -7957,67 +7954,51 @@ function getNextAvailableElementID( elementType, nexml ) {
     }
     var typeInfo = viewModel.elementTypes[elementType];
     var typePrefix = typeInfo.prefix || elementType;
-    var nextAvailableNumber = getNextElementOrdinalNumber( elementType, nexml );
-    return (typePrefix + nextAvailableNumber);
+    var newElementIDNumber = getUniqueElementIDNumber( elementType, nexml );
+    return (typePrefix + newElementIDNumber);
 }
-function getNextElementOrdinalNumber( elementType, nexml ) {
-    // increment and returns the next available ordinal number for this type
+function getUniqueElementIDNumber( elementType, nexml ) {
+    /* pick a random ID number, to minimize the chances of duplication
+     * esp. for tree IDs. Let's check against our existing IDs for this 
+     * element type just to avoid obvious disaster.
+     *
+     * NB - This returns a number only! not the full ID
+     */
     if (!(elementType in viewModel.elementTypes)) {
-        console.error('getNextElementOrdinalNumber(): type "'+ elementType +'" not found!');
+        console.error('getUniqueElementIDNumber(): type "'+ elementType +'" not found!');
         return;
     }
     var typeInfo = viewModel.elementTypes[elementType];
     var typePrefix = typeInfo.prefix || elementType;
-    if (typeInfo.highestOrdinalNumber === null) {
-        typeInfo.highestOrdinalNumber = findHighestElementOrdinalNumber(
-            nexml,
-            typePrefix,
-            typeInfo.gatherAll
-        );
-    }
-    // increment the highest ID for faster assignment next time
-    typeInfo.highestOrdinalNumber++;
-    return typeInfo.highestOrdinalNumber;
+    return mintNewElementIDNumber( elementType, nexml );
 }
-function findHighestElementOrdinalNumber( nexml, prefix, gatherAllFunc ) {
-    // Return the numeric component of the highest element ID matching
-    // these specs, eg, 'node2336' => 2336
-    if (!nexml) {
-        nexml = viewModel.nexml;
+function mintNewElementIDNumber( elementType, nexml ) {
+    /* Create a unique, unused element ID (numeric component ONLY!) 
+     * for the specified type, then return it. This ID will be remembered
+     * so that we don't repeat it in this session, which admittedly is
+     * highly unlikely.  :-/
+     */
+    if (!(elementType in viewModel.elementTypes)) {
+        console.error('mintNewElementIDNumber(): type "'+ elementType +'" not found!');
+        return;
     }
-    // do a one-time(?) scan for the highest ID currently in use
-    var allElements = gatherAllFunc( nexml );
-    var highestOrdinalNumber = 0;
-    for (var i = 0; i < allElements.length; i++) {
-        // ignore agents with non-standard IDs, eg, 'opentree-curation-webapp'
-        var testElement = allElements[i];
-        var testID = ko.unwrap(testElement['@id']) || '';
-        if (testID === '') {
-            /* Suppress these warnings for 'message' prefix; it's just noise
-             * until we have established a need and a batch solution for minting
-             * unique message IDs.
-             */
-            if (prefix !== 'message') {
-                console.error("MISSING ID for this "+ prefix +":");
-                console.error(testElement);
-            }
-            continue;  // skip to next element
-        }
-        if (testID.indexOf(prefix) === 0) {
-            // compare this to the highest ID found so far
-            var itsNumber = testID.split( prefix )[1];
-            if ($.isNumeric( itsNumber )) {
-                highestOrdinalNumber = Math.max( highestOrdinalNumber, itsNumber );
-            }
-        }
-    }
-    return highestOrdinalNumber;
-}
-function clearAllHighestIDs() {
-    // reset these counters, as after an import+merge
-    for (var aType in viewModel.elementTypes) {
-        viewModel.elementTypes[ aType ].highestOrdinalNumber = null;
-    }
+    var typeInfo = viewModel.elementTypes[elementType];
+    var typePrefix = typeInfo.prefix || elementType;
+    var existingElements = typeInfo.gatherAll(viewModel.nexml);
+    var matchingElements;  // if proposed ID is already in use!
+    var alreadyFound = false;
+    do {
+        // try a random integer from 1 to 999999
+        var elNumber = Math.ceil(Math.random() * 999998) + 1;  // e.g. 23
+        var fullMatchingID = typePrefix + (elNumber).toString();  // e.g. 'tree23'
+        console.log("TESTING element ID "+ fullMatchingID);
+        // compare this to all IDs currently in use, just in case!
+        matchingElements = $.map(existingElements, function(el) {
+            return (el['id'] === fullMatchingID);
+        });
+        alreadyFound = (matchingElements.length > 0);
+    } while alreadyFound;  // keep trying if we're already using this ID
+    return elNumber;
 }
 
 function getAllAnnotationMessagesInStudy(nexml) {
