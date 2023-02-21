@@ -8029,13 +8029,13 @@ function mintNewElementIDNumber( elementType, nexml ) {
         // try a random integer from 1 to 999999
         var elNumber = Math.ceil(Math.random() * 999998) + 1;  // e.g. 23
         var fullMatchingID = typePrefix + (elNumber).toString();  // e.g. 'tree23'
-        console.log("TESTING element ID "+ fullMatchingID);
         // compare this to all IDs currently in use, just in case!
         matchingElements = $.map(existingElements, function(el) {
-            return (el['id'] === fullMatchingID);
+            return (el['@id'] === fullMatchingID);
         });
+        console.log("TESTING element ID "+ fullMatchingID +"... matches? "+ matchingElements.length);
         alreadyFound = (matchingElements.length > 0);
-    } while alreadyFound;  // keep trying if we're already using this ID
+    } while (alreadyFound);  // keep trying if we're already using this ID
     return elNumber;
 }
 
