@@ -1181,7 +1181,7 @@ function updateCollectionTrees ( collection ) {
          * Update its compact study reference, if changed
          * Update UI along the way...
          *    grey block = UNCHANGED
-         *    yellow block = RENAMED (either label or compact reference)
+         *    yellow block = MODIFIED (label, references, year, etc.)
          *    red block = REMOVED
          */
         // look for a matching tree in the study index
@@ -1279,8 +1279,8 @@ function updateCollectionTrees ( collection ) {
                                     // Update the existing collection record for this tree; mark it for review
                                     treesChanged += 1;
                                     decision.name = proposedName;
-                                    // Highlight this in the list, mark as RENAMED
-                                    decision.status = 'RENAMED';
+                                    // Highlight this in the list, mark as MODIFIED
+                                    decision.status = 'MODIFIED';
                                 }
                                 /* TODO: Should we update the tree's SHA? Not currently available! */
                             }
@@ -1328,7 +1328,7 @@ function updateCollectionTrees ( collection ) {
                         if (treesChanged > 0) {
                             summaryMsg += (String(treesChanged) +' tree'+ (treesChanged == 1 ? '' : 's')
                                 +' (marked in yellow) ' + (treesChanged == 1 ? 'has' : 'have')
-                                +' been renamed. New names are usually an improvement and worth saving. ');
+                                +' been modified (changes to name, reference, year, clade). These changes are usually an improvement and worth saving. ');
                         }
                         summaryMsg += 'Remember to save this collection after your review, or cancel to ignore these changes.';
                         showErrorMessage(summaryMsg);
@@ -1799,8 +1799,7 @@ function addPendingCollectionChange( action, studyID, treeID ) {
             msg = ('Changed ranking of trees.');
             break;
         case 'UPDATE':
-            //msg = ('Tree names and status renamed in phylesystem.');
-            msg = ('Tree '+ treeID +' from study '+ studyID +' renamed in phylesystem.');
+            msg = ('Tree '+ treeID +' from study '+ studyID +' modified in phylesystem.');
             break;
         default:
             console.error('UNKNOWN collection change: '+ action);
@@ -2228,7 +2227,7 @@ function saveTreeCollection( collection ) {
     // remove explicit ranking values (rely on array order)
     stripTreeCollectionRanking( collection );
 
-    // remove any 'status' property markers (RENAMED, REMOVED, etc.)
+    // remove any 'status' property markers (MODIFIED, REMOVED, etc.)
     stripTreeCollectionStatusMarkers( collection );
 
     // push changes back to storage
