@@ -616,16 +616,16 @@ def to_nexson():
                 shutil.copyfile(INPUT_FILEPATH, NEXML_FILEPATH)
             else:
                 try:
-                    try:
-                        exe_path = get_conf(request).get("external", "2nexml")
-                    except:
-                        _LOG.warn("Config does not have external/2nexml setting")
-                        raise
+                    exe_path = get_conf(request).get("external", "2nexml")
+                except:
+                    _LOG.warn("Config does not have external/2nexml setting")
+                    raise HTTP(501, T("Server is not configured to allow 2nexml conversion"))
+                try:
                     assert(os.path.exists(exe_path))
                 except:
                     response.view = 'generic.json'; return {'hb':exe_path}
                     _LOG.warn("Could not find the 2nexml executable")
-                    raise HTTP(501, T("Server is not configured to allow 2nexml conversion"))
+                    raise HTTP(501, T("Server is misconfigured for 2nexml conversion"))
                 invoc = [exe_path, '-f{f}'.format(f=inp_format), ]
                 if inp_format == 'relaxedphyliptree':
                     invoc.extend(['-X', '-x'])
