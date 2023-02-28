@@ -2624,11 +2624,10 @@ function scrubNexsonForTransport( nexml ) {
         var typeInfo = viewModel.elementTypes[ elType ];
         var typePrefix = typeInfo.prefix || elementType;
         var highestIdInUse = findHighestElementOrdinalNumberInUse(
-                nexml,
-                typePrefix,
-                typeInfo.gatherAll
-            );
-        }
+            nexml,
+            typePrefix,
+            typeInfo.gatherAll
+        );
         // is there a previously stored value for this type?
         var oldStoredValue = (nexml['highestMintedElementIDs'][ elType ]) || 0;
         nexml['highestMintedElementIDs'][ elType ] = Math.max( highestIdInUse, oldStoredValue);
