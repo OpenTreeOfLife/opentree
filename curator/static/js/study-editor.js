@@ -7989,6 +7989,9 @@ function getNextAvailableElementID( elementType, nexml ) {
 }
 function getNextElementOrdinalNumber( elementType, nexml ) {
     // increment and returns the next available ordinal number for this type
+    if (!nexml) {
+        nexml = viewModel.nexml;
+    }
     if (!(elementType in viewModel.elementTypes)) {
         console.error('getNextElementOrdinalNumber(): type "'+ elementType +'" not found!');
         return;
