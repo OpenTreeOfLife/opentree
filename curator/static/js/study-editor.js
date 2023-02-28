@@ -804,7 +804,7 @@ function loadSelectedStudy() {
                 },
                 'tree': {
                     highestOrdinalNumber: null,
-                    gatherAll: function(nexml) {
+                    gatherAll: function(nexml, options) {
                         // return an array of all matching elements
                         if (!options) options = {INCLUDE_SCRIPT_MANAGED_TREES: true};
                         var allTrees = [];
