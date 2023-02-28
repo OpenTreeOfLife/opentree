@@ -216,7 +216,7 @@ def do_ext_proc_launch(request,
     if not os.path.exists(job_launcher):
         raise RuntimeError('Could not find joblauncher script')
     stdin_path = ''
-    wrapped_invoc = [sys.executable,
+    wrapped_invoc = ['python3', # sys.executable,
                      job_launcher,
                      par_dir,
                      stdin_path,
