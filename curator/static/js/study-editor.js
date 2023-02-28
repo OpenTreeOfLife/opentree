@@ -2620,8 +2620,8 @@ function scrubNexsonForTransport( nexml ) {
      * element type found in the live study. If the tracker already exists,
      * weigh its currently stored number against whatever else we find.
      */
-    for (var elType in viewModel.elementTypes) {
-        var typeInfo = viewModel.elementTypes[ elType ];
+    for (var elementType in viewModel.elementTypes) {
+        var typeInfo = viewModel.elementTypes[ elementType ];
         var typePrefix = typeInfo.prefix || elementType;
         var highestIdInUse = findHighestElementOrdinalNumberInUse(
             nexml,
@@ -2629,8 +2629,8 @@ function scrubNexsonForTransport( nexml ) {
             typeInfo.gatherAll
         );
         // is there a previously stored value for this type?
-        var oldStoredValue = (nexml['highestMintedElementIDs'][ elType ]) || 0;
-        nexml['highestMintedElementIDs'][ elType ] = Math.max( highestIdInUse, oldStoredValue);
+        var oldStoredValue = (nexml['highestMintedElementIDs'][ elementType ]) || 0;
+        nexml['highestMintedElementIDs'][ elementType ] = Math.max( highestIdInUse, oldStoredValue);
     }
 }
 
