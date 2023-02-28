@@ -8005,7 +8005,7 @@ function getNextElementOrdinalNumber( elementType, nexml ) {
         // have we previously stored a higher ID for this type?
         var oldStoredValue = 0;
         if (nexml['highestMintedElementIDs']) {
-            oldStoredValue = nexml['highestMintedElementIDs'][elementType]) || 0;
+            oldStoredValue = (nexml['highestMintedElementIDs'][elementType]) || 0;
         }
         // track the *highest* of these, to avoid accidental re-use of a deleted ID
         typeInfo.highestOrdinalNumber = Math.max( highestIdInUse, oldStoredValue);
