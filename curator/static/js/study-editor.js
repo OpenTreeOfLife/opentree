@@ -11124,10 +11124,11 @@ function taxonCondidateIsValid( candidate, options ) {
             }
             return false;
         case 'FOUND IN TAXONOMY':
+            // we want to allow existing taxon names, but let's give a warning too
             if (options.REPORT_ERRORS) {
-                showErrorMessage('There is already a taxon with this name! Homonyms are not currently allowed.');
+                showInfoMessage('There is already a taxon with this name! Proceed with caution.');
             }
-            return false;
+            // return false;
         case 'NOT FOUND':
             // it's a unique name! no problem here
             break;
