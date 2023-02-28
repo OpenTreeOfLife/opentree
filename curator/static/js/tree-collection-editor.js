@@ -1718,6 +1718,9 @@ function replaceViewModelNexson( nexml ) {
     // "lookups" should be purged of all stale ids
     clearFastLookup('ALL');
 
+    // reset highest-ID markers (these might have changed)
+    clearAllHighestIDs();
+
     // refresh the complete curation UI, via ticklers
     nudgeTickler('ALL');
 }
