@@ -11130,10 +11130,14 @@ function taxonCondidateIsValid( candidate, options ) {
             }
             return false;
         case 'FOUND IN TAXONOMY':
+            // we want to allow existing taxon names, and we already show a warning
+            /*
             if (options.REPORT_ERRORS) {
-                showErrorMessage('There is already a taxon with this name! Homonyms are not currently allowed.');
+                showInfoMessage('There is already a taxon with this name! Proceed with caution.');
             }
-            return false;
+            // return false;
+            */
+            break;
         case 'NOT FOUND':
             // it's a unique name! no problem here
             break;
@@ -11311,7 +11315,7 @@ function proposedTaxonNameStatusMessage(candidate) {
         case 'NOT FOUND':
             return "No duplicates found.";
         case 'FOUND IN TAXONOMY':
-            return "Already in OT taxonomy!";
+            return "Already in OT taxonomy! Are you sure?";
         case 'FOUND IN CANDIDATES':
             return "Already in proposed taxa!";
         default:
