@@ -1265,22 +1265,44 @@ function updateCollectionTrees ( collection ) {
                                     return;
                             }
                             if (foundTree) {
-                                /* Still here? Compare the tree's current name and study
-                                 * reference to the version stored in this collection
+                                /* Still here? Compare the found study and tree's properties (name, study reference,
+                                 * compact reference, date) to the version stored in this collection.
                                  */
+                                // tree name (NB - modified to include compact reference!)
                                 var foundTreeName = $.trim(foundTree['@label']);
                                 var proposedName = $.trim(foundTreeName || decision.treeID) +' ('+ compactStudyRef +')';
-                                var treeLabelHasChanged = false;
-                                if (proposedName == decision.name) {
+                                var treeLabelHasChanged = (proposedName != decision['name']);
+                                // focal clade
+                                var proposedClade = foundStudy['ot:focalCladeOTTTaxonName'];
+                                var focalCladeHasChanged = (proposedClade == decision['ot:focalCladeOTTTaxonName']);
+                                // publication URL
+                                var proposedPubURL = foundStudy['ot:studyPublication'];
+                                var pubUrlHasChanged = (proposedPubURL != decision['ot:studyPublication']);
+                                // full study reference (text)
+                                var proposedFullRef = foundStudy['ot:studyPublicationReference'];
+                                var fullRefHasChanged = (proposedFullRef != decision['ot:studyPublicationReference']);
+                                // compact study reference (already generated above)
+                                var compactRefHasChanged = (compactStudyRef != decision['compactRefText']);
+                                // study year
+                                var proposedYear = foundStudy['ot:studyYear'];
+                                var studyYearHasChanged = (proposedYear != decision['ot:studyYear']);
+
+                                if (treeLabelHasChanged || focalCladeHasChanged || pubUrlHasChanged || fullRefHasChanged 
+                                    || compactRefHasChanged || studyYearHasChanged) {
+                                    treesChanged += 1;
+                                    // Update the existing collection record for this tree; mark it for review
+                                    decision['name'] = proposedName;
+                                    decision['ot:focalCladeOTTTaxonName'] = proposedClade;
+                                    decision['ot:studyPublication'] = proposedPubURL;
+                                    decision['ot:studyPublicationReferenc'] = proposedFullRef;
+                                    decision['compactRefText'] = compactStudyRef;
+                                    decision['ot:studyYear'] = proposedYear;
+                                    // Highlight this in the list, mark as MODIFIED
+                                    decision.status = 'MODIFIED';
+                                } else {
                                     treesUnchanged += 1;
                                     // UN-highlight this in the list, mark as UNCHANGED
                                     decision.status = 'UNCHANGED';
-                                } else {
-                                    // Update the existing collection record for this tree; mark it for review
-                                    treesChanged += 1;
-                                    decision.name = proposedName;
-                                    // Highlight this in the list, mark as MODIFIED
-                                    decision.status = 'MODIFIED';
                                 }
                                 /* TODO: Should we update the tree's SHA? Not currently available! */
                             }
