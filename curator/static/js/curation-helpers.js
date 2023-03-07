@@ -900,7 +900,7 @@ function getPhylesystemLookupContext() {
         return 'COLLECTION_EDITOR_ADD_TREE';
     }
 
-    if ($('#tree-viewer').is(":visible")) {
+    if ($('#tree-viewer').is(":visible") || treeViewerIsInUse) {
         return 'PHYLOGRAM_CONFLICT_CHOOSE_TREE2';
     }
 
