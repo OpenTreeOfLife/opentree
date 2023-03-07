@@ -1843,6 +1843,21 @@ function getBranchLengthToggleStyle(tree) {
     return {'color': '#999999'};
 }
 
+function updatePhylesystemLookupWidgets(chooser) {
+    var newValue = $(chooser).val();
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+    console.log("NEW value is: "+ newValue);
+    if (newValue == '') {
+        // show study + tree lookup widgets (keep old values, if any)
+        $container.find('.lookup-widgets').show();
+    } else {
+        // hide 'em
+        $container.find('.lookup-widgets').hide();
+    }
+}
+
 /* Support conflict display in the tree viewer */
 function getTreeConflictSummary(conflictInfo) {
     // Expects a JS object from conflict service; returns an object with
@@ -2230,7 +2245,10 @@ function showTreeConflictDetailsFromPopup(tree) {
         console.warn("showTreeConflictDetailsFromPopup(): No tree specified!");
         return;
     }
-    var newReferenceTreeID = $('#treeview-reference-select').val();
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+    var newReferenceTreeID = $container.find('.treeview-reference-select').val();
     if (!newReferenceTreeID) {
         hideTreeConflictDetails( tree );
     } else {
@@ -2284,8 +2302,11 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
     }
 
     if (treeViewerIsInUse) {
+        var context = getPhylesystemLookupContext();
+        // what's the parent element for study+tree lookup UI?
+        var $container = getPhylesystemLookupPanel( context );
         // update the reference-tree selector
-        $('#treeview-reference-select').val(tree.conflictDetails.referenceTreeID);
+        $container.find('.treeview-reference-select').val(tree.conflictDetails.referenceTreeID);
         $('#treeview-clear-conflict').show();
     }
 }
@@ -2327,16 +2348,22 @@ function removeConflictInfoFromTree( treeOrID ) {
         delete node.conflictDetails;
     });
     if (treeViewerIsInUse) {
+        var context = getPhylesystemLookupContext();
+        // what's the parent element for study+tree lookup UI?
+        var $container = getPhylesystemLookupPanel( context );
         // update the reference-tree selector
-        $('#treeview-reference-select').val('');
+        $container.find('.treeview-reference-select').val('');
         $('#treeview-clear-conflict').hide();
     }
 }
 
 function showConflictDetailsWithHistory(tree, referenceTreeID) {
     // triggered from tree-view popup UI, works via History
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
     if (typeof referenceTreeID !== 'string') {
-        referenceTreeID = $('#treeview-reference-select').val();
+        referenceTreeID = $container.find('.treeview-reference-select').val();
     }
     if (!referenceTreeID) {
         showErrorMessage('Please choose a target (reference) tree for comparison');
