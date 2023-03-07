@@ -782,7 +782,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                          data-bind="foreach: { data: $data.data.decisions }">
                       <tr data-bind="attr: { class: (userIsEditingCollection($parent) && $data['status'] == 'REMOVED') ?
                                                       'single-tree-row error' :
-                                                      (userIsEditingCollection($parent) && $data['status'] == 'RENAMED' ?
+                                                      (userIsEditingCollection($parent) && $data['status'] == 'MODIFIED' ?
                                                         'single-tree-row warning' :
                                                         'single-tree-row-'+ $data['status'] )
                                             }">
@@ -833,8 +833,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                            <!-- ko if: $data['status'] == 'REMOVED' -->
                              <div class="tree-status-marker text-error">REMOVED</div>
                            <!-- /ko -->
-                           <!-- ko if: $data['status'] == 'RENAMED' -->
-                             <div class="tree-status-marker text-warning">RENAMED</div>
+                           <!-- ko if: $data['status'] == 'MODIFIED' -->
+                             <div class="tree-status-marker text-warning">MODIFIED</div>
                            <!-- /ko -->
 
                           <!-- /ko --><!-- END of editing widgets -->
