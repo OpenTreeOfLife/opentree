@@ -1363,7 +1363,7 @@ function updateCollectionTrees ( collection ) {
                                 var treeLabelHasChanged = (proposedName != decision['name']);
                                 // focal clade
                                 var proposedClade = foundStudy['ot:focalCladeOTTTaxonName'];
-                                var focalCladeHasChanged = (proposedClade == decision['ot:focalCladeOTTTaxonName']);
+                                var focalCladeHasChanged = (proposedClade != decision['ot:focalCladeOTTTaxonName']);
                                 // publication URL
                                 var proposedPubURL = foundStudy['ot:studyPublication'];
                                 var pubUrlHasChanged = (proposedPubURL != decision['ot:studyPublication']);
