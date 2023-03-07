@@ -3180,13 +3180,21 @@ cat, Felis catus, 563166"
               Radial tree layout
           </label>
 
+        <div style="display: inline-block; vertical-align: top;">
           <label style="margin-left: 25px; position: relative; top: 1px;">Show conflict versus</label>
-          <select id="treeview-reference-select" data-bind="value: $data.conflictDetails ? $data.conflictDetails.referenceTreeID : ''">
+          <select class="treeview-reference-select"
+                  data-bind="value: $data.conflictDetails ? $data.conflictDetails.referenceTreeID : ''"
+                  onchange="updatePhylesystemLookupWidgets(this);">
               <option value="">Choose a target...</option>
               <option value="synth">Synthetic Tree of Life</option>
               <option value="ott">Open Tree Taxonomy</option>
               <option value="STUDYID_TREEID">Source tree from a published study</option>
           </select>
+          <div class="lookup-widgets" style="display: none;">
+              BUTTONS GO HERE
+          </div>
+        </div>
+
           <button id="treeview-fetch-conflict" class="btn btn-info" data-bind="click: showConflictDetailsWithHistory">GO!</button>
           <button id="treeview-clear-conflict" class="btn" data-bind="click: hideConflictDetailsWithHistory">Hide conflict</button>
       </div>
