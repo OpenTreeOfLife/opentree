@@ -4294,6 +4294,10 @@ function showTreeViewer( tree, options ) {
         ko.applyBindings(tree,el);
     });
 
+    // enable study+tree lookup in tree-viewer popup
+    loadStudyListForLookup();
+    //bindStudyAndTreeLookups();
+
     // enable collection search (in tree-viewer popup)
     $('input[name=collection-search]').unbind('keyup change')
                                       .bind('keyup change', setCollectionSearchFuse )
@@ -4398,6 +4402,7 @@ function showTreeViewer( tree, options ) {
         }
 
         ///hideModalScreen();
+        bindStudyAndTreeLookups();
     }
 
     var $treeViewerTabs = $('#tree-viewer .modal-header a[data-toggle="tab"]');
