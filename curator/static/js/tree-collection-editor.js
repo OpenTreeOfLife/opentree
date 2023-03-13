@@ -920,7 +920,7 @@ function loadSelectedCollection() {
             // emulate original popup behavior from editCollection()
             showCollectionViewer( viewModel );  // to refresh the UI
             loadStudyListForLookup();
-            updateNewCollTreeUI();
+            updateTreeLookupUI();
             //pushPageExitWarning('UNSAVED_COLLECTION_CHANGES',
             //                    "WARNING: This page contains unsaved changes.");
             viewModel.ticklers.TREES.subscribe(countHiddenTreeColumns);

@@ -1739,7 +1739,11 @@ body {
 
                  <!-- Optional widgets to choose a study+tree from phylesystem -->
                  <div style="display: block; text-align: right; padding-top: 8px;">
-
+                    <div class="dropup" style="position: relative; margin-left: 146px;">
+                        <ul id="study-lookup-results" class="dropdown-menu" role="menu">
+                            ...
+                        </ul>
+                    </div>
                     <label style="display: inline-block;">Choose a study &nbsp;</label>
                     <!-- "active" wiget for study lookup -->
                     <i class="icon-search study-lookup-active" style="position: absolute; margin: 8px 0 0 7px; pointer-events: none;"></i>
@@ -1748,13 +1752,13 @@ body {
                         placeholder="Enter its title, DOI, reference, tag, ID..."
                         data-bind="value: '',
                                    valueUpdate: ['afterkeydown', 'input'],
-                                   event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                                   event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
                                    "
                     ></input>
                     <!-- hidden field to store chosen ID -->
                     <input type="hidden" name="study-lookup-id"
                            data-bind="value: '',
-                                      event: { change: updateNewCollTreeUI }
+                                      event: { change: updateTreeLookupUI }
                                      "></input>
                     <!-- "passive" wiget once study is chosen -->
                     <a class="btn btn-small study-lookup-passive" style="display: none; margin: 3px 0 3px;"
@@ -1772,7 +1776,7 @@ body {
                         placeholder="Enter its name, ID, ingroup clade..."
                         data-bind="value: '',
                                    valueUpdate: ['afterkeydown', 'input'],
-                                   event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                                   event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
                                    "
                     >
                         <option disabled="disabled" value="">Find the study above first</option>
@@ -3203,13 +3207,13 @@ cat, Felis catus, 563166"
                  placeholder="Enter its title, DOI, reference, tag, ID..."
                  data-bind="value: '',
                             valueUpdate: ['afterkeydown', 'input'],
-                            event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                            event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
                             "
              ></input>
              <!-- hidden field to store chosen ID -->
              <input type="hidden" name="study-lookup-id"
                     data-bind="value: '',
-                               event: { change: updateNewCollTreeUI }
+                               event: { change: updateTreeLookupUI }
                               "></input>
              <!-- "passive" wiget once study is chosen -->
              <a class="btn btn-small study-lookup-passive" style="display: none; margin: 3px 0 3px;"
@@ -3227,7 +3231,7 @@ cat, Felis catus, 563166"
                  placeholder="Enter its name, ID, ingroup clade..."
                  data-bind="value: '',
                             valueUpdate: ['afterkeydown', 'input'],
-                            event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                            event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
                             "
              >
                  <option disabled="disabled" value="">Find the study above first</option>
