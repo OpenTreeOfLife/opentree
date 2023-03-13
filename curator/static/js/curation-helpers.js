@@ -1072,7 +1072,7 @@ function searchForMatchingStudy() {
                 $lookupResults.hide();
                 // replace input field with static indicator (and trigger to search again?)
                 $container.find('.study-lookup-active').hide();
-                $container.find('[id=study-lookup-indicator]')
+                $container.find('a.study-lookup-indicator')
                     .attr({'href': $link.attr('href'), 'title': $link.attr('title')})
                     .html( $link.html() );
                 $container.find('.study-lookup-passive').show();
