@@ -4354,7 +4354,6 @@ function showTreeViewer( tree, options ) {
     });
 
     // enable collection search (in tree-viewer popup)
-    console.warn('BINDING COLLECTION SEARCH');
     $('input[name=collection-search]').unbind('keyup change')
                                       .bind('keyup change', setCollectionSearchFuse )
                                       .unbind('keydown')  // block errant form submission
