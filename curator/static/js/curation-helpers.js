@@ -863,6 +863,12 @@ function setStudyLookupFuse(e) {
     // reset the timeout for another n milliseconds
     studyLookupTimeoutID = setTimeout(searchForMatchingStudy, lookupDelay);
 
+    // find the correct UI components for the current context
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+    var $lookupResults = $container.find('[id=study-lookup-results]');     // display matching stuff
+
     /* If the last key pressed was the ENTER key, stash the current (trimmed)
      * string and auto-jump if it's a valid taxon name.
      */
@@ -878,7 +884,7 @@ function setStudyLookupFuse(e) {
             case 39:
             case 40:
                 // down or right arrows should try to select first result
-                $('#study-lookup-results a:eq(0)').focus();
+                $lookupResults.find('a:eq(0)').focus();
                 break;
             default:
                 hopefulStudyLookupName = null;
@@ -955,15 +961,15 @@ function searchForMatchingStudy() {
         default:  // missing/unknown context!
             return;
     }
-    var $studynameinput = $container.find('input[name=study-lookup]');    // search text field
+    var $studyNameInput = $container.find('input[name=study-lookup]');    // search text field
     var $lookupResults = $container.find('[id=study-lookup-results]');     // display matching stuff
 
-    if ($studynameinput.length === 0) {
+    if ($studyNameInput.length === 0) {
         $container.find('#study-lookup-results').html('');
         console.log("Input field not found!");
         return false;
     }
-    var searchText = $.trim( $studynameinput.val() );
+    var searchText = $.trim( $studyNameInput.val() );
     var searchTokens = tokenizeSearchTextKeepingQuotes(searchText);
 
     if ((searchTokens.length === 0) ||
@@ -1046,7 +1052,7 @@ function searchForMatchingStudy() {
             var matchURL = getViewURLFromStudyID(studyInfo['ot:studyId']);
             var matchText = fullToCompactReference(studyInfo['ot:studyPublicationReference']);
             var mouseOver = studyInfo['ot:studyPublicationReference'];
-            $('#study-lookup-results').append(
+            $lookupResults.append(
                 '<li><a href="'+ matchURL +'" title="'+ mouseOver +'">'+ matchText +'</a></li>'
             );
             visibleResults++;
