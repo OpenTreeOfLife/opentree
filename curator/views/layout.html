@@ -934,13 +934,13 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     placeholder="Enter its title, DOI, reference, tag, ID..."
                     data-bind="value: '',
                                valueUpdate: ['afterkeydown', 'input'],
-                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
                                "
                 ></input>
                 <!-- hidden field to store chosen ID -->
                 <input type="hidden" name="study-lookup-id"
                        data-bind="value: '',
-                                  event: { change: updateNewCollTreeUI }
+                                  event: { change: updateTreeLookupUI }
                                  "></input>
                 <!-- "passive" wiget once study is chosen -->
                 <a class="btn btn-small study-lookup-passive" style="display: none; margin: 3px 0 3px;"
@@ -959,7 +959,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     placeholder="Enter its name, ID, ingroup clade..."
                     data-bind="value: '',
                                valueUpdate: ['afterkeydown', 'input'],
-                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
                                "
                 >
                     <option disabled="disabled" value="">Find the study above first</option>
@@ -978,7 +978,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     placeholder=".../curator/study/view/pg_2826/?tab=trees&tree=tree6573"
                     data-bind="value: '',
                                valueUpdate: ['afterkeydown', 'input'],
-                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
                                "
                 ></input>
                 <button class="btn btn-info"
