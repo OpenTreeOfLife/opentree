@@ -2099,12 +2099,12 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
             referenceTreeName = 'Synthetic Tree of Life';
             break;
         case 'STUDYID_TREEID':
-            referenceTreeName = 'TODO - TODO';
-            break;
-        default:
-            hideModalScreen()
-            console.error('fetchTreeConflictStatus(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
+            hideModalScreen();
+            console.error('fetchTreeConflictStatus(): ERROR, expecting a fully specified studyID#treeID as referenceTreeID!');
             return;
+        default:
+            referenceTreeName = referenceTreeID;  // echo studyID#treeID here
+            break;
     }
     var conflictURL = treeConflictStatus_url
         .replace(/&amp;/g, '&')  // restore all naked ampersands (for query-string args)
@@ -2341,6 +2341,17 @@ function showConflictDetailsWithHistory(tree, referenceTreeID) {
     if (!referenceTreeID) {
         showErrorMessage('Please choose a target (reference) tree for comparison');
         return;
+    }
+    var comparingToPhylesystemTree = (referenceTreeID == 'STUDYID_TREEID');
+    if (comparingToPhylesystemTree) {
+        // replace reference tree ID with found study AND tree ids
+        var chosenStudyID = $container.find('[name=study-lookup-id]').val();
+        var chosenTreeID = $container.find('[name=tree-lookup] option:selected').val();
+        if (!chosenStudyID || !chosenTreeID) {
+            showErrorMessage('Please choose a study and tree for comparison');
+            return;
+        }
+        referenceTreeID = (chosenStudyID +'#'+ chosenTreeID);
     }
     if (studyHasUnsavedChanges) {
         showInfoMessage('REMINDER: Conflict analysis uses the last-saved version of this study!');
@@ -7584,6 +7595,7 @@ function getNodeConflictDescription(tree, node) {
                     break;
 
                 case 'synth':
+                default:  // presumably a source tree, e.g. 'ot_234#tree3'
                     if (isNaN(witnessID)) {
                         // it's a synthetic-tree node ID (e.g. 'ott1234' or 'mrcaott123ott456')
                         /* N.B. Ideally we'd include the current synth-version (e.g. '/opentree7.0@ott123'),
@@ -7605,10 +7617,6 @@ function getNodeConflictDescription(tree, node) {
                         witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', witnessID);
                     }
                     break;
-
-                default:
-                    console.error('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
-                    return;
             }
 
             witnessHTML += '<a href="'+ witnessURL +'" target="_blank">'+ (witnessName || witnessID) +'</a>';
@@ -7630,7 +7638,8 @@ function getNodeConflictDescription(tree, node) {
                 witnessHTML = "anonymous synth node";
                 break;
             default:
-                console.error('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
+                // for published trees (e.g. 'ot_234#tree2') witness info should always be provided
+                console.warn('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
                 return;
         }
     }
