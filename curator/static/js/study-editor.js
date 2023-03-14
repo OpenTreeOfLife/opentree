@@ -2367,7 +2367,7 @@ function showConflictDetailsWithHistory(tree, referenceTreeID) {
                 'conflict': referenceTreeID
             }
         );
-        History.pushState( newState, (window.document.title), ('?tab=home&tree='+ newState.tree +'&conflict='+ newState.conflict) );
+        History.pushState( newState, (window.document.title), ('?tab=home&tree='+ newState.tree +'&conflict='+ encodeURIComponent(newState.conflict)) );
     } else {
         // show conflict normally (ignore browser history)
         showTreeConflictDetailsFromPopup(tree);
