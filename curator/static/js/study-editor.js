@@ -2104,6 +2104,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
             return;
         default:
             referenceTreeName = referenceTreeID;  // echo studyID#treeID here
+            referenceTreeID = referenceTreeID.replace('#','%23');  // confirm encoding!
             break;
     }
     var conflictURL = treeConflictStatus_url
@@ -2367,7 +2368,7 @@ function showConflictDetailsWithHistory(tree, referenceTreeID) {
                 'conflict': referenceTreeID
             }
         );
-        History.pushState( newState, (window.document.title), ('?tab=home&tree='+ newState.tree +'&conflict='+ encodeURIComponent(newState.conflict)) );
+        History.pushState( newState, (window.document.title), ('?tab=home&tree='+ newState.tree +'&conflict='+ newState.conflict) );
     } else {
         // show conflict normally (ignore browser history)
         showTreeConflictDetailsFromPopup(tree);
