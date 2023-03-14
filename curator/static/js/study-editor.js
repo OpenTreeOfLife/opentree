@@ -2377,7 +2377,7 @@ function showConflictDetailsWithHistory(tree, referenceTreeID) {
             showErrorMessage('Please choose a study and tree for comparison');
             return;
         }
-        referenceTreeID = (chosenStudyID +'#'+ chosenTreeID);
+        referenceTreeID = encodeURIComponent(chosenStudyID +'#'+ chosenTreeID);
     }
     if (studyHasUnsavedChanges) {
         showInfoMessage('REMINDER: Conflict analysis uses the last-saved version of this study!');
