@@ -2167,6 +2167,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
                 return;
             }
             callback(conflictInfo);
+            updateTreeConflictWidgets(conflictInfo);
             hideModalScreen();
         }
     });
@@ -2210,6 +2211,9 @@ function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID, options) 
             if (options.SHOW_SPINNER) {
                 hideModalScreen();
             }
+
+            // refresh UI (study + tree selectors) if we just opened this page
+            updateTreeConflictWidgets( conflictInfo );
         },
         false  // don't reuse a cached response
     );
@@ -2283,16 +2287,17 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
     }
 }
 
-function updateTreeConflictWidgets(conflictDetails) {
+function updateTreeConflictWidgets(conflictInfo) {
     // this should work even for incoming URLs, esp. for conflict with a published tree
     var context = getPhylesystemLookupContext();
     // what's the parent element for study+tree lookup UI?
     var $container = getPhylesystemLookupPanel( context );
 
-    var referenceTreeID = conflictDetails.referenceTreeID;
-    var referenceTreeName = conflictDetails.referenceTreeName;
+    var referenceTreeID = conflictInfo.referenceTreeID;
+    var referenceTreeName = conflictInfo.referenceTreeName;
     console.warn("referenceTreeID: "+ referenceTreeID);
     console.warn("referenceTreeName: "+ referenceTreeName);
+    console.warn(conflictInfo);
 
     //$container.find('.treeview-reference-select option:selected').val();
 
