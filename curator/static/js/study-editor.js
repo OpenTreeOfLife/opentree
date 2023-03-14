@@ -185,19 +185,7 @@ if ( History && History.enabled ) {
                 // omit conflict spinner when handling inbound URLs; it conflicts with others
                 if (conflictReferenceTree) {
                     fetchAndShowTreeConflictDetails(currentTree, conflictReferenceTree, {SHOW_SPINNER: false});
-                    // refresh UI (study + tree selectors) if we just opened this page?
-                    var context = getPhylesystemLookupContext();
-                    var $container = getPhylesystemLookupPanel( context );
-                    var referenceTreeID = $container.find('.treeview-reference-select option:selected').val();
-                    if (referenceTreeID === 'STUDYID_TREEID') {
-                        var selectedTreeID = $container.find('.tree-lookup option:selected').val();
-                        if (!selectedTreeID) {
-                            // we need to populate the selection widgets to match!
-                            console.warn("TODO: update study and tree selection widgets!");
-                        } else {
-                            console.warn("NO NEED to update study + tree selectors.");
-                        }
-                    }
+                    updateTreeConflictWidgets();
                 } else {
                     hideTreeConflictDetails(currentTree, {SHOW_SPINNER: false});
                 }
@@ -2275,7 +2263,7 @@ function showTreeConflictDetailsFromPopup(tree) {
     var context = getPhylesystemLookupContext();
     // what's the parent element for study+tree lookup UI?
     var $container = getPhylesystemLookupPanel( context );
-    var newReferenceTreeID = $container.find('.treeview-reference-select').val();
+    var newReferenceTreeID = $container.find('.treeview-reference-select option:selected').val();
     if (!newReferenceTreeID) {
         hideTreeConflictDetails( tree );
     } else {
@@ -2329,13 +2317,37 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
     }
 
     if (treeViewerIsInUse) {
-        var context = getPhylesystemLookupContext();
-        // what's the parent element for study+tree lookup UI?
-        var $container = getPhylesystemLookupPanel( context );
-        // update the reference-tree selector
-        $container.find('.treeview-reference-select').val(tree.conflictDetails.referenceTreeID);
+        updateTreeConflictWidgets(tree.conflictDetails);
         $('#treeview-clear-conflict').show();
     }
+}
+
+function updateTreeConflictWidgets(conflictDetails) {
+    // this should work even for incoming URLs, esp. for conflict with a published tree
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+
+    var referenceTreeID = conflictDetails.referenceTreeID;
+    var referenceTreeName = conflictDetails.referenceTreeName;
+    console.warn("referenceTreeID: "+ referenceTreeID);
+    console.warn("referenceTreeName: "+ referenceTreeName);
+
+    //$container.find('.treeview-reference-select option:selected').val();
+
+    if (referenceTreeID === 'STUDYID_TREEID') {
+        var selectedTreeID = $container.find('.tree-lookup option:selected').val();
+        if (!selectedTreeID) {
+            // we need to populate the selection widgets to match!
+            console.warn("TODO: update study and tree selection widgets!");
+        } else {
+            console.warn("NO NEED to update study + tree selectors.");
+        }
+    }
+
+    // update the reference-tree selector
+    // TODO: $container.find('.treeview-reference-select').val();
+    // TODO: update the study+tree selectors
 }
 
 function removeTaxonMappingInfoFromTree( treeOrID ) {
@@ -2380,6 +2392,7 @@ function removeConflictInfoFromTree( treeOrID ) {
         var $container = getPhylesystemLookupPanel( context );
         // update the reference-tree selector
         $container.find('.treeview-reference-select').val('');
+        // TODO: clear study+tree selectors
         $('#treeview-clear-conflict').hide();
     }
 }
