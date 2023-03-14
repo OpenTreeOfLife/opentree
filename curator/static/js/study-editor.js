@@ -2326,26 +2326,27 @@ function updateTreeConflictWidgets(conflictInfo) {
     var $container = getPhylesystemLookupPanel( context );
 
     var referenceTreeID = conflictInfo.referenceTreeID;
-    var referenceTreeName = conflictInfo.referenceTreeName;
-    console.warn("referenceTreeID: "+ referenceTreeID);
-    console.warn("referenceTreeName: "+ referenceTreeName);
-    console.warn(conflictInfo);
-
     //$container.find('.treeview-reference-select option:selected').val();
 
-    if (referenceTreeID === 'STUDYID_TREEID') {
-        var selectedTreeID = $container.find('.tree-lookup option:selected').val();
-        if (!selectedTreeID) {
-            // we need to populate the selection widgets to match!
-            console.warn("TODO: update study and tree selection widgets!");
+    var selectedTreeID = $container.find('.tree-lookup option:selected').val();
+    if (!selectedTreeID) {
+        // we need to populate the selection widgets to match!
+        console.warn("TODO: update study and tree selection widgets!");
+        if (referenceTreeID.indexOf('@') !== -1) {
+            // it's a compound ID (study and tree IDs)!
+            var idParts = referenceTreeID.split('@');
+            var studyID = idParts[0];
+            var treeID = idParts[1];
+            $container.find('.treeview-reference-select').val( 'STUDYID_TREEID' );
+            // TODO: update the study+tree selectors
+            //$container.find('.treeview-reference-select').val( 'STUDYID_TREEID' );
         } else {
-            console.warn("NO NEED to update study + tree selectors.");
+            // a simpler update to the reference-tree selector
+            $container.find('.treeview-reference-select').val( referenceTreeID );
         }
+    } else {
+        console.warn("NO NEED to update study + tree selectors.");
     }
-
-    // update the reference-tree selector
-    // TODO: $container.find('.treeview-reference-select').val();
-    // TODO: update the study+tree selectors
 }
 
 function removeTaxonMappingInfoFromTree( treeOrID ) {
