@@ -2130,7 +2130,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
             return;
         default:
             referenceTreeName = referenceTreeID;  // echo studyID#treeID here
-            referenceTreeID = referenceTreeID.replace('#','%23');  // confirm encoding!
+            referenceTreeID = referenceTreeID.replace('@','%23');  // encode this as '#' for the API
             break;
     }
     var conflictURL = treeConflictStatus_url
@@ -2378,7 +2378,7 @@ function showConflictDetailsWithHistory(tree, referenceTreeID) {
             showErrorMessage('Please choose a study and tree for comparison');
             return;
         }
-        referenceTreeID = encodeURIComponent(chosenStudyID +'#'+ chosenTreeID);
+        referenceTreeID = encodeURIComponent(chosenStudyID +'@'+ chosenTreeID);
     }
     if (studyHasUnsavedChanges) {
         showInfoMessage('REMINDER: Conflict analysis uses the last-saved version of this study!');
