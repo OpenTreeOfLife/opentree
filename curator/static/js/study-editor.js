@@ -185,7 +185,6 @@ if ( History && History.enabled ) {
                 // omit conflict spinner when handling inbound URLs; it conflicts with others
                 if (conflictReferenceTree) {
                     fetchAndShowTreeConflictDetails(currentTree, conflictReferenceTree, {SHOW_SPINNER: false});
-                    updateTreeConflictWidgets();
                 } else {
                     hideTreeConflictDetails(currentTree, {SHOW_SPINNER: false});
                 }
