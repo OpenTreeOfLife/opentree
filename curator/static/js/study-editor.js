@@ -1829,6 +1829,7 @@ function updatePhylesystemLookupWidgets(chooser) {
         // hide 'em
         $container.find('.lookup-widgets').hide();
     }
+    updateTreeViewerHeight({'MAINTAIN_SCROLL': true});
 }
 
 /* Support conflict display in the tree viewer */
@@ -2207,6 +2208,19 @@ function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID, options) 
             drawTree(inputTreeID);
             if (options.SHOW_SPINNER) {
                 hideModalScreen();
+            }
+            // refresh UI (study + tree selectors) if we just opened this page?
+            var context = getPhylesystemLookupContext();
+            var $container = getPhylesystemLookupPanel( context );
+            var referenceTreeID = $container.find('.treeview-reference-select option:selected').val();
+            if (referenceTreeID === 'STUDYID_TREEID') {
+                var selectedTreeID = $container.find('.tree-lookup option:selected').val();
+                if (!selectedTreeID) {
+                    // we need to populate the selection widgets to match!
+                    console.warn("TODO: update study and tree selection widgets!");
+                } else {
+                    console.warn("NO NEED to update study + tree selectors.");
+                }
             }
         },
         false  // don't reuse a cached response
