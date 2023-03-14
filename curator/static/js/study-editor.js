@@ -184,6 +184,13 @@ if ( History && History.enabled ) {
                 }
                 // omit conflict spinner when handling inbound URLs; it conflicts with others
                 if (conflictReferenceTree) {
+                    // bare-bones conflict metadata
+                    var minimalConflictInfo = {
+                        inputTreeID: currentTree,
+                        referenceTreeID: conflictReferenceTree,
+                        referenceTreeName: conflictReferenceTree
+                    }
+                    updateTreeConflictWidgets( minimalConflictInfo );
                     fetchAndShowTreeConflictDetails(currentTree, conflictReferenceTree, {SHOW_SPINNER: false});
                 } else {
                     hideTreeConflictDetails(currentTree, {SHOW_SPINNER: false});
