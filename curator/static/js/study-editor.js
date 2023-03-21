@@ -159,6 +159,12 @@ if ( History && History.enabled ) {
                     activeFilter = viewModel.listFilters.OTUS;
                     filterDefaults = listFilterDefaults.OTUS;
                     break;
+
+                case 'analyses':
+                    // enable study+tree lookup in tree-viewer popup, Analyses tab
+                    loadStudyListForLookup();
+                    console.log('LOADING STUDY LIST...');
+                    break;
             }
             if (activeFilter) {
                 // assert any saved filter values
@@ -468,10 +474,6 @@ $(document).ready(function() {
     studyHasUnsavedChanges = false;
     disableSaveButton();
     loadSelectedStudy();
-
-    // enable study+tree lookup in tree-viewer popup, Analyses tab
-    loadStudyListForLookup();
-    //bindStudyAndTreeLookups();
 
     // Initialize the jQuery File Upload widgets
     $('#fileupload').fileupload({
