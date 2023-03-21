@@ -453,6 +453,10 @@ $(document).ready(function() {
     bindHistoryAwareWidgets();
     bindHelpPanels();
 
+    // enable study+tree lookup in tree-viewer popup, Analyses tab
+    loadStudyListForLookup();
+    //bindStudyAndTreeLookups();
+
     // NOTE that our initial state is set in the main page template, so we
     // can build it from incoming URL in web2py. Try to recapture this state,
     // ideally through manipulating history.
@@ -4406,10 +4410,6 @@ function showTreeViewer( tree, options ) {
         ko.cleanNode(el);
         ko.applyBindings(tree,el);
     });
-
-    // enable study+tree lookup in tree-viewer popup
-    loadStudyListForLookup();
-    //bindStudyAndTreeLookups();
 
     // enable collection search (in tree-viewer popup)
     $('input[name=collection-search]').unbind('keyup change')
