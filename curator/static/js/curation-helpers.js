@@ -2082,10 +2082,15 @@ function loadStudyListForLookup() {
         return true;
     }
 
-    // disable "Add tree" button until the list is loaded
-    var $newTreeStartButton = $('#new-collection-tree-start');
-    $newTreeStartButton.attr('disabled', 'disabled')
-                       .addClass('btn-info-disabled');
+    // find the correct UI components for the current context
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+
+    // disable lookup form until the list is loaded
+    var $formInitButtons = $container.parent().find('.form-init');
+    $formInitButtons.attr('disabled', 'disabled')
+                    .addClass('btn-info-disabled');
 
     $.ajax({
         type: 'POST',
@@ -2093,8 +2098,7 @@ function loadStudyListForLookup() {
         url: findAllStudies_url,
         data: { verbose: true },
         success: function( data, textStatus, jqXHR ) {
-            // this should be properly parsed JSON
-
+            // this should be properly parsed JSON;
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
                 showErrorMessage('Sorry, there was an error loading the list of studies.');
@@ -2104,10 +2108,11 @@ function loadStudyListForLookup() {
                 showErrorMessage('Sorry, there is a problem with the study-list data.');
                 return;
             }
-
+            // save global lookup list!
             studyListForLookup = data['matched_studies'];
             bindStudyAndTreeLookups();
-            if (collectionUI === 'FULL_PAGE') {
+            if (context === 'COLLECTION_EDITOR_ADD_TREE' &&
+                collectionUI === 'FULL_PAGE') {
                 // refresh tree list in collections editor
                 nudgeTickler('TREES', {modelHasChanged: false});
             }
