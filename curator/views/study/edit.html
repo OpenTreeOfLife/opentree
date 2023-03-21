@@ -1743,7 +1743,8 @@ body {
                  </select>
 
                  <label>against target</label>
-                 <select id="reference-select">
+                 <select id="reference-select"
+                         onchange="updatePhylesystemLookupWidgets(this);">
                      <option value="">Choose a target...</option>
                      <option value="synth">Synthetic Tree of Life</option>
                      <option value="ott">Open Tree Taxonomy</option>
