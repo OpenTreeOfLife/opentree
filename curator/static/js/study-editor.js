@@ -146,6 +146,8 @@ if ( History && History.enabled ) {
             goToTab( currentTab );
             switch(slugify(currentTab)) {
                 case 'home':
+                    // enable study+tree lookup in tree-viewer popup
+                    loadStudyListForLookup();
                     activeFilter = viewModel.listFilters.TREES;
                     filterDefaults = listFilterDefaults.TREES;
                     break;
@@ -161,7 +163,7 @@ if ( History && History.enabled ) {
                     break;
 
                 case 'analyses':
-                    // enable study+tree lookup in tree-viewer popup, Analyses tab
+                    // enable study+tree lookup in Analyses tab
                     loadStudyListForLookup();
                     console.log('LOADING STUDY LIST...');
                     break;
