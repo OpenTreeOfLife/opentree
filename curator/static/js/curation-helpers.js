@@ -905,14 +905,16 @@ function getPhylesystemLookupContext() {
         return 'COLLECTION_EDITOR_ADD_TREE';
     }
 
-    if ($('#tree-viewer').is(":visible") || treeViewerIsInUse) {
-        return 'PHYLOGRAM_CONFLICT_CHOOSE_TREE2';
-    }
-
     var $tabBar = $('ul.nav-tabs:eq(0)');
     var activeTabName = $.trim($tabBar.find('li.active a').text());
     if (activeTabName.indexOf('Analyses') === 0) {
         return 'ANALYSES_CONFLICT_CHOOSE_TREE2';
+    }
+
+    if ((activeTabName.indexOf('Home') === 0) ||
+       $('#tree-viewer').is(":visible") ||
+       treeViewerIsInUse) {
+        return 'PHYLOGRAM_CONFLICT_CHOOSE_TREE2';
     }
 
     console.error("getPhylesystemLookupContext(): UNKNOWN context!");
@@ -2074,7 +2076,7 @@ function bindStudyAndTreeLookups() {
     $newTreeStartButton.attr('disabled', null)
                        .removeClass('btn-info-disabled');
 }
-function loadStudyListForLookup() {
+function loadStudyListForLookup( context ) {
     ///console.warn('STARTING loadStudyListForLookup');
     // if list is available, bind UI and return
     if (studyListForLookup) {
@@ -2083,7 +2085,9 @@ function loadStudyListForLookup() {
     }
 
     // find the correct UI components for the current context
-    var context = getPhylesystemLookupContext();
+    if (!context) {
+        context = getPhylesystemLookupContext();
+    }
     // what's the parent element for study+tree lookup UI?
     var $container = getPhylesystemLookupPanel( context );
 
