@@ -2105,6 +2105,23 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
         return;
     }
     var fullInputTreeID = (studyID +"%23"+ inputTreeID);
+
+    var comparingToPhylesystemTree = (referenceTreeID == 'STUDYID_TREEID');
+    if (comparingToPhylesystemTree) {
+        // build and parse from study and tree selector widgets
+        var context = getPhylesystemLookupContext();
+        // what's the parent element for study+tree lookup UI?
+        var $container = getPhylesystemLookupPanel( context );
+        // replace reference tree ID with found study AND tree ids
+        var chosenStudyID = $container.find('[name=study-lookup-id]').val();
+        var chosenTreeID = $container.find('[name=tree-lookup] option:selected').val();
+        if (!chosenStudyID || !chosenTreeID) {
+            showErrorMessage('Please choose a study and tree for comparison');
+            return;
+        }
+        referenceTreeID = encodeURIComponent(chosenStudyID +'@'+ chosenTreeID);
+    }
+
     var referenceTreeName;
     switch(referenceTreeID) {
         // these are the only ids allowed for now
@@ -2114,10 +2131,6 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
         case 'synth':
             referenceTreeName = 'Synthetic Tree of Life';
             break;
-        case 'STUDYID_TREEID':
-            hideModalScreen();
-            console.error('fetchTreeConflictStatus(): ERROR, expecting a fully specified studyID#treeID as referenceTreeID!');
-            return;
         default:
             referenceTreeName = referenceTreeID;  // echo studyID#treeID here
             referenceTreeID = referenceTreeID.replace('@','%23');  // encode this as '#' for the API
