@@ -2119,7 +2119,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
             showErrorMessage('Please choose a study and tree for comparison');
             return;
         }
-        referenceTreeID = encodeURIComponent(chosenStudyID +'@'+ chosenTreeID);
+        referenceTreeID = (chosenStudyID +'@'+ chosenTreeID);
     }
 
     var referenceTreeName;
@@ -2133,7 +2133,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
             break;
         default:
             referenceTreeName = referenceTreeID;  // echo studyID#treeID here
-            referenceTreeID = referenceTreeID.replace( /@|%40/g , '%23' );  // encode this as '#' for the API
+            referenceTreeID = referenceTreeID.replace( /@|%40/g , '%23' );  // encode '@' as '#' for the API
             break;
     }
     var conflictURL = treeConflictStatus_url
