@@ -2133,7 +2133,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
             break;
         default:
             referenceTreeName = referenceTreeID;  // echo studyID#treeID here
-            referenceTreeID = referenceTreeID.replace('@','%23');  // encode this as '#' for the API
+            referenceTreeID = referenceTreeID.replace( /@|%40/g , '%23' );  // encode this as '#' for the API
             break;
     }
     var conflictURL = treeConflictStatus_url
