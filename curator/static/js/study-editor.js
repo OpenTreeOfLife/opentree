@@ -2336,6 +2336,7 @@ function updateTreeConflictWidgets(conflictInfo) {
             // TODO: update the study+tree selectors
             // (for now, just show a sensible footer message)
             var studyURL = getViewURLFromStudyID(studyID);
+            studyURL += ("/?tab=home&tree=" + treeID);
             showErrorMessage('Showing conflict vs. <a target="_blank" href="'+ studyURL +'">reference tree '+ treeID +' from study '+ studyID +'</a>.');
             //$container.find('.treeview-reference-select').val( 'STUDYID_TREEID' );
         } else {
