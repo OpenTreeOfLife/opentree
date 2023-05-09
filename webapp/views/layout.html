@@ -90,7 +90,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
     <!-- js dependencies for argus -->
     {{if globals().get('treemachine_domain',False):}}  <!-- TODO: add a proper test here, to omit while in /opentree/appadmin -->
     <script type="text/javascript">
-        // make important domains available to client-side code
+        // make important API endpoints (and some base URLs) available to client-side code
         var treemachine_domain = "{{=treemachine_domain}}";
         var taxomachine_domain = "{{=taxomachine_domain}}";
         var getDraftTreeID_url = "{{=getDraftTreeID_url}}";

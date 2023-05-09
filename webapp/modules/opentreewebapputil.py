@@ -119,15 +119,15 @@ def get_opentree_api_endpoints(request):
     base_urls = get_opentree_api_base_urls(request)
 
     conf = get_conf(request)
-    url_pairs = conf.items('method_urls')
-    method_urls = base_urls.copy()
+    url_pairs = conf.items('api_endpoints')
+    api_endpoints = base_urls.copy()
     for mname, murl in url_pairs:
         # replace any base-URL tokens, eg, 'CACHED_production_apis'
         for dname, durl in base_urls.items():
             murl = murl.replace('{%s}' % dname, durl)
-        method_urls[ mname ] = murl
+        api_endpoints[ mname ] = murl
 
-    return method_urls
+    return api_endpoints
 
 def get_user_display_name():
     # Determine the best possible name to show for the current logged-in user.
