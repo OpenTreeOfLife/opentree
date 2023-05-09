@@ -91,8 +91,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
     {{#if globals().get('treemachine_domain',False):}}  <!-- TODO: add a proper test here, to omit while in /opentree/appadmin -->
     <script type="text/javascript">
         // make important API endpoints (and some base URLs) available to client-side code
-        var treemachine_domain = "{{=treemachine_domain}}";
-        var taxomachine_domain = "{{=taxomachine_domain}}";
+        var treemachine_domain = "{{=default_apis}}";
+        var taxomachine_domain = "{{=default_apis}}";
         var getDraftTreeID_url = "{{=getDraftTreeID_url}}";
         var getSyntheticTree_url = "{{=getSyntheticTree_url}}";
         var getTaxonInfo_url = "{{=getTaxonInfo_url}}";
