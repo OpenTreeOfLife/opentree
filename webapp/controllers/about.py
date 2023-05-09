@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 from datetime import datetime
-from opentreewebapputil import (get_opentree_services_method_urls,
+from opentreewebapputil import (get_opentree_api_endpoints, 
                                 fetch_current_TNRS_context_names,
                                 get_data_deposit_message,)
 import bleach
@@ -34,7 +34,7 @@ def index():
     redirect(URL('about', 'open-tree-of-life'))
 
 # try grabbing shared data just once
-default_view_dict = get_opentree_services_method_urls(request)
+default_view_dict = get_opentree_api_endpoints(request)
 default_view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
 
 # NOTE that web2py should attempt to convert hyphens (dashes) in URLs into underscores
@@ -445,7 +445,7 @@ def fetch_current_synthesis_source_data():
     try:
         import requests
         import json
-        method_dict = get_opentree_services_method_urls(request)
+        method_dict = get_opentree_api_endpoints(request)
 
         # fetch a list of all studies that contribute to synthesis
         fetch_url = method_dict['getSynthesisSourceList_url']

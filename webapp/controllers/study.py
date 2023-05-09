@@ -29,7 +29,8 @@ def _get_nexson_proc_conf(request):
     try:
         d = {}
         d['nexsons_dir'] = conf.get('paths', 'nexsonsdir')
-        d['treemachine_domain'] = conf.get('domains', 'treemachine')
+        # TODO
+        d['treemachine_domain'] = conf.get('api_base_urls', 'default_apis')
         d['study_to_status_script'] = conf.get('paths', 'study_to_status_script')
     except:
         raise HTTP(501, T('Server is not configured to report on NexSON status'))

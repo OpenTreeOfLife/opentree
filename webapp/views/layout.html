@@ -90,7 +90,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
     <!-- js dependencies for argus -->
     {{if globals().get('treemachine_domain',False):}}  <!-- TODO: add a proper test here, to omit while in /opentree/appadmin -->
     <script type="text/javascript">
-        // make important domains available to client-side code
+        // make important API endpoints (and some base URLs) available to client-side code
         var treemachine_domain = "{{=treemachine_domain}}";
         var taxomachine_domain = "{{=taxomachine_domain}}";
         var getDraftTreeID_url = "{{=getDraftTreeID_url}}";
@@ -438,7 +438,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         <div class="nav-collapse collapse">
                     <ul class="nav">
               <!--<li class="active"><a href="{{= URL('default','index') }}">Home</a></li>-->
-              <li><a href="/curator">Add / browse trees</a></li>
+              <li><a href="{{=curation_webapp_url}}">Add / browse trees</a></li>
               <li><a href="{{= URL('contact','index') }}">Feedback</a></li>
               <li class="dropdown">
                 <a href="{{= URL('about','open-tree-of-life') }}" class="dropdown-toggle" data-toggle="dropdown">
