@@ -69,25 +69,25 @@ def get_logger(request, name):
         logger.is_configured = True
     return logger
 
-def get_opentree_services_domains(request):
+def get_opentree_api_base_urls(request):
     '''
-    Reads the local configuration to get the domains and returns a dictionary
+    Reads the local configuration to get the base URLs and returns a dictionary
         with keys:
-            treemachine_domain
-            taxomachine_domain
-            oti_domain
-            opentree_api_domain
-        the values of the domain will contain the port (when needed)
+            default_apis
+            production_apis
+            CACHED_default_apis
+            CACHED_production_apis
+        These values will contain the port (when needed) and any base path like `/cached'
 
     This is mainly useful for debugging because it lets developers use local
         instances of the service by tweaking private/conf (see private/conf.example)
     '''
     conf = get_conf(request)
-    domain_pairs = conf.items('domains')
-    domains = dict()
-    for name, url in domain_pairs:
-        domains[ "%s_domain" % name ] = url
-    return domains
+    base_url_pairs = conf.items('api_base_urls')
+    base_urls = dict()
+    for name, url in base_url_pairs:
+        base_urls[ name ] = url
+    return base_urls
 
 def get_maintenance_info(request):
     '''
@@ -106,24 +106,24 @@ def get_maintenance_info(request):
         minfo['maintenance_notice'] = ""
     return minfo
 
-def get_opentree_services_method_urls(request):
+def get_opentree_services_api_endpoints(request):
     '''
-    Reads the local configuration to build on domains and return a dictionary
-        with keys for all domains AND their service methods, whose values are
-        URLs combining domain and partial paths
+    Reads the local configuration to build on base URLs and return a dictionary
+        with keys for all API endpoints (method URLs) combining base URLs
+        and partial paths for each method
 
     This is useful for debugging and for adapting to different ways of 
         configuring services, eg, proxied through a single domain 
         (see private/conf.example)
     '''
-    domains = get_opentree_services_domains(request)
+    base_urls = get_opentree_api_base_urls(request)
 
     conf = get_conf(request)
     url_pairs = conf.items('method_urls')
-    method_urls = domains.copy()
+    method_urls = base_urls.copy()
     for mname, murl in url_pairs:
-        # replace any domain tokens, eg, 'treemachine_domain'
-        for dname, durl in domains.items():
+        # replace any base-URL tokens, eg, 'CACHED_production_apis'
+        for dname, durl in base_urls.items():
             murl = murl.replace('{%s}' % dname, durl)
         method_urls[ mname ] = murl
 
