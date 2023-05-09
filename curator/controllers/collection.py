@@ -14,7 +14,7 @@
 #########################################################################
 
 from applications.opentree.modules.opentreewebapputil import(
-    get_opentree_services_method_urls, 
+    get_opentree_api_endpoints, 
     fetch_current_TNRS_context_names,
     fetch_trees_queued_for_synthesis,
     get_maintenance_info)
@@ -27,7 +27,7 @@ def index():
     Show list searchable/filtered list of all collections
     (default filter = My Collections, if logged in?)
     """
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
     view_dict['maintenance_info'] = get_maintenance_info(request)
     if auth.is_logged_in():
         # user is logged in, filter to their own collections by default?
@@ -46,7 +46,7 @@ def view():
     ? OR can this include work-in-progress from a personal branch?
     """
     response.view = 'collection/edit.html'
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
     view_dict['maintenance_info'] = get_maintenance_info(request)
     #view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['collectionID'] = request.args[0] +'/'+ request.args[1]
@@ -65,7 +65,7 @@ def create():
     if maintenance_info.get('maintenance_in_progress', False):
         redirect(URL('curator', 'default', 'index', vars={"maintenance_notice":"true"}))
         pass
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
     view_dict['message'] = "collection/create"
     return view_dict
 """
@@ -80,7 +80,7 @@ def edit():
             args=request.args))
     # Fetch a fresh list of search contexts for TNRS? see working example in
     # the header search of the main opentree webapp
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
     view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['treesQueuedForSynthesis'] = fetch_trees_queued_for_synthesis(request)
     view_dict['collectionID'] = request.args[0] +'/'+ request.args[1]
@@ -118,7 +118,7 @@ def _get_latest_synthesis_details_for_collection_id( collection_id ):
         import json
         import requests
 
-        method_dict = get_opentree_services_method_urls(request)
+        method_dict = get_opentree_api_endpoints(request)
 
         # fetch a list of all studies and collections that contribute to synthesis
         # TODO: Request that these fields be added

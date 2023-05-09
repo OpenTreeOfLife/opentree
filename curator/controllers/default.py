@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from applications.opentree.modules.opentreewebapputil import(
-    get_opentree_services_method_urls,
+    get_opentree_api_endpoints,
     extract_nexson_from_http_call,
     fetch_github_app_auth_token,
     get_maintenance_info)
@@ -29,7 +29,7 @@ def index():
     a logged-in user.
     """
     #response.flash = T("Welcome to web2py!")
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
     view_dict['maintenance_info'] = get_maintenance_info(request)
 
     if False:  ## auth.is_logged_in():
@@ -45,12 +45,12 @@ def collections():
 
     TODO: move to collection/index?
     """
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
     view_dict['maintenance_info'] = get_maintenance_info(request)
     return view_dict
     
 def error():
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
     return view_dict
 
 @auth.requires_login()
@@ -78,7 +78,7 @@ def profile():
     shows a personalized profile for any user (default = the current logged-in user) 
     http://..../{app}/default/profile/[username]
     """
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
     view_dict['maintenance_info'] = get_maintenance_info(request)
 
     # if the URL has a [username], try to load their information
@@ -192,7 +192,7 @@ def _get_opentree_activity( userid=None, username=None ):
         'added_collections':[],
         'curated_collections':[]
     }
-    method_dict = get_opentree_services_method_urls(request)
+    method_dict = get_opentree_api_endpoints(request)
 
     # Use GitHub API to gather comments from this user, as shown in
     #   https://github.com/OpenTreeOfLife/feedback/issues/created_by/jimallman

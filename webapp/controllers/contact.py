@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from opentreewebapputil import (get_opentree_services_method_urls, 
+from opentreewebapputil import (get_opentree_api_endpoints, 
                                 fetch_current_TNRS_context_names)
 
 ### required - do no delete
@@ -8,7 +8,7 @@ def download(): return response.download(request,db)
 def call(): return service()
 ### end requires
 
-default_view_dict = get_opentree_services_method_urls(request)
+default_view_dict = get_opentree_api_endpoints(request)
 default_view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
 
 def index():

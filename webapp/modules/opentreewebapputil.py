@@ -106,7 +106,7 @@ def get_maintenance_info(request):
         minfo['maintenance_notice'] = ""
     return minfo
 
-def get_opentree_services_api_endpoints(request):
+def get_opentree_api_endpoints(request):
     '''
     Reads the local configuration to build on base URLs and return a dictionary
         with keys for all API endpoints (method URLs) combining base URLs
@@ -268,7 +268,7 @@ def fetch_current_TNRS_context_names(request):
         # fetch the latest contextName values as JSON from remote site
         import requests
 
-        method_dict = get_opentree_services_method_urls(request)
+        method_dict = get_opentree_api_endpoints(request)
         fetch_url = method_dict['getContextsJSON_url']
         if fetch_url.startswith('//'):
             # Prepend scheme to a scheme-relative URL
@@ -300,7 +300,7 @@ def fetch_trees_queued_for_synthesis(request):
         # <https://github.com/OpenTreeOfLife/peyotl/blob/33b493e84558ffef381d841986281be352f3da53/peyotl/collections_store/__init__.py#L46>
         import requests
 
-        method_dict = get_opentree_services_method_urls(request)
+        method_dict = get_opentree_api_endpoints(request)
         fetch_url = method_dict['getTreesQueuedForSynthesis_url']
         if fetch_url.startswith('//'):
             # Prepend scheme to a scheme-relative URL
