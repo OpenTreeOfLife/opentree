@@ -26,6 +26,9 @@ github_redirect_uri = YOUR_REDIRECT_URI_HERE
 # (the installation ID is in the URL of the Configure button here)
 github_app_installation_id = YOUR_APP_INSTALLATION_ID_HERE
 
+#
+# TODO: Revise both API sections to match our Ansible stuff, or delete this file entirely!
+#
 # List public-facing base URL for treemachine and taxomachine services
 # (NOTE that these are used by both server- and client-side code)
 [domains]

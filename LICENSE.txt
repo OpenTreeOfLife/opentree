@@ -1,7 +1,7 @@
-Copyright (c) 2013, Jonathan Rees
-Copyright (c) 2013, Mark Holder
-Copyright (c) 2013, Jim Allman
-Copyright (c) 2013, Stephen Smith
+Copyright (c) 2013-2016, Jonathan Rees
+Copyright (c) 2013-2016, Mark Holder
+Copyright (c) 2013-2016, Jim Allman
+Copyright (c) 2013-2016, Stephen Smith
 
 All rights reserved.
 

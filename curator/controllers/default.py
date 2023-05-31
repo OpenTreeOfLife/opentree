@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from applications.opentree.modules.opentreewebapputil import(
-    get_opentree_services_method_urls,
+    get_opentree_api_endpoints,
     extract_nexson_from_http_call,
     fetch_github_app_auth_token,
     get_maintenance_info)
@@ -29,7 +29,7 @@ def index():
     a logged-in user.
     """
     #response.flash = T("Welcome to web2py!")
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
     view_dict['maintenance_info'] = get_maintenance_info(request)
 
     if False:  ## auth.is_logged_in():
@@ -45,12 +45,12 @@ def collections():
 
     TODO: move to collection/index?
     """
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
     view_dict['maintenance_info'] = get_maintenance_info(request)
     return view_dict
     
 def error():
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
     return view_dict
 
 @auth.requires_login()
@@ -78,7 +78,7 @@ def profile():
     shows a personalized profile for any user (default = the current logged-in user) 
     http://..../{app}/default/profile/[username]
     """
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
     view_dict['maintenance_info'] = get_maintenance_info(request)
 
     # if the URL has a [username], try to load their information
@@ -192,7 +192,7 @@ def _get_opentree_activity( userid=None, username=None ):
         'added_collections':[],
         'curated_collections':[]
     }
-    method_dict = get_opentree_services_method_urls(request)
+    method_dict = get_opentree_api_endpoints(request)
 
     # Use GitHub API to gather comments from this user, as shown in
     #   https://github.com/OpenTreeOfLife/feedback/issues/created_by/jimallman
@@ -470,6 +470,7 @@ def to_nexson():
     _LOG = get_logger(request, 'to_nexson')
     if request.env.request_method == 'OPTIONS':
         raise HTTP(200, T('Preflight approved!'))
+
     orig_args = {}
     is_upload = False
     # several of our NexSON use "uploadid" instead of "uploadId" so we should accept either
@@ -615,16 +616,16 @@ def to_nexson():
                 shutil.copyfile(INPUT_FILEPATH, NEXML_FILEPATH)
             else:
                 try:
-                    try:
-                        exe_path = get_conf(request).get("external", "2nexml")
-                    except:
-                        _LOG.warn("Config does not have external/2nexml setting")
-                        raise
+                    exe_path = get_conf(request).get("external", "2nexml")
+                except:
+                    _LOG.warn("Config does not have external/2nexml setting")
+                    raise HTTP(501, T("Server is not configured to allow 2nexml conversion"))
+                try:
                     assert(os.path.exists(exe_path))
                 except:
-                    response.view = 'generic.json'; return {'hb':exe_path}
+                    #response.view = 'generic.json'; return {'hb':exe_path}
                     _LOG.warn("Could not find the 2nexml executable")
-                    raise HTTP(501, T("Server is not configured to allow 2nexml conversion"))
+                    raise HTTP(501, T("Server is misconfigured for 2nexml conversion"))
                 invoc = [exe_path, '-f{f}'.format(f=inp_format), ]
                 if inp_format == 'relaxedphyliptree':
                     invoc.extend(['-X', '-x'])

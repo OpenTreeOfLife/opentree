@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 from datetime import datetime
-from opentreewebapputil import (get_opentree_services_method_urls, 
+from opentreewebapputil import (get_opentree_api_endpoints, 
                                 fetch_current_TNRS_context_names,
                                 get_data_deposit_message,)
 import bleach
@@ -34,13 +34,17 @@ def index():
     redirect(URL('about', 'open-tree-of-life'))
 
 # try grabbing shared data just once
-default_view_dict = get_opentree_services_method_urls(request)
+default_view_dict = get_opentree_api_endpoints(request)
 default_view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
 
 # NOTE that web2py should attempt to convert hyphens (dashes) in URLs into underscores
 
 def open_tree_of_life():
     # URL is /opentree/about/open-tree-of-life
+    return default_view_dict
+
+def faq():
+    # URL is /opentree/about/faq
     return default_view_dict
 
 def privacy_policy():
@@ -75,7 +79,7 @@ def references():
 def progress():
     view_dict = default_view_dict.copy()
 
-    # Load each JSON document into a list or dict, so we can compile daily entries. 
+    # Load each JSON document into a list or dict, so we can compile daily entries.
     # NB: For simplicity and uniformity, filter these to use only simple dates
     # with no time component!
     # EXAMPLE u'2015-01-16T23Z' ==> u'2015-01-16'
@@ -210,7 +214,7 @@ def progress():
             else:
                 num_otu_in_ott = ott_synth_version_info.get('visible_taxon_count', 0)
 
-        # N.B. Some days (esp. early in history) might not have any synthesis data, 
+        # N.B. Some days (esp. early in history) might not have any synthesis data,
         # or incomplete data (if synthesis was prior to gathering detailed stats)
         if synth_v:  # ignore empty dict (no data found)
             if synth_v.get('total_OTU_count') is None:
@@ -271,7 +275,7 @@ def _force_to_simple_date_string( date_string ):
 def synthesis_release():
     view_dict = default_view_dict.copy()
 
-    # Load each JSON document into a list or dict, so we can compile daily entries. 
+    # Load each JSON document into a list or dict, so we can compile daily entries.
     # NB: For simplicity and uniformity, filter these to use only simple dates
     # with no time component!
     # EXAMPLE u'2015-01-16T23Z' ==> u'2015-01-16'
@@ -296,8 +300,8 @@ def synthesis_release():
     if len(request.args) == 0:
         release_date = sorted(synth.keys(), reverse=False)[-1]
         release_version = synth[release_date].get('version')
-        redirect(URL('opentree', 'about', 'synthesis_release', 
-            vars={}, 
+        redirect(URL('opentree', 'about', 'synthesis_release',
+            vars={},
             args=[release_version]))
 
     synth_release_version = request.args[0]
@@ -369,7 +373,7 @@ def taxonomy_version():
             synth_ott_version = synth_ott_version.split('draft')[0]
         if synth_ott_version == taxo_version:
             related_releases.append(synth[date]['version'])
-    view_dict['related_synth_releases'] = related_releases 
+    view_dict['related_synth_releases'] = related_releases
 
     return view_dict
 
@@ -441,7 +445,7 @@ def fetch_current_synthesis_source_data():
     try:
         import requests
         import json
-        method_dict = get_opentree_services_method_urls(request)
+        method_dict = get_opentree_api_endpoints(request)
 
         # fetch a list of all studies that contribute to synthesis
         fetch_url = method_dict['getSynthesisSourceList_url']
@@ -508,13 +512,13 @@ def fetch_current_synthesis_source_data():
 
         # TODO: encode data to utf-8?
         ## context_names += [n.encode('utf-8') for n in contextnames_json[gname] ]
-        
+
         # translate data-deposit DOIs/URLs into friendlier forms
         for study in contributing_studies:
             raw_deposit_doi = study.get('ot:dataDeposit', None)
             if raw_deposit_doi:
                 study['friendlyDepositMessage'] = get_data_deposit_message(raw_deposit_doi)
-        
+
         return contributing_studies
 
     except Exception, e:

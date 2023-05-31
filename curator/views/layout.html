@@ -99,6 +99,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         /* N.B. These methods are needed to manage tree collections from any page. */
         var findAllTreeCollections_url = "{{=findAllTreeCollections_url}}";
         var findAllStudies_url = "{{=findAllStudies_url}}";
+        var findAllSynthesisRuns_url = "{{=findAllSynthesisRuns_url}}";
+        var requestNewSynthesisRun_url = "{{=requestNewSynthesisRun_url}}";
         var singlePropertySearchForTrees_url = "{{=singlePropertySearchForTrees_url}}";
         var API_create_collection_POST_url = "{{=API_create_collection_POST_url}}";
         var API_load_collection_GET_url = "{{=API_load_collection_GET_url}}";
@@ -405,6 +407,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     <ul class="dropdown-menu">
                         <li><a href="/curator/profile#collections">Manage my collections</a></li>
                         <li><a href="/curator/collection/">Browse all collections</a></li>
+                        <li><a href="/curator/collection/synthesis-dashboard">Custom tree synthesis</a></li>
                       {{ if (response.view != 'collection/edit.html'): }}
                         <li><a href="#" onclick="createNewTreeCollection(); return false;">Add new collection</a></li>
                       {{ pass }}
@@ -779,7 +782,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                          data-bind="foreach: { data: $data.data.decisions }">
                       <tr data-bind="attr: { class: (userIsEditingCollection($parent) && $data['status'] == 'REMOVED') ?
                                                       'single-tree-row error' :
-                                                      (userIsEditingCollection($parent) && $data['status'] == 'RENAMED' ?
+                                                      (userIsEditingCollection($parent) && $data['status'] == 'MODIFIED' ?
                                                         'single-tree-row warning' :
                                                         'single-tree-row-'+ $data['status'] )
                                             }">
@@ -830,8 +833,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                            <!-- ko if: $data['status'] == 'REMOVED' -->
                              <div class="tree-status-marker text-error">REMOVED</div>
                            <!-- /ko -->
-                           <!-- ko if: $data['status'] == 'RENAMED' -->
-                             <div class="tree-status-marker text-warning">RENAMED</div>
+                           <!-- ko if: $data['status'] == 'MODIFIED' -->
+                             <div class="tree-status-marker text-warning">MODIFIED</div>
                            <!-- /ko -->
 
                           <!-- /ko --><!-- END of editing widgets -->
@@ -907,7 +910,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             <!-- TODO: Put add-collection widgets! -->
             <div xclass="form-actions" style="margin-top: 0px; margin-bottom: 0.25em;">
               <button id="new-collection-tree-start" type="submit"
-                      class="btn btn-info Xbtn-info-disabled"
+                      class="btn btn-info Xbtn-info-disabled form-init"
                       onclick="return false;"
               ><span data-bind="text: ($data.data.decisions.length > 0) ? 'Add another tree' : 'Add a tree to this collection'">ADD TREE</span>
                     &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
@@ -927,24 +930,25 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 <!-- "active" wiget for study lookup -->
                 <i class="icon-search study-lookup-active" style="position: absolute; margin: 8px 0 0 7px; pointer-events: none;"></i>
                 <input type="text" name="study-lookup"
+                    autocomplete="off"
                     class="input-xlarge study-lookup-active" style="margin-bottom: 2px; padding-left: 25px;"
                     placeholder="Enter its title, DOI, reference, tag, ID..."
                     data-bind="value: '',
                                valueUpdate: ['afterkeydown', 'input'],
-                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
                                "
                 ></input>
                 <!-- hidden field to store chosen ID -->
                 <input type="hidden" name="study-lookup-id"
                        data-bind="value: '',
-                                  event: { change: updateNewCollTreeUI }
+                                  event: { change: updateTreeLookupUI }
                                  "></input>
                 <!-- "passive" wiget once study is chosen -->
                 <a class="btn btn-small study-lookup-passive" style="display: none; margin: 3px 0 3px;"
                    onclick="resetStudyLookup(); return false;">
                     <i class="icon-search"></i>
                 </a>
-                <a id="study-lookup-indicator" class="study-lookup-passive"
+                <a class="study-lookup-indicator study-lookup-passive"
                    style="font-weight: bold; display: none;"
                    title="" href="" target="_blank">...</a>
                 <br />
@@ -956,10 +960,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     placeholder="Enter its name, ID, ingroup clade..."
                     data-bind="value: '',
                                valueUpdate: ['afterkeydown', 'input'],
-                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
                                "
                 >
-                    <option disabled="disabled" value="">Find the study above first</option>
+                    <option disabled="disabled" value="">Choose a study first</option>
                 </select>
                 <button class="btn btn-info"
                         data-bind="click: function() {addTreeToCollection($data, 'FROM_LOOKUPS'); return false;}"
@@ -975,7 +979,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     placeholder=".../curator/study/view/pg_2826/?tab=trees&tree=tree6573"
                     data-bind="value: '',
                                valueUpdate: ['afterkeydown', 'input'],
-                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
                                "
                 ></input>
                 <button class="btn btn-info"
@@ -1047,6 +1051,183 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
               class="btn btn-danger pull-right" style="margin-left: 20px;"
               onclick="return false;">Delete Collection</button>
       <a id="delete-collection-comments-cancel" data-dismiss="modal" class="btn" >Cancel</a>
+    </div>
+</div>
+
+<!-- hidden template for gathering specs for a proposed synthesis run -->
+<div class="modal hide fade new-synth-popup" id="define-synth-run-popup" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Describe the synthesis you want to see
+      </h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            Describe the synthesis you'd like to see, and we'll run it on the
+            first available server. (If someone has already run this synthesis,
+            you will be redirected to the existing data.)
+        </p>
+        <!--
+        <input type="text" id="new-synth-TODO" class="input-block-level" maxlength="50" placeholder=" (50 chars max)"/>
+        -->
+        <textarea id="new-synth-description" class="input-block-level" rows="2" placeholder="Briefly describe this synthesis and/or its purpose (optional)"                  data-bind="value: $data.description,
+                             valueUpdate: ['afterkeydown', 'input']"></textarea>
+
+        <div class="control-group">
+          <label class="control-label" for="ot_focalClade" style="display: inline-block;">Root taxon for this synthesis:</label>
+          <div id="new-synth-root-name" class="input-block-level static-form-value" style="display: inline;"
+               data-bind="text: $data.rootTaxonName() || 'None'">&nbsp;</div>
+          <input type="hidden" id="new-synth-root-ottid" style="color: #999;" readonly="readonly" eaxlength="10"
+                 data-bind="value: $data.rootTaxonID" />
+
+          <div class="controls">
+            <!-- reuse some (not all) style and behavior for taxon search in synth-tree viewer -->
+            <div id="taxon-search-form" autocomplete="off" style="position: relative;">
+                <input type="text" name="taxon-search" class="" style="width: 300px; margin-bottom: 0;"
+                    placeholder="Choose its root taxon" autocomplete="off">
+                <!-- then show dropdown when results are ready... -->
+                <span style="color: #999; padding: 0 2px; font-size: 14px;">in</span>
+                <select style="margin-bottom: 0; width: auto;" name="taxon-search-context">
+                    {{ # generate our contextNames list based on newly fetched names
+                      try:
+                       for context_name in taxonSearchContextNames:
+                          if context_name == 'All life': }}
+                            <option selected="selected" value="{{= context_name }}">{{= context_name }}</option>
+                       {{ else: }}
+                            <option value="{{= context_name }}">{{= context_name }}</option>
+                       {{ pass }}
+                    {{ pass }}
+                    {{ except: }}
+                            <option selected="selected">ERROR loading context values</option>
+                    {{ pass }}
+                <!--
+                NOTE that the displayed OPTION values (confirmed as current via AJAX) are accepted
+                by the server, ie, there's no distinction between visible and occult values.
+                -->
+                </select>
+                <div class="">
+                    <ul id="search-results" class="dropdown-menu" role="menu">
+                        ...
+                    </ul>
+                </div>
+              </div>
+          </div>
+        </div>
+
+        <button class="btn btn-info pull-left" style="margin-right: 8px;"
+                onclick="promptToAddCollection(this); return false;">
+            Add a tree collection
+            <i class="icon-book icon-white"></i>
+        </button>
+        <form id="add-collection-search-form" class="navbar-search" autocomplete="off"
+              style="display: none; margin-top: 0;">
+            <div class="left-inner-addon">
+                <i class="icon-search"></i>
+                <input type="text" name="collection-search" class="search-query" placeholder="Match by name, id, owner, description..." autocomplete="off" style="width: 260px;">
+            </div>
+            <!-- then show dropdown when results are ready... -->
+            <div class="" style="position: absolute; left: -160px;">
+                <ul id="add-collection-search-results" class="dropdown-menu" role="menu">
+                    ...
+                </ul>
+            </div>
+        </form>
+
+      <div id="synth-run-ranked-list-holder" style="clear: both; overflow: auto; max-height: 508px;">
+        <table class="table table-condensed" style="margin-bottom: 2px; position: relative">
+          <thead>
+            <tr>
+                <th width="76">Rank</th>
+                <th width="*">Collection name (click to preview)</th>
+            </tr>
+          </thead>
+          <tbody style="y-overflow: auto;"
+                 data-bind="foreach: { data: $data.collections, as: 'collectionInfo' }">
+            <tr>
+                <td>
+                    <input type="text"
+                           data-bind="value: collectionInfo['rank'],
+                                      valueUpdate: ['afterkeydown', 'input'],
+                                      event: {
+                        keyup: function() {showSynthRunMoveUI($data, $element, $parent)},
+                        change: function() {showSynthRunMoveUI($data, $element, $parent)}
+                                              }"
+                                   style="color: #999; width: 24px; margin-bottom: 0px;
+                                          margin-left: -4px; text-align: right;"
+                                   value=""
+                     />&nbsp;
+
+                   <!-- SORTING widgets -->
+                   <!-- ko if: $index() === 0 -->
+                    <a style="opacity: 0.5;"
+                       href="#"
+                       onclick="return false;"
+                       class="icon-chevron-up">
+                    </a>
+                   <!-- /ko -->
+                   <!-- ko if: $index() > 0 -->
+                    <a data-bind="click: function() {moveInSynthesisRun($data, $parent, 'UP'); return false;}"
+                       href="#"
+                       title="Move this collection up in the list"
+                       class="icon-chevron-up">
+                    </a>
+                   <!-- /ko -->
+
+                   <!-- ko if: $index() === ($parent.collections().length-1) -->
+                    <a style="opacity: 0.5;"
+                       href="#"
+                       onclick="return false;"
+                       class="icon-chevron-down">
+                    </a>
+                   <!-- /ko -->
+                   <!-- ko if: $index() < ($parent.collections().length-1) -->
+                    <a data-bind="click: function() {moveInSynthesisRun($data, $parent, 'DOWN'); return false;}"
+                       href="#"
+                       title="Move this collection down in the list"
+                       class="icon-chevron-down">
+                    </a>
+                   <!-- /ko -->
+
+                   <!-- TODO: Offer similar refresh/status features as in collection editor?-->
+                   <!-- ko if: $data['status'] == 'REMOVED' -->
+                     <div class="tree-status-marker text-error">REMOVED</div>
+                   <!-- /ko -->
+                   <!-- ko if: $data['status'] == 'RENAMED' -->
+                     <div class="tree-status-marker text-warning">RENAMED</div>
+                   <!-- /ko -->
+
+                  <!-- /ko --><!-- END of editing widgets -->
+                </td>
+                <td>
+                  <button data-bind="click: function() {removeCollectionFromSynthRun($data, $parent); return false;}"
+                          title="Remove this collection from the synthesis run"
+                          class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                          style="margin-left: 4px;">
+                      <i class="icon-trash icon-white"></i>
+                  </button>
+                  <a data-bind="text: collectionInfo.id,
+                                click: function() {fetchAndShowCollection( collectionInfo.id )},
+                                attr: {'href': '/curator/collection/view/'+ collectionInfo.id}"
+                                href="#" target="_blank" style="hyphens: auto; overflow-wrap: anywhere; display: inline-block; margin-top: 4px;"><!--NAME--></a>
+                  </a>
+                </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+        <div class="empty-list-prompt" data-bind="visible: $data.collections().length === 0">
+            There are no collections here yet. Use the buttons above to add a collection.
+        </div>
+
+    </div>
+    <div class="modal-footer">
+      <button id="new-synth-submit"
+              class="btn btn-danger pull-right" style="margin-left: 20px;"
+              data-bind="css: {'disabled': !validateSynthRunSpec()},
+                         click: requestNewSynthRun"
+              >Generate this synthetic tree</button>
+      <a id="new-synth-cancel" data-dismiss="modal" class="btn" >Cancel</a>
     </div>
 </div>
 

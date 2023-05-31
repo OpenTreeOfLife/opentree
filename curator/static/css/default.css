@@ -870,7 +870,13 @@ tr.after-shims th {
     position: relative;
     top: -8px;
 }
-.collection-move-panel {
+
+.form-horizontal.metadata-readonly .control-group {
+  margin-bottom: 12px;
+}
+
+.collection-move-panel,
+.synthrun-move-panel {
     position: absolute;
     margin-left: 2px;
     z-index: 1;
@@ -880,7 +886,8 @@ tr.after-shims th {
     -moz-box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
     box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
 }
-.collection-move-panel button {
+.collection-move-panel button,
+.synthrun-move-panel button {
     opacity: 1.0;
 }
 
@@ -1013,4 +1020,12 @@ form.skip-label * {
 }
 form.skip-label *.non-fading {
     opacity: 1.0;
+}
+.loading-message {
+    display: inline-block; 
+    position: relative; 
+    top: -6px; 
+    left: 8px; 
+    color: #999; 
+    font-style: italic;
 }
