@@ -6,6 +6,18 @@
         "===": "visible_taxon_count comes from `cleaned_ott/index.html` in propinquity output",
         "===": "For proper sorting, all `date` strings must be in the form {yyyy-mm-dd}!",
 
+        "version": "ott3.5",
+        "date": "2023-05-22",
+        "taxon_count":         4528269,
+        "visible_taxon_count": 3955066
+    },
+    {
+        "version": "ott3.4",
+        "date": "2022-10-31",
+        "taxon_count":         4528224,
+        "visible_taxon_count": 3943215
+    },
+    {
         "version": "ott3.3",
         "date": "2021-06-01",
         "taxon_count":         4528126,

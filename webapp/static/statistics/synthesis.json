@@ -131,5 +131,14 @@
         "tree_count": 1239,
         "total_OTU_count": 94028,
         "tip_count": 2392042
+    },
+    "2023-06-01T00Z": {
+        "===": "tree_count from https://files.opentreeoflife.org/synthesis/opentree14.7output/index.html",
+        "===": "total_OTU_count and tip_count found in https://files.opentreeoflife.org/synthesis/opentree14.7/output/labelled_supertree/index.html",
+        "version": "v14.7",
+        "OTT_version": "ott3.5draft1",
+        "tree_count": 1330,
+        "total_OTU_count": 112890,
+        "tip_count": 2392570
     }
 }
