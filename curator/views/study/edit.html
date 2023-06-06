@@ -746,7 +746,7 @@ body {
                     data-bind="visible: viewModel.filteredFiles().pagedItems().length &gt; 0">
                   <thead>
                     <tr>
-                        <th width="35%">File name (click to download)</th>
+                        <th width="35%">File name</th>
                         <th width="*">Description</th>
                         <th width="15%">Size</th><!-- also includes possible delete button -->
                     </tr>
@@ -755,16 +755,9 @@ body {
                     <tr>
                     {{ if viewOrEdit == 'EDIT': }}
                         <td>
-                          <!-- ko if: file['@url']  -->
-                            <a href="#" target="_blank" data-bind="text: file['@filename'] || '?', attr: { href: file['@url'] }">
-                                Alignment data (urchins).xls
-                            </a>
-                          <!-- /ko -->
-                          <!-- ko if: !file['@url'] -->
-                            <span style="color: #999;" data-bind="text: file['@filename'] || '?'" onclick="showErrorMessage('No URL stored for this file!')">
+                            <span style="color: #999;" data-bind="text: file['@filename'] || '?'">
                                 Alignment data (urchins).xls
                             </span>
-                          <!-- /ko -->
                         </td>
                         <td>
                             <div><textarea data-bind="value: file.description.$,
@@ -803,16 +796,9 @@ body {
                         </td>
                     {{ else: }}
                         <td>
-                          <!-- ko if: file['@url']  -->
-                            <a href="#" target="_blank" data-bind="text: file['@filename'] || '?', attr: { href: file['@url'] }">
-                                Alignment data (urchins).xls
-                            </a>
-                          <!-- /ko -->
-                          <!-- ko if: !file['@url'] -->
-                            <span style="color: #999;" data-bind="text: file['@filename'] || '?'" onclick="showErrorMessage('No URL stored for this file!')">
+                            <span style="color: #999;" data-bind="text: file['@filename'] || '?'">
                                 Alignment data (urchins).xls
                             </span>
-                          <!-- /ko -->
                         </td>
                         <td>
                             <div data-bind="text: file.description.$">Microsoft Excel spreadsheet</div>
