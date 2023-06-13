@@ -12,7 +12,7 @@ from bleach.sanitizer import Cleaner
 # whitelist.
 # N.B. HTML comments are stripped by default. Non-allowed tags will appear
 # "naked" in output, so we can identify any bad actors.
-common_version_notes_tags = [u'p', u'br',
+common_version_notes_tags = [u'p', u'br', u'pre',
                              u'h1', u'h2', u'h3', u'h4', u'h5', u'h6',
                              u'table', u'tbody', u'tr', u'td', u'th',
                              ]
