@@ -7699,8 +7699,7 @@ function getNodeConflictDescription(tree, node) {
                 witnessHTML = "anonymous synth node";
                 break;
             default:
-                // for published trees (e.g. 'ot_234#tree2') witness info should always be provided
-                console.warn('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
+                witnessHTML = "anonymous source-tree node";
                 return;
         }
     }
