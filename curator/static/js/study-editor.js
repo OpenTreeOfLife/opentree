@@ -7744,7 +7744,8 @@ function getNodeConflictDescription(tree, node) {
                      * viewer.
                      */
                     // split the witnessID into study and tree IDs, or complain if we can't
-                    var studyAndTreeIDs = (tree.conflictDetails.referenceTreeID).split( /#|@/s );  // test for all possible delimiters!
+                    var possibleDelimiters = /#|@|%23/s ;  // regex tests for all possible delimiters
+                    var studyAndTreeIDs = (tree.conflictDetails.referenceTreeID).split( possibleDelimiters );
                     if (studyAndTreeIDs.length < 2) {
                         console.error(">> Unable to find study and tree IDs in witnessID: '"+ witnessID +"'");
                     } else {
