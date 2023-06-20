@@ -2358,7 +2358,11 @@ function updateTreeConflictWidgets(conflictInfo) {
             var idParts = referenceTreeID.split('@');
             var studyID = idParts[0];
             var treeID = idParts[1];
+            console.log(">>> BEFORE setting it to STUDYID_TREEID: "
+              + $container.find('.treeview-reference-select').val());
             $container.find('.treeview-reference-select').val( 'STUDYID_TREEID' );
+            console.log(">>> AFTER setting it to STUDYID_TREEID: "
+              + $container.find('.treeview-reference-select').val());
             // TODO: update the study+tree selectors
             // (for now, just show a sensible footer message)
             var studyURL = getViewURLFromStudyID(studyID);
