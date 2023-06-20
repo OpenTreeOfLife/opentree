@@ -7684,7 +7684,7 @@ function getNodeConflictDescription(tree, node) {
                      * point directly to a node in the curation app's tree
                      * viewer.
                      */
-                    // split the witnessID into study and tree IDs, or complain if we can't
+                    // split the referenceTreeID into study and tree IDs, or complain if we can't
                     var possibleDelimiters = /#|@|%23/s ;  // regex tests for all possible delimiters
                     var studyAndTreeIDs = (tree.conflictDetails.referenceTreeID).split( possibleDelimiters );
                     if (studyAndTreeIDs.length < 2) {
@@ -7694,7 +7694,7 @@ function getNodeConflictDescription(tree, node) {
                         var witnessTreeID = studyAndTreeIDs[1];
                         witnessURL = getViewURLFromStudyID( witnessStudyID )
                             +"?tab=home&tree="+ witnessTreeID
-                            +"&node="+ nodeID;
+                            +"&node="+ witnessID;
                     }
                     break;
             }
