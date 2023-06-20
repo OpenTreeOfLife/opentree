@@ -7679,13 +7679,13 @@ function getNodeConflictDescription(tree, node) {
 
                 default:
                     /* The reference tree is presumably a curated tree in a
-                     * published study, e.g. 'ot_234#tree3'. We should build
-                     * our typical URL to point directly to a node in the
-                     * curation app's tree viewer.
+                     * published study, e.g. 'pg_2866%23tree6656' or
+                     * 'pg_2866#tree6656'. We should build our typical URL to
+                     * point directly to a node in the curation app's tree
+                     * viewer.
                      */
-
                     // split the witnessID into study and tree IDs, or complain if we can't
-                    var studyAndTreeIDs = witnessID.split( /#|@/s );  // test for all possible delimiters!
+                    var studyAndTreeIDs = (tree.conflictDetails.referenceTreeID).split( /#|@/s );  // test for all possible delimiters!
                     if (studyAndTreeIDs.length < 2) {
                         console.error(">> Unable to find study and tree IDs in witnessID: '"+ witnessID +"'");
                     } else {
