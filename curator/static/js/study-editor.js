@@ -7715,7 +7715,6 @@ function getNodeConflictDescription(tree, node) {
                     break;
 
                 case 'synth':
-                default:  // presumably a source tree, e.g. 'ot_234#tree3'
                     if (isNaN(witnessID)) {
                         // it's a synthetic-tree node ID (e.g. 'ott1234' or 'mrcaott123ott456')
                         /* N.B. Ideally we'd include the current synth-version (e.g. '/opentree7.0@ott123'),
@@ -7733,8 +7732,27 @@ function getNodeConflictDescription(tree, node) {
                         */
                         witnessURL = "/opentree/argus/@{NODE_ID}".replace('{NODE_ID}', witnessID);
                     } else {
-                        // it's a numeric OTT taxon ID (e.g. '1234')
+                        // it's an (legacy?) numeric OTT taxon ID (e.g. '1234')
                         witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', witnessID);
+                    }
+
+                default:
+                    /* The reference tree is presumably a curated tree in a
+                     * published study, e.g. 'ot_234#tree3'. We should build
+                     * our typical URL to point directly to a node in the
+                     * curation app's tree viewer.
+                     */
+
+                    // split the witnessID into study and tree IDs, or complain if we can't
+                    var studyAndTreeIDs = witnessID.split( /#|@/s );  // test for all possible delimiters!
+                    if (studyAndTreeIDs.length < 2) {
+                        console.error(">> Unable to find study and tree IDs in witnessID: '"+ witnessID +"'");
+                    } else {
+                        var witnessStudyID = studyAndTreeIDs[0];
+                        var witnessTreeID = studyAndTreeIDs[1];
+                        witnessURL = getViewURLFromStudyID( witnessStudyID )
+                            +"?tab=home&tree="+ witnessTreeID
+                            +"&node="+ nodeID;
                     }
                     break;
             }
@@ -7758,8 +7776,7 @@ function getNodeConflictDescription(tree, node) {
                 witnessHTML = "anonymous synth node";
                 break;
             default:
-                // for published trees (e.g. 'ot_234#tree2') witness info should always be provided
-                console.warn('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
+                witnessHTML = "anonymous source-tree node";
                 return;
         }
     }
