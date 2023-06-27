@@ -2116,6 +2116,9 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
         var chosenStudyID = $container.find('[name=study-lookup-id]').val();
         var chosenTreeID = $container.find('[name=tree-lookup] option:selected').val();
         if (!chosenStudyID || !chosenTreeID) {
+            console.log("choose study+tree (B)");
+            console.log('  chosenStudyID: '+ chosenStudyID);
+            console.log('  chosenTreeID: '+ chosenTreeID);
             showErrorMessage('Please choose a study and tree for comparison');
             return;
         }
@@ -2417,6 +2420,9 @@ function showConflictDetailsWithHistory(tree, referenceTreeID) {
         var chosenStudyID = $container.find('[name=study-lookup-id]').val();
         var chosenTreeID = $container.find('[name=tree-lookup] option:selected').val();
         if (!chosenStudyID || !chosenTreeID) {
+            console.log("choose study+tree (A)");
+            console.log('  chosenStudyID: '+ chosenStudyID);
+            console.log('  chosenTreeID: '+ chosenTreeID);
             showErrorMessage('Please choose a study and tree for comparison');
             return;
         }
