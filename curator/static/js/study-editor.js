@@ -2159,6 +2159,9 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
             if (textStatus !== 'success') {
                 if (jqXHR.status >= 500) {
                     // major server-side error, just show raw response for tech support
+                    console.log(">>ERROR fetching conflict report!")
+                    console.log(">>  status: "+ jqXHR.status);
+                    console.log(">>  statusText: "+ jqXHR.statusText);
                     var errMsg = 'Sorry, there was an error generating a conflict report. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
                     hideModalScreen();
                     showErrorMessage(errMsg);
