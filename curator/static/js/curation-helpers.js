@@ -1277,7 +1277,7 @@ function updateCollectionTrees ( collection ) {
          * Update its compact study reference, if changed
          * Update UI along the way...
          *    grey block = UNCHANGED
-         *    yellow block = RENAMED (either label or compact reference)
+         *    yellow block = MODIFIED (label, references, year, etc.)
          *    red block = REMOVED
          */
         // look for a matching tree in the study index
@@ -1361,22 +1361,44 @@ function updateCollectionTrees ( collection ) {
                                     return;
                             }
                             if (foundTree) {
-                                /* Still here? Compare the tree's current name and study
-                                 * reference to the version stored in this collection
+                                /* Still here? Compare the found study and tree's properties (name, study reference,
+                                 * compact reference, date) to the version stored in this collection.
                                  */
+                                // tree name (NB - modified to include compact reference!)
                                 var foundTreeName = $.trim(foundTree['@label']);
                                 var proposedName = $.trim(foundTreeName || decision.treeID) +' ('+ compactStudyRef +')';
-                                var treeLabelHasChanged = false;
-                                if (proposedName == decision.name) {
+                                var treeLabelHasChanged = (proposedName != decision['name']);
+                                // focal clade
+                                var proposedClade = foundStudy['ot:focalCladeOTTTaxonName'];
+                                var focalCladeHasChanged = (proposedClade != decision['ot:focalCladeOTTTaxonName']);
+                                // publication URL
+                                var proposedPubURL = foundStudy['ot:studyPublication'];
+                                var pubUrlHasChanged = (proposedPubURL != decision['ot:studyPublication']);
+                                // full study reference (text)
+                                var proposedFullRef = foundStudy['ot:studyPublicationReference'];
+                                var fullRefHasChanged = (proposedFullRef != decision['ot:studyPublicationReference']);
+                                // compact study reference (already generated above)
+                                var compactRefHasChanged = (compactStudyRef != decision['compactRefText']);
+                                // study year
+                                var proposedYear = foundStudy['ot:studyYear'];
+                                var studyYearHasChanged = (proposedYear != decision['ot:studyYear']);
+
+                                if (treeLabelHasChanged || focalCladeHasChanged || pubUrlHasChanged || fullRefHasChanged 
+                                    || compactRefHasChanged || studyYearHasChanged) {
+                                    treesChanged += 1;
+                                    // Update the existing collection record for this tree; mark it for review
+                                    decision['name'] = proposedName;
+                                    decision['ot:focalCladeOTTTaxonName'] = proposedClade;
+                                    decision['ot:studyPublication'] = proposedPubURL;
+                                    decision['ot:studyPublicationReferenc'] = proposedFullRef;
+                                    decision['compactRefText'] = compactStudyRef;
+                                    decision['ot:studyYear'] = proposedYear;
+                                    // Highlight this in the list, mark as MODIFIED
+                                    decision.status = 'MODIFIED';
+                                } else {
                                     treesUnchanged += 1;
                                     // UN-highlight this in the list, mark as UNCHANGED
                                     decision.status = 'UNCHANGED';
-                                } else {
-                                    // Update the existing collection record for this tree; mark it for review
-                                    treesChanged += 1;
-                                    decision.name = proposedName;
-                                    // Highlight this in the list, mark as RENAMED
-                                    decision.status = 'RENAMED';
                                 }
                                 /* TODO: Should we update the tree's SHA? Not currently available! */
                             }
@@ -1424,7 +1446,7 @@ function updateCollectionTrees ( collection ) {
                         if (treesChanged > 0) {
                             summaryMsg += (String(treesChanged) +' tree'+ (treesChanged == 1 ? '' : 's')
                                 +' (marked in yellow) ' + (treesChanged == 1 ? 'has' : 'have')
-                                +' been renamed. New names are usually an improvement and worth saving. ');
+                                +' been modified (changes to name, reference, year, clade). These changes are usually an improvement and worth saving. ');
                         }
                         summaryMsg += 'Remember to save this collection after your review, or cancel to ignore these changes.';
                         showErrorMessage(summaryMsg);
@@ -1895,8 +1917,7 @@ function addPendingCollectionChange( action, studyID, treeID ) {
             msg = ('Changed ranking of trees.');
             break;
         case 'UPDATE':
-            //msg = ('Tree names and status renamed in phylesystem.');
-            msg = ('Tree '+ treeID +' from study '+ studyID +' renamed in phylesystem.');
+            msg = ('Tree '+ treeID +' from study '+ studyID +' modified in phylesystem.');
             break;
         default:
             console.error('UNKNOWN collection change: '+ action);
@@ -2331,7 +2352,7 @@ function saveTreeCollection( collection ) {
     // remove explicit ranking values (rely on array order)
     stripTreeCollectionRanking( collection );
 
-    // remove any 'status' property markers (RENAMED, REMOVED, etc.)
+    // remove any 'status' property markers (MODIFIED, REMOVED, etc.)
     stripTreeCollectionStatusMarkers( collection );
 
     // push changes back to storage

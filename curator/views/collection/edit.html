@@ -516,7 +516,7 @@ body {
                   <tbody data-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
                     <tr data-bind="attr: { class: (userIsEditingCollection($parent) && $data['status'] == 'REMOVED') ?
                                                     'single-tree-row error' :
-                                                    (userIsEditingCollection($parent) && $data['status'] == 'RENAMED' ?
+                                                    (userIsEditingCollection($parent) && $data['status'] == 'MODIFIED' ?
                                                       'single-tree-row warning' :
                                                       'single-tree-row-'+ $data['status'] )
                                           },
@@ -572,9 +572,9 @@ body {
                         <div data-bind="visible: $data['status'] == 'REMOVED',
                                         css: viewModel.ticklers.TREES"
                              class="tree-status-marker text-error">REMOVED</div>
-                        <div data-bind="visible: $data['status'] == 'RENAMED',
+                        <div data-bind="visible: $data['status'] == 'MODIFIED',
                                         css: viewModel.ticklers.TREES"
-                             class="tree-status-marker text-warning">RENAMED</div>
+                             class="tree-status-marker text-warning">MODIFIED</div>
 
                         <!-- ko if: !userIsEditingCollection($parent) -->
                         <div data-bind="text: $data['rank']"

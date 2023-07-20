@@ -1193,7 +1193,7 @@ function scrubJsonForTransport( collection ) {
     // remove explicit ranking values (rely on array order)
     stripTreeCollectionRanking( collection );
 
-    // remove any 'status' property markers (RENAMED, REMOVED, etc.)
+    // remove any 'status' property markers (MODIFIED, REMOVED, etc.)
     stripTreeCollectionStatusMarkers( collection );
 
     // avoid empty or missing decision list

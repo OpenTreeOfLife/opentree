@@ -766,6 +766,11 @@ function loadSelectedStudy() {
              * simple integer tallies to show determine the next available ID in the
              * current study.
              *
+             * These IDs should *persist* in the saved study, to avoid problems with
+             * stale IDs being re-used in some cases. (This causes confusion with, e.g.,
+             * tree collections that include a now-missing tree4, but now we have a
+             * new, unrelated tree4 in its place.)
+             *
              * N.B. Unless otherwise specified with a 'prefix' property, the
              * key in each case is also the preferred prefix.
              */
@@ -2631,6 +2636,7 @@ function scrubNexsonForTransport( nexml ) {
      *   - remove "empty" elements if server doesn't expect them
      *   - clean up empty/unused OTU alt-labels
      *   - remove client-side MRCA test results
+     *   - ADD element-ID trackers, if not found
      */
     if (!nexml) {
         nexml = viewModel.nexml;
@@ -2699,6 +2705,27 @@ function scrubNexsonForTransport( nexml ) {
             }
         }
     });
+
+    // add (or update) our element-ID trackers to avoid re-using deleted IDs
+    if (!(['highestMintedElementIDs'] in nexml)) {
+        nexml['highestMintedElementIDs'] = {};
+    }
+    /* Record the highest ID found (or next available?) for each
+     * element type found in the live study. If the tracker already exists,
+     * weigh its currently stored number against whatever else we find.
+     */
+    for (var elementType in viewModel.elementTypes) {
+        var typeInfo = viewModel.elementTypes[ elementType ];
+        var typePrefix = typeInfo.prefix || elementType;
+        var highestIdInUse = findHighestElementOrdinalNumberInUse(
+            nexml,
+            typePrefix,
+            typeInfo.gatherAll
+        );
+        // is there a previously stored value for this type?
+        var oldStoredValue = (nexml['highestMintedElementIDs'][ elementType ]) || 0;
+        nexml['highestMintedElementIDs'][ elementType ] = Math.max( highestIdInUse, oldStoredValue);
+    }
 }
 
 function saveFormDataToStudyJSON() {
@@ -8099,6 +8126,9 @@ function getNextAvailableElementID( elementType, nexml ) {
 }
 function getNextElementOrdinalNumber( elementType, nexml ) {
     // increment and returns the next available ordinal number for this type
+    if (!nexml) {
+        nexml = viewModel.nexml;
+    }
     if (!(elementType in viewModel.elementTypes)) {
         console.error('getNextElementOrdinalNumber(): type "'+ elementType +'" not found!');
         return;
@@ -8106,17 +8136,25 @@ function getNextElementOrdinalNumber( elementType, nexml ) {
     var typeInfo = viewModel.elementTypes[elementType];
     var typePrefix = typeInfo.prefix || elementType;
     if (typeInfo.highestOrdinalNumber === null) {
-        typeInfo.highestOrdinalNumber = findHighestElementOrdinalNumber(
+        // first scan all elements in the current study
+        var highestIdInUse = findHighestElementOrdinalNumberInUse(
             nexml,
             typePrefix,
             typeInfo.gatherAll
         );
+        // have we previously stored a higher ID for this type?
+        var oldStoredValue = 0;
+        if (nexml['highestMintedElementIDs']) {
+            oldStoredValue = (nexml['highestMintedElementIDs'][elementType]) || 0;
+        }
+        // track the *highest* of these, to avoid accidental re-use of a deleted ID
+        typeInfo.highestOrdinalNumber = Math.max( highestIdInUse, oldStoredValue);
     }
-    // increment the highest ID for faster assignment next time
+    // increment the highest ID, since we're minting a new ID right now
     typeInfo.highestOrdinalNumber++;
     return typeInfo.highestOrdinalNumber;
 }
-function findHighestElementOrdinalNumber( nexml, prefix, gatherAllFunc ) {
+function findHighestElementOrdinalNumberInUse( nexml, prefix, gatherAllFunc ) {
     // Return the numeric component of the highest element ID matching
     // these specs, eg, 'node2336' => 2336
     if (!nexml) {
