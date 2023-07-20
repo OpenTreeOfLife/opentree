@@ -2142,6 +2142,9 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
         var chosenStudyID = $container.find('[name=study-lookup-id]').val();
         var chosenTreeID = $container.find('[name=tree-lookup] option:selected').val();
         if (!chosenStudyID || !chosenTreeID) {
+            console.log("choose study+tree (B)");
+            console.log('  chosenStudyID: '+ chosenStudyID);
+            console.log('  chosenTreeID: '+ chosenTreeID);
             showErrorMessage('Please choose a study and tree for comparison');
             return;
         }
@@ -2182,6 +2185,9 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
             if (textStatus !== 'success') {
                 if (jqXHR.status >= 500) {
                     // major server-side error, just show raw response for tech support
+                    console.log(">>ERROR fetching conflict report!")
+                    console.log(">>  status: "+ jqXHR.status);
+                    console.log(">>  statusText: "+ jqXHR.statusText);
                     var errMsg = 'Sorry, there was an error generating a conflict report. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
                     hideModalScreen();
                     showErrorMessage(errMsg);
@@ -2359,10 +2365,10 @@ function updateTreeConflictWidgets(conflictInfo) {
             var studyID = idParts[0];
             var treeID = idParts[1];
             console.log(">>> BEFORE setting it to STUDYID_TREEID: "
-              + $container.find('.treeview-reference-select').val());
+              + $container.find('.treeview-reference-select').val() );
             $container.find('.treeview-reference-select').val( 'STUDYID_TREEID' );
             console.log(">>> AFTER setting it to STUDYID_TREEID: "
-              + $container.find('.treeview-reference-select').val());
+              + $container.find('.treeview-reference-select').val() );
             // TODO: update the study+tree selectors
             // (for now, just show a sensible footer message)
             var studyURL = getViewURLFromStudyID(studyID);
@@ -2443,6 +2449,9 @@ function showConflictDetailsWithHistory(tree, referenceTreeID) {
         var chosenStudyID = $container.find('[name=study-lookup-id]').val();
         var chosenTreeID = $container.find('[name=tree-lookup] option:selected').val();
         if (!chosenStudyID || !chosenTreeID) {
+            console.log("choose study+tree (A)");
+            console.log('  chosenStudyID: '+ chosenStudyID);
+            console.log('  chosenTreeID: '+ chosenTreeID);
             showErrorMessage('Please choose a study and tree for comparison');
             return;
         }
