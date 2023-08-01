@@ -2355,7 +2355,7 @@ function updateTreeConflictWidgets(conflictInfo) {
     var referenceTreeID = conflictInfo.referenceTreeID;
     //$container.find('.treeview-reference-select option:selected').val();
 
-    var selectedTreeID = $container.find('.tree-lookup option:selected').val();
+    var selectedTreeID = $container.find('[name=tree-lookup] option:selected').val();
     if (!selectedTreeID) {
         // we need to populate the selection widgets to match!
         console.warn("TODO: update study and tree selection widgets!");
