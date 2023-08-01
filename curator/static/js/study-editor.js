@@ -2337,19 +2337,14 @@ function updateTreeConflictWidgets(conflictInfo) {
     var selectedTreeID = $container.find('[name=tree-lookup] option:selected').val();
     if (!selectedTreeID) {
         // we need to populate the selection widgets to match!
-        console.warn("TODO: update study and tree selection widgets!");
         if (referenceTreeID.indexOf('@') !== -1) {
             // it's a compound ID (study and tree IDs)!
             var idParts = referenceTreeID.split('@');
             var studyID = idParts[0];
             var treeID = idParts[1];
-            console.log(">>> BEFORE setting it to STUDYID_TREEID: "
-              + $container.find('.treeview-reference-select').val() );
-            $container.find('.treeview-reference-select').val( 'STUDYID_TREEID' );
-            console.log(">>> AFTER setting it to STUDYID_TREEID: "
-              + $container.find('.treeview-reference-select').val() );
-            // TODO: update the study+tree selectors
-            // (for now, just show a sensible footer message)
+            /* TODO: update the study+tree selectors to reflect incoming conflict URL?
+             * (for now, we just show a sensible footer message)
+             */
             var studyURL = getViewURLFromStudyID(studyID);
             studyURL += ("/?tab=home&tree=" + treeID);
             showErrorMessage('Showing conflict vs. <a target="_blank" href="'+ studyURL +'">reference tree '+ treeID +' from study '+ studyID +'</a>.');
@@ -2359,7 +2354,7 @@ function updateTreeConflictWidgets(conflictInfo) {
             $container.find('.treeview-reference-select').val( referenceTreeID );
         }
     } else {
-        console.warn("NO NEED to update study + tree selectors.");
+        console.log("NO NEED to update study + tree selectors.");
     }
 }
 
