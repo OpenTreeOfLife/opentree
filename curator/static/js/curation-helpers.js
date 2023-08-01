@@ -1067,7 +1067,7 @@ function searchForMatchingStudy() {
                 var pathParts = $link.attr('href').split('/');
                 var studyID = pathParts[ pathParts.length - 1 ];
                 // update hidden field
-                $('input[name=study-lookup-id]').val( studyID );
+                $container.find('input[name=study-lookup-id]').val( studyID );
                 // hide menu and reset search field
                 clearTimeout(studyLookupTimeoutID);
                 $lookupResults.html('');
