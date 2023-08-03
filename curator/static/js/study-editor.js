@@ -1843,7 +1843,9 @@ function updatePhylesystemLookupWidgets(chooser) {
     // what's the parent element for study+tree lookup UI?
     var $container = getPhylesystemLookupPanel( context );
     if (newValue == 'STUDYID_TREEID') {
-        // show study + tree lookup widgets (keep old values, if any)
+        // show study + tree lookup widgets, clearing old values for both
+        // TODO: Try to keep old tree+study values, if any
+        resetStudyLookup();
         $container.find('.lookup-widgets').show();
     } else {
         // hide 'em
