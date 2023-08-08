@@ -8828,14 +8828,17 @@ function getAssociatedTreeLabels( fileInfo ) {
 function lookUpDOI() {
     // try to find a match, based on existing metadata
     var referenceText = $.trim( $('#ot_studyPublicationReference').val() );
+    // toss in the current URL as well, in case this is the latest input
+    var urlText = $.trim( $('#ot_studyPublication').val() );
+    var combinedSearchText = referenceText +" "+ urlText;
     var lookupURL;
-    if (referenceText === '') {
+    if ($.trim(combinedSearchText) === '') {
         // try a generic search in a new window
         lookupURL = 'http://search.crossref.org/';
         window.open(lookupURL,'lookup');
     } else {
         // see if we get lucky..
-        lookupURL = '/curator/search_crossref_proxy?' + encodeURIComponent(referenceText).replace(/\(/g,'%28').replace(/\)/g,'%29');
+        lookupURL = '/curator/search_crossref_proxy?' + encodeURIComponent(combinedSearchText).replace(/\(/g,'%28').replace(/\)/g,'%29');
 
         // show potential matches in popup? or new frame?
         showModalScreen("Looking up DOI...", {SHOW_BUSY_BAR:true});
@@ -8846,7 +8849,7 @@ function lookUpDOI() {
             // crossdomain: true,
             // contentType: "application/json; charset=utf-8",
             url: lookupURL,
-            //data: {'q': referenceText},
+            //data: {'q': combinedSearchText},
             complete: function( jqXHR, textStatus ) {
                 hideModalScreen();
                 if (textStatus !== 'success') {
