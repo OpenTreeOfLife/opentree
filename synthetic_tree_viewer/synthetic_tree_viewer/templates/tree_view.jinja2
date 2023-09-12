@@ -1,8 +1,240 @@
 {% extends "layout.jinja2" %}
 
-{% block content %}
-<div class="content">
-  <h1><span class="font-semi-bold">Pyramid</span> <span class="smaller">Starter project</span></h1>
-  <p class="lead">Welcome to <span class="font-normal">{{project}}</span>, a&nbsp;Pyramid application generated&nbsp;by<br><span class="font-normal">Cookiecutter</span>.</p>
+<div id="argusDBContainer" /><!-- TODO: Remove this? -->
+
+{% block center %}
+<div class="container">
+
+    <div class="vizcontent">
+     <div id="viz-header" class="row">
+      <div class="span12">
+       <h1 id="main-title" class="pull-left" style="margin: 0;">
+           <span class="title">&nbsp;</span>
+       </h1>
+       <p id="tree-description" class="hidden-phone pull-right">Exploring the current synthetic tree</p>
+       <!-- if main title is long, this should disappear on narrow screens -->
+
+       <!--
+           <div id="links-to-local-comments" style="clear: both;">
+               <a href="#comment-header">Comments on this node</a>
+               |
+               <a href="#comment-header" onclick="$('.plugin_localcomments #r0 > a.reply, .plugin_localcomments a.login-logout').eq(0).click(); return true;">Add a comment</a>
+           </div>
+       -->
+      </div>
+     </div>
+
+     <!--<a id="provenance-show" href="#">Show properties</a>-->
+     <div id="viewer-collection" class="with-small-provenance"
+          style="overflow: visible;" >
+
+           <div id="argus-controls" style="position: absolute; top: -24px; width: 100%; line-height: 1em; text-align: center;">
+              <span class="comments-indicator"
+                    style="float: left; margin-left: 4px;">
+               <a class="badge" href="#"
+                  title="Show comments for this node"
+                  onclick="toggleCommentsPanel(); $(this).blur(); return false;">
+                   <span id="comment-count">0</span>
+                   <i class="icon-comment icon-white"></i>
+                   <span class="hidden-phone widget-prompt"> Show comments</span>
+               </a>
+              </span><!-- .comments-indicator -->
+
+              <span class="legend-widget">
+                  <a class="badge" onclick="toggleTreeViewLegend(); $(this).blur(); return false;">Legend</a>
+              </span>
+
+              <span class="zoom-widget">
+               <span class="badge"
+                   title="Magnify tree view"
+                   onclick="return false;"
+                   >
+                   <a href="#"
+                      onclick="(argus.getZoomInHandler())(); $(this).blur(); return false;" >
+                      <span class="hidden-phone widget-prompt">Zoom tree view &nbsp;</span>
+                      <i class="icon-plus icon-white" style="margin-right: 8px;" ></i>
+                   </a>
+                   <span style="color: #ccc;">|</span>
+                   <a href="#"
+                      onclick="(argus.getZoomOutHandler())(); $(this).blur(); return false;" >
+                       <i class="icon-minus icon-white" style="margin-left: 8px;" ></i>
+                   </a>
+               </span>
+              </span><!-- .zoom-widget -->
+
+               <a class="badge toggle-conflicts" href="#"
+                   style="display: none;"
+                   title="Toggle conflict information"
+                   onclick="f = argus.getToggleConflictsHandler(); if (f) f(); $(this).blur(); return false;"
+                   >
+                      Toggle conflicts
+               </a>
+
+              <span class="properties-indicator"
+                    style="float: right; margin-right: 4px;">
+               <a class="badge" href="#"
+                  title="Show properties for the current selection"
+                  onclick="togglePropertiesPanel(); $(this).blur(); return false;">
+                   <i class="icon-info-sign icon-white"></i>
+                   <span class="hidden-phone widget-prompt">Show properties </span>
+               </a>
+              </span><!-- .properties-indicator -->
+           </div>
+
+          <div id="comments-panel">
+           <div class="panel-edges">
+            <div class="panel-content">
+             <div class="panel-controls">
+                 <a id="comments-hide" href="#" title="Hide comments">&times;</a>
+             </div>
+             <div class="provenance-intro">Loading&hellip;</div>
+             <div class="provenance-title">&nbsp;</div>
+             <div>
+               {# initialize comments with a naive url-based query
+                # (this will probably be overwritten by tree-view data)
+                if feedbackParentWindowURL:
+                    filter = 'url'
+                    url = feedbackParentWindowURL
+                else:
+                    filter = 'skip_comments'
+                    url = request.url
+                pass
+               #}
+               {# plugin_localcomments(filter=filter,url=url) #}
+               <strong style="color: red;">TODO: local comments appear here!</strong>
+             </div>
+            </div>
+           </div>
+          </div>
+
+          <div id="argusCanvasContainer" class="viewer-frame"> &nbsp;</div>
+          <!-- TODO: Add other viewers here, and code to switch among them -->
+
+          <div id="provenance-panel">
+           <div class="panel-edges">
+            <div class="panel-content">
+             <div class="panel-controls">
+                 <a id="provenance-hide" href="#" title="Hide properties">&times;</a>
+             </div>
+             <div class="provenance-title">&nbsp;</div>
+             <div class="ordered-sections">&nbsp;</div>
+            </div>
+           </div>
+          </div>
+      </div>
+
+    </div><!-- end of .vizcontent -->
+  </div><!-- end of .container -->
+
+  <script type="text/javascript">
+    var syntheticTreeID = '{{draftTreeName}}';
+    var syntheticTreeDefaultStartingNodeID = '{{startingNodeID}}';
+        // TODO: Allow other choices via URL?
+    var viewer = '{{viewer}}';
+
+    // if inbound URL points to a particular location+view, record it here
+    var urlState = {
+     {% if 'forcedByURL' %}
+      {% if 'viewer' %} viewer: '{{viewer}}', {% endif %}
+      {% if 'domSource' %} domSource: '{{domSource}}', {% endif %}
+      {% if 'nodeID' %} nodeID: '{{nodeID}}', {% endif %}
+      {% if 'nodeName' %} nodeName: '{{nodeName}}', {% endif %}
+        forcedByURL: true
+     {% endif %}
+    };
+    // treeview.js will examine this to determine our starting view
+  </script>
+
+<script type="text/javascript" src="/opentree/static/js/treeview.js"></script>
+
+{% if viewer == 'feedback' %}
+  <script type="text/javascript">
+    // hide all but the feedback (comments) panel
+    //$('#comments-panel, #viewer-collection, .viewer-frame, #footer').addClass('isolated-feedback');
+    $('body').addClass('isolated-feedback');
+    $commentsPanel = $('#comments-panel');
+    $commentsPanel.siblings().hide();
+    $commentsPanel.parentsUntil('body').each(function() {
+        var $ancestor = $(this);
+        $ancestor.siblings().hide();
+    });
+    $commentsPanel.show();
+    loadLocalComments();
+  </script>
+{% endif %}
+
+<!-- hidden template for argus (tree-viewer) legend -->
+<div class="modal hide fade" id="tree-view-legend" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Tree view legend
+      </h3>
+    </div>
+    <div class="modal-body">
+      <div class="legend-pane">
+       <table>
+        <tr>
+         <td align="right">
+            Node size reflects number of descendants
+         </td>
+         <td>
+          <img src="{{ request.static_url('synthetic_tree_viewer:static/images/tree-view-node-sizes.png') }}" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            Nearest ancestors of current node
+         </td>
+         <td>
+          <img src="{{ request.static_url('synthetic_tree_viewer:static/images/tree-view-ancestors.png') }}" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            Hollow tips may have more descendants
+         </td>
+         <td>
+          <img src="{{ request.static_url('synthetic_tree_viewer:static/images/tree-view-tips.png') }}" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            Paths supported by phylogeny
+         </td>
+         <td>
+          <img src=" request.static_url('synthetic_tree_viewer:static/images/tree-view-solid-paths.png') }}" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            Paths supported only by taxonomy
+         </td>
+         <td>
+          <img src="{{ request.static_url('synthetic_tree_viewer:static/images/tree-view-dotted-paths.png') }}" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            Mouse-over hint (click to see node and edge properties)
+         </td>
+         <td>
+          <img src="{{ request.static_url('synthetic_tree_viewer:static/images/tree-view-node-info.png') }}" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            New target node (click to jump to it)
+         </td>
+         <td>
+          <img src="{{ request.static_url('synthetic_tree_viewer:static/images/tree-view-node-jump.png') }}" alt="outgroup style" />
+         </td>
+        </tr>
+       </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <a data-dismiss="modal" class="btn" >Close</a>
+    </div>
 </div>
-{% endblock content %}
+{% endblock center %}
