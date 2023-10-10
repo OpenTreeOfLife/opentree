@@ -579,7 +579,8 @@
 
 <!-- hidden spinner (move and display as needed), created with http://preloaders.net/en/circular -->
 <div id="spinner" style="display: none;">
-    <img src="/opentree/static/images/spinner.gif" />
+    <img src="{{ request.static_url('synthetic_tree_viewer:static/images/spinner.gif') }}" />
+    <link rel="shortcut icon" href="{{ request.static_url('synthetic_tree_viewer:static/favicon.ico') }}">
 </div>
 
 <!-- cookie consent for first-time visitors -->
