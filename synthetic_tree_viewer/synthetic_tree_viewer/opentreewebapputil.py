@@ -38,6 +38,11 @@ def get_conf(request):
             raise Exception(err_msg)
     return _CONF_OBJ_DICT.get(app_name)
 
+def get_conf_as_dict(request):
+    # convert config file to dict (for use in Jinja templates)
+    config = get_conf(request)
+    return {s:dict(config.items(s)) for s in config.sections()}
+
 def get_user_display_name():
     # TODO
     pass
