@@ -83,7 +83,6 @@ def tree_view(request):
         'domain_banner_hovertext': get_domain_banner_hovertext(request),
         })
 
-    #import pdb; pdb.set_trace()
 
     if request.params.get('parentWindowURL', None):
         plain_feedback_url = unquote_plus(request.params.get('parentWindowURL'))
@@ -92,7 +91,6 @@ def tree_view(request):
         view_dict['feedbackParentWindowURL'] = None
 
     # examine the path parts of the incoming URL to correctly target the view
-    ##import pdb; pdb.set_trace()
     if len(path_parts) > 0:
         if path_parts[0] in ['argus', 'feedback', 'properties']:  # TODO: add 'onezoom','phylet', others?
             view_dict['viewer'] = path_parts[0]
