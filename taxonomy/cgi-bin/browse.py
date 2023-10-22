@@ -469,15 +469,16 @@ local_stylesheet = """
 """
 
 if __name__ == '__main__':
-    #form = cgi.FieldStorage()
-    # TODO gather QUERY_STRING from environment variables passed by Apache
+    # force all output to Unicode
+    sys.stdout.reconfigure(encoding='utf-8')
     query_string = None
     try:
         query_string = os.environ['QUERY_STRING']
     except KeyError:
         print("WARNING! This script expects the QUERY_STRING environment variable via Apache CGI!")
+        query_string = "id=844192"
     if query_string:
-        form = urllib.parse.parse_qs(qs=query_string)
+        form = urllib.parse.parse_qsl(qs=query_string)
         id = name = limit = api_base = None
         if "id" in form: id = form["id"].value
         if "name" in form: name = form["name"].value
@@ -493,6 +494,6 @@ if __name__ == '__main__':
         output.write(local_stylesheet)
         end_el(output, 'head')
         start_el(output, 'body')
-        print(browse(id, name, limit, api_base).encode('utf-8'))
+        print(browse(id, name, limit, api_base))
         end_el(output, 'body')
         end_el(output, 'html')
