@@ -14,5 +14,5 @@ def includeme(config):
     config.add_route('contact', '/contact')
 
     # default synth-tree view (with catch-all path)
-    config.add_route('tree_view', '/{full_path:.*}')
+    config.add_route('tree_view', '/opentree/{full_path:.*}')
     config.add_route('home', '/')
