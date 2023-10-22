@@ -15,7 +15,7 @@
 # If this were to be written using peyotl, it might do something similar to the following:
 # from peyotl.api import APIWrapper
 # taxo = APIWrapper().taxomachine
-# print taxo.taxon(12345)
+# print(taxo.taxon(12345))
 
 default_api_base_url = 'https://api.opentreeoflife.org/'
 
@@ -26,8 +26,11 @@ dev_amendment_url_template =        'https://github.com/OpenTreeOfLife/amendment
 
 import os
 import sys
-import cgi, cgitb, StringIO
+import urllib
+from io import StringIO
+#from io import BytesIO  # TODO will we need this?
 
+import html
 import requests
 import json
 
@@ -40,7 +43,7 @@ headers = {
 
 def browse(id=None, name=None, limit=None, api_base=None):
     global _AMENDMENT_REPO_URL_TEMPLATE
-    output = StringIO.StringIO()
+    output = StringIO()
 
     if api_base == None:
         server_name = os.environ.get('SERVER_NAME')
@@ -91,7 +94,7 @@ def report_invalid_arg(output, info):
     end_el(output, 'h1')
     output.write('<p class="error">There was a problem with the name or ID provided:</p>\n')
     start_el(output, 'pre', 'error')
-    output.write(cgi.escape(json.dumps(info, sort_keys=True, indent=4)))
+    output.write(html.escape(json.dumps(info, sort_keys=True, indent=4)))
     end_el(output, 'pre')
 
 def browse_by_name(name, limit, api_base, output):
@@ -101,10 +104,10 @@ def browse_by_name(name, limit, api_base, output):
         return None
     matches = result[u'matches']
     if len(matches) == 0:
-        output.write('no TNRS matches for %s\n' % cgi.escape(name))
+        output.write('no TNRS matches for %s\n' % html.escape(name))
         return None
     elif len(matches) > 1:
-        output.write('Matches for %s: \n' % cgi.escape(name))
+        output.write('Matches for %s: \n' % html.escape(name))
         start_el(output, 'ul')
         for match in matches:
             taxon = match[u'taxon']
@@ -132,12 +135,12 @@ def look_up_name(name, api_base):
 
 def browse_by_id(id, limit, api_base, output):
     info = get_taxon_info(id, 'ott_id', api_base)
-    #print json.dumps(info, sort_keys=True, indent=4)
+    #print(json.dumps(info, sort_keys=True, indent=4))
     display_taxon_info(info, limit, output, api_base)
 
 def browse_by_qid(id, limit, api_base, output):
     info = get_taxon_info(id, 'source_id', api_base)
-    #print json.dumps(info, sort_keys=True, indent=4)
+    #print(json.dumps(info, sort_keys=True, indent=4))
     display_taxon_info(info, limit, output, api_base)
 
 def get_taxon_info(id, property, api_base):
@@ -151,8 +154,8 @@ def get_taxon_info(id, property, api_base):
         return error_report(response)
 
 def display_taxon_info(info, limit, output, api_base):
-    included_children_output = StringIO.StringIO()
-    suppressed_children_output = StringIO.StringIO()
+    included_children_output = StringIO()
+    suppressed_children_output = StringIO()
 
     # Search box
     output.write('<form action="browse"><p align="right"><input type="text" name="name" placeholder="name or id"/></p></form>')
@@ -174,7 +177,7 @@ def display_taxon_info(info, limit, output, api_base):
         display_basic_info(info, output)
         output.write(' (OTT id %s)' % id)
         synth_tree_url = "/opentree/argus/ottol@%s" % id
-        output.write('<br/><a target="_blank" href="%s">View this taxon in the current synthetic tree</a>' % cgi.escape(synth_tree_url))
+        output.write('<br/><a target="_blank" href="%s">View this taxon in the current synthetic tree</a>' % html.escape(synth_tree_url))
 
         end_el(output, 'p')
 
@@ -343,10 +346,10 @@ def source_link(source_id):
                     prefix = type_to_singular_prefix.get(id_parts[0])
                     node_id = parts[1]
                     formatted_id = '%s:%s' % (prefix, node_id)
-                    return '<a href="%s">%s</a>' % (cgi.escape(url), cgi.escape(formatted_id))
+                    return '<a href="%s">%s</a>' % (html.escape(url), html.escape(formatted_id))
 
     if url != None:
-        return '<a href="%s">%s</a>' % (cgi.escape(url), cgi.escape(source_id))
+        return '<a href="%s">%s</a>' % (html.escape(url), html.escape(source_id))
     else:
         return source_id
 
@@ -366,10 +369,10 @@ def link_to_taxon(id, text, limit=None):
         option = ''
     else:
         option = '&limit=%s' % limit
-    return '<a href="browse?id=%s%s">%s</a>' % (id, option, style_name(cgi.escape(text)))
+    return '<a href="browse?id=%s%s">%s</a>' % (id, option, style_name(html.escape(text)))
 
 def link_to_name(name):
-    name = cgi.escape(name)
+    name = html.escape(name)
     return '<a href="browse?name=%s">%s</a>' % (name, style_name(name))
 
 def style_name(ename):
@@ -466,22 +469,30 @@ local_stylesheet = """
 """
 
 if __name__ == '__main__':
-    form = cgi.FieldStorage()
-    id = name = limit = api_base = None
-    if "id" in form: id = form["id"].value
-    if "name" in form: name = form["name"].value
-    if "limit" in form: limit = form["limit"].value
-    if "api_base" in form: api_base = form["api_base"].value
-    # Content-type information is not helpful in our current setup?
-    sys.stdout.write('Content-type: text/html; charset=utf8\r\n')
-    sys.stdout.write('\r\n')
-    output = sys.stdout
-    start_el(output, 'html')
-    start_el(output, 'head', '')
-    output.write('<link rel="stylesheet" href="//opentreeoflife.github.io/css/main.css" />')
-    output.write(local_stylesheet)
-    end_el(output, 'head')
-    start_el(output, 'body')
-    print browse(id, name, limit, api_base).encode('utf-8')
-    end_el(output, 'body')
-    end_el(output, 'html')
+    #form = cgi.FieldStorage()
+    # TODO gather QUERY_STRING from environment variables passed by Apache
+    query_string = None
+    try:
+        query_string = os.environ['QUERY_STRING']
+    except KeyError:
+        print("WARNING! This script expects the QUERY_STRING environment variable via Apache CGI!")
+    if query_string:
+        form = urllib.parse.parse_qs(qs=query_string)
+        id = name = limit = api_base = None
+        if "id" in form: id = form["id"].value
+        if "name" in form: name = form["name"].value
+        if "limit" in form: limit = form["limit"].value
+        if "api_base" in form: api_base = form["api_base"].value
+        # Content-type information is not helpful in our current setup?
+        sys.stdout.write('Content-type: text/html; charset=utf8\r\n')
+        sys.stdout.write('\r\n')
+        output = sys.stdout
+        start_el(output, 'html')
+        start_el(output, 'head', '')
+        output.write('<link rel="stylesheet" href="//opentreeoflife.github.io/css/main.css" />')
+        output.write(local_stylesheet)
+        end_el(output, 'head')
+        start_el(output, 'body')
+        print(browse(id, name, limit, api_base).encode('utf-8'))
+        end_el(output, 'body')
+        end_el(output, 'html')
