@@ -476,7 +476,8 @@ if __name__ == '__main__':
         query_string = os.environ['QUERY_STRING']
     except KeyError:
         print("WARNING! This script expects the QUERY_STRING environment variable via Apache CGI!")
-        query_string = "id=844192"
+        # Enable this sample string to test with 'cellular organisms'
+        #query_string = "id=844192"
     if query_string:
         form = urllib.parse.parse_qsl(qs=query_string)
         id = name = limit = api_base = None
