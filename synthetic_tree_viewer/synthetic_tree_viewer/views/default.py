@@ -10,7 +10,7 @@ from synthetic_tree_viewer.opentreewebapputil import (
     latest_CrossRef_URL,
     fetch_current_TNRS_context_names,
     )
-from pyramid.httpexceptions import HTTPNotFound
+from pyramid.httpexceptions import HTTPNotFound, HTTPSeeOther
 
 def fetch_current_synthetic_tree_ids(request):
     # return the latest synthetic-tree ID (and its 'life' node ID)
@@ -35,6 +35,11 @@ def fetch_current_synthetic_tree_ids(request):
     except Exception as e:
         # throw 403 or 500 or just leave it
         return ('ERROR', str(e))
+
+@view_config(route_name='home')
+def home(request):
+    # redirect to default tree view
+    return HTTPSeeOther(location='/opentree/argus')
 
 
 @view_config(route_name='tree_view', renderer='synthetic_tree_viewer:templates/tree_view.jinja2')
