@@ -925,13 +925,14 @@ function showObjectProperties( objInfo, options ) {
             }
         });
     }
+    /* DISABLING PhyloPic features for now...
     if (objInfo['phyloPicStatus'] !== 'PENDING') {
         // fetch a PhyloPic image (just once!), then show it when it returns
         objInfo['phyloPicStatus'] = 'PENDING';
         $.getJSON(
             '/phylopic_proxy/api/a/name/search?callback=?',  // JSONP fetch URL
             {   // GET data
-                text: objName,
+                filter_name: objName,  // NB Must be normalized! (lower case, no diacritics)
                 options: 'icon illustrated' // uid? string?
             },
             function(data) {    // JSONP callback
@@ -948,6 +949,7 @@ function showObjectProperties( objInfo, options ) {
             }
         );
     }
+    */
 
     var sectionPos, sectionCount = orderedSections.length,
         aSection, dLabel, i, displayVal = '', moreInfo;

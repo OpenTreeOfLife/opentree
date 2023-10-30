@@ -1,5 +1,6 @@
 def includeme(config):
     config.add_static_view(name='static', path='synthetic_tree_viewer:static', cache_max_age=3600)
+
     # match all explicit URLs before the default tree view
     config.add_route('about', '/about')
     config.add_route('about_open_tree_of_life', '/about/open-tree-of-life')
@@ -12,6 +13,10 @@ def includeme(config):
     config.add_route('about_licenses', '/about/licenses')
 
     config.add_route('contact', '/contact')
+
+    # DISABLING PhyloPic features for now...
+    ## provide support for phylopic searches and image display via HTTPS
+    #config.add_route('phylopic_proxy', '/phylopic_proxy/{proxied_path:.*}')
 
     # default synth-tree view (with catch-all path)
     config.add_route('tree_view', '/opentree/{full_path:.*}')

@@ -36,6 +36,29 @@ def fetch_current_synthetic_tree_ids(request):
         # throw 403 or 500 or just leave it
         return ('ERROR', str(e))
 
+# Disablng PhyloPic features for now...
+#@view_config(route_name='phylopic_proxy')
+#def phylopic_proxy(request):
+#    # hit the PhyloPic API and fetch an SVG image (or URL?)
+#    import pdb; pdb.set_trace()
+#
+#    #node_id = request.matchdict['node_id']
+#    # examine the full path to customize this view
+#    proxied_path = request.matchdict['proxied_path']
+#    path_parts = proxied_path.split('/')
+#
+#    phylopic_url = proxied_path
+#    # prepend the real domain, using HTTP, and return the response
+#    phylopic_url = 'https://api.phylopic.org/%s' % proxied_path
+#    import requests
+#    try:
+#        return requests.get(url=phylopic_url, timeout=10).content
+#    except requests.exceptions.ReadTimeout as e:
+#        raise HTTP(503, 'The attempt to fetch an image from phylopic timed out')
+#    except:
+#        raise HTTP(503, 'The attempt to fetch an image from phylopic failed')
+#    return HTTPSeeOther(location='/opentree/argus')
+
 @view_config(route_name='home')
 def home(request):
     # redirect to default tree view
