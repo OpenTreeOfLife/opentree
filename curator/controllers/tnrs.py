@@ -6,7 +6,7 @@
 #########################################################################
 
 from applications.opentree.modules.opentreewebapputil import(
-    get_opentree_services_method_urls, 
+    get_opentree_api_endpoints, 
     fetch_current_TNRS_context_names,
     get_maintenance_info)
 
@@ -19,7 +19,7 @@ def index():
     """
 
     response.view = 'tnrs.html'
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
     #view_dict['message'] = "This would appear at bottom of page.."
     view_dict['maintenance_info'] = get_maintenance_info(request)
     view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
