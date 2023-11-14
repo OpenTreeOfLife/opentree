@@ -1,0 +1,189 @@
+{% extends "../layout.jinja2" %}
+
+{% block center %}
+{# import urllib #}
+{# from pprint import pprint #}
+<style type="text/css">
+-->
+
+<!--
+div.contributing-studies div.row {
+    margin: 1em 0;
+    border-bottom: 1px solid #eee;
+}
+div.contributing-studies div.reference,
+div.contributing-studies div.links {
+    margin-bottom: 1em;
+}
+div.contributing-studies div.reference {
+    margin-left: 0px;
+    line-height: 1.25em;
+    /* background-color: #ffeeee; */
+}
+div.contributing-studies div.reference a,
+div.contributing-studies div.reference em {
+    display: block;
+    margin-top: 0.25em;
+}
+div.contributing-studies div.links {
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    padding: 0.3em 0 0.25em;
+    font-size: 0.9em;
+    line-height: 1.2em;
+}
+div.contributing-studies div.links a {
+    display: block;
+    margin-bottom: 0.25em;
+    margin-left: 1em;
+}
+div.contributing-studies div.links .tree-links {
+    display: none;
+    margin-bottom: 0.25em;
+    margin-left: 2em;
+}
+div.contributing-studies div.links .tree-links a {
+    display: block;
+    margin-left: 0;
+}
+//-->
+</style>
+
+<div class="container">
+      <h1 id="main-title">Bibliographic references for the synthetic tree</h1>
+      <div class="row">
+          <div class="span12">
+              <p>The following studies (listed alphabetically by first author) have contributed to the current synthetic tree.</p>
+          </div>
+      </div>
+
+      <div class="row">
+          <div class="contributing-studies span10 offset1">
+              <!-- TODO: Relax the margin-top if we're on a narrow screen (stacked columns), to avoid overlap. -->
+
+              <!-- Hide sorting options until we have a programmatic source for priority order, and ways to show *tree* rank vs. study rank.
+              <div class="btn-group">
+                <button id="priority-sort-button" class="btn active" onclick="sortReferences(sortByPriority); return false;">&nbsp; Sort by priority in synthesis &nbsp;</button>
+                <button id="alpha-sort-button" class="btn" onclick="sortReferences(sortByPrimaryAuthor); return false;">&nbsp; Sort alphabetically &nbsp;</button>
+              </div>
+              -->
+
+             {% set priority = 1 %}
+             {% for study in contributing_studies: %}
+             <div class="row synthesis-priority-{{ "{0:0>6}".format(priority) }}">
+              <div class="span6 reference">
+                  {{ study.get('ot:studyPublicationReference') }}
+                  {% if study.get('ot:studyPublication'): %}
+                    <a target="_blank"
+                       href="{{ latest_CrossRef_URL(study.get('ot:studyPublication')) }}">{{ latest_CrossRef_URL(study.get('ot:studyPublication')) }}</a>
+                  {% else: %}
+                    <div style="color: #c33; background-color: #fdd; font-weight: bold; margin-top: 2px; padding: 1px 4px 3px;">
+                        <em>
+                            No link provided! Try 
+                          <a href="http://scholar.google.com/scholar?q={{ urllib.quote(study.get('ot:studyPublicationReference').encode('utf-8')) }}"
+                            target="_blank" style="margin-top: 0; display: inline;">
+                            Google Scholar</a> or 
+                          <a href="http://search.crossref.org/?q={{ urllib.quote(study.get('ot:studyPublicationReference').encode('utf-8')) }}"
+                            target="_blank" style=" margin-top: 0; display: inline;">
+                            CrossRef.org</a>
+                        </em> 
+                    </div>
+                  {% endif %}
+              </div>
+              <div class="span4 links">
+                  <a target="_blank" href="{{ URL(a='curator', c='study', f='view', args=[ study.get('ot:studyId') ]) }}"
+                    >Open study in curator application</a>
+                  <a href="#" onclick="toggleTreeLinks(this); return false;"
+                      ><span>Show links to included trees</span> ({{ len(study['tree_ids']) }})</a>
+                  <div class="tree-links">
+                     {% for tree_id in study['tree_ids']: %}
+                     <a target="_blank" href="{{ URL(a='curator', c='study', f='view', args=[ study.get('ot:studyId') ], vars={'tab':'trees', 'tree': tree_id }) }}"
+                        title="Click to see this tree in the curation app">{{ tree_id }}</a>
+                     {% endfor %}
+                  </div>
+                  <a target="_blank" 
+                    href="{{ URL(a='default', c='default', f='argus', args=['ottol@{}/{}'.format( study.get('ot:focalClade'), study.get('ot:focalCladeOTTTaxonName') ) ] ) }}"
+                    >Browse focal clade in synthetic tree</a>
+                <a target="_blank" href="{{ API_load_study_GET_url.replace('{STUDY_ID}', study.get('ot:studyId')) }}"
+                    >Download current NexSON</a>
+                  {% if study.get('commit_SHA_in_synthesis', None): %}
+                  <a target="_blank" href="{{ API_load_study_GET_url.replace('{STUDY_ID}', study.get('ot:studyId')) }}?starting_commit_SHA={{ study.get('commit_SHA_in_synthesis') }}"
+                    >Download version used in synthesis</a>
+                  {% endif %}
+                <!--
+                  <a target="_blank" href="http://www.reelab.net/phylografter/study/view/{{ study.get('ot:studyId')}}">Open in phylografter</a>
+                  -->
+                 {% if study.get('friendlyDepositMessage', None): %}
+                  {{ XML(study.get('friendlyDepositMessage')) }}
+                 {% elif study.get('ot:dataDeposit', None): %}
+                  <a target="_blank"
+                     href="{{ latest_CrossRef_URL(study.get('ot:dataDeposit')) }}">Data deposit DOI/URL</a>
+                 {% endif %}
+              </div>
+             </div>
+                {% set priority = priority + 1 %}
+             {% endfor %}
+          </div>
+
+      </div>
+
+      <h3 id="comment-header">Comments <i></i></h3>
+      {# plugin_localcomments(filter='url',url=request.url) #}
+
+</div><!-- end of .container -->
+
+<script type="text/javascript">
+    function sortByPriority(a, b) {
+        // Assumes DOM elements with numerically sortable classnames, eg
+        //  class="row synthesis-priority-00001"
+        //  class="row synthesis-priority-00234"
+        //  ...
+        var aOrderedClass = $(a).attr('class');
+        var bOrderedClass = $(b).attr('class');
+        if (aOrderedClass > bOrderedClass) {
+            return 1;
+        } else if (aOrderedClass < bOrderedClass) {
+            return -1;
+        } 
+        return 0;
+    }
+    function sortByPrimaryAuthor(a, b) {
+        // Assumes reference text with lead author's surname as first word
+        var aRefText = $.trim( $(a).find('.reference').text() );
+        var bRefText = $.trim( $(b).find('.reference').text() );
+        if (aRefText > bRefText) {
+            return 1;
+        } else if (aRefText < bRefText) {
+            return -1;
+        } 
+        return 0;
+    }
+    function sortReferences( sortFunction ) {
+        if (sortFunction === sortByPrimaryAuthor) {
+            $('#priority-sort-button').removeClass('active');
+            $('#alpha-sort-button').addClass('active');
+        } else {
+            $('#alpha-sort-button').removeClass('active');
+            $('#priority-sort-button').addClass('active');
+        }
+        var $refContainer = $('.contributing-studies');
+        var $refs = $refContainer.children('.row');
+        var sortedRefs = $refs.get().sort( sortFunction );
+        $.each(sortedRefs, function(pos, ref) {
+            $refContainer.append(ref);
+        });
+    }
+    function toggleTreeLinks( clicked ) {
+        var $clicked = $(clicked);
+        var $prompt = $(clicked).find('span');
+        var $treeLinks = $clicked.next('.tree-links');
+        if ($treeLinks.is(':visible')) {
+            $treeLinks.hide();
+            $prompt.text("Show links to included trees");
+        } else {
+            $treeLinks.show();
+            $prompt.text("Hide links to included trees");
+        }
+    }
+</script>
+{% endblock center %}

@@ -1,0 +1,45 @@
+{{extend 'layout.html'}}
+
+<div class="container">
+      <h1 id="main-title">Developer resources</h1>
+
+      <div class="row">
+          <div class="span10 offset1">
+
+            <p>Search all open tree of life sites
+                <script>
+                (function() {
+                  var cx = '008969357630728117148:1adkfaq9u3i';
+                  var gcse = document.createElement('script'); gcse.type = 'text/javascript';
+                  gcse.async = true;
+                  gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+                      '//www.google.com/cse/cse.js?cx=' + cx;
+                  var s = document.getElementsByTagName('script')[0];
+                  s.parentNode.insertBefore(gcse, s);
+                })();
+                </script>
+                <gcse:search></gcse:search>
+            </p>
+
+            <h4>Links to various resources</h4>
+            <ul>
+                <li><a href="http://files.opentreeoflife.org/ott/">OTT - Open Tree reference taxonomy</a></li>
+                <li><a href="http://files.opentreeoflife.org/trees">newicks of the synthetic tree</a></li>
+                <li><a href="https://github.com/OpenTreeOfLife/">OpenTreeOfLife GitHub organization</a></li>
+                <li><a href="https://github.com/OpenTreeOfLife/phylesystem">NexSON data store</a></li>
+                <li><a href="http://purl.org/opentree/nexson">NexSON documentation</a></li>
+                <li><a href="https://trello.com/board/software/4fb665cce706648863c3cc90">trello board for software development</a></li>
+                <li><a href="http://opentree.wikispaces.com/Grant+Proposal">original grant proposal</a>
+            </ul>
+
+          </div>
+      </div>
+
+      <h3 id="comment-header">Comments <i></i></h3>
+      {{=plugin_localcomments(filter='url',url=request.url)}}
+
+</div><!-- end of .container -->
+
+<script type="text/javascript">
+    // add any page-specific behavior here
+</script>
