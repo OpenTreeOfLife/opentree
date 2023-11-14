@@ -146,6 +146,8 @@ if ( History && History.enabled ) {
             goToTab( currentTab );
             switch(slugify(currentTab)) {
                 case 'home':
+                    // enable study+tree lookup in tree-viewer popup
+                    loadStudyListForLookup();
                     activeFilter = viewModel.listFilters.TREES;
                     filterDefaults = listFilterDefaults.TREES;
                     break;
@@ -158,6 +160,12 @@ if ( History && History.enabled ) {
                 case 'otu-mapping':
                     activeFilter = viewModel.listFilters.OTUS;
                     filterDefaults = listFilterDefaults.OTUS;
+                    break;
+
+                case 'analyses':
+                    // enable study+tree lookup in Analyses tab
+                    loadStudyListForLookup();
+                    console.log('LOADING STUDY LIST...');
                     break;
             }
             if (activeFilter) {
@@ -184,6 +192,13 @@ if ( History && History.enabled ) {
                 }
                 // omit conflict spinner when handling inbound URLs; it conflicts with others
                 if (conflictReferenceTree) {
+                    // bare-bones conflict metadata
+                    var minimalConflictInfo = {
+                        inputTreeID: currentTree,
+                        referenceTreeID: conflictReferenceTree,
+                        referenceTreeName: conflictReferenceTree
+                    }
+                    updateTreeConflictWidgets( minimalConflictInfo );
                     fetchAndShowTreeConflictDetails(currentTree, conflictReferenceTree, {SHOW_SPINNER: false});
                 } else {
                     hideTreeConflictDetails(currentTree, {SHOW_SPINNER: false});
@@ -1822,6 +1837,23 @@ function getBranchLengthToggleStyle(tree) {
     return {'color': '#999999'};
 }
 
+function updatePhylesystemLookupWidgets(chooser) {
+    var newValue = $(chooser).val();
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+    if (newValue == 'STUDYID_TREEID') {
+        // show study + tree lookup widgets, clearing old values for both
+        // TODO: Try to keep old tree+study values, if any
+        resetStudyLookup();
+        $container.find('.lookup-widgets').show();
+    } else {
+        // hide 'em
+        $container.find('.lookup-widgets').hide();
+    }
+    updateTreeViewerHeight({'MAINTAIN_SCROLL': true});
+}
+
 /* Support conflict display in the tree viewer */
 function getTreeConflictSummary(conflictInfo) {
     // Expects a JS object from conflict service; returns an object with
@@ -2080,6 +2112,26 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
         return;
     }
     var fullInputTreeID = (studyID +"%23"+ inputTreeID);
+
+    var comparingToPhylesystemTree = (referenceTreeID == 'STUDYID_TREEID');
+    if (comparingToPhylesystemTree) {
+        // build and parse from study and tree selector widgets
+        var context = getPhylesystemLookupContext();
+        // what's the parent element for study+tree lookup UI?
+        var $container = getPhylesystemLookupPanel( context );
+        // replace reference tree ID with found study AND tree ids
+        var chosenStudyID = $container.find('[name=study-lookup-id]').val();
+        var chosenTreeID = $container.find('[name=tree-lookup] option:selected').val();
+        if (!chosenStudyID || !chosenTreeID) {
+            console.log("choose study+tree (B)");
+            console.log('  chosenStudyID: '+ chosenStudyID);
+            console.log('  chosenTreeID: '+ chosenTreeID);
+            showErrorMessage('Please choose a study and tree for comparison');
+            return;
+        }
+        referenceTreeID = (chosenStudyID +'@'+ chosenTreeID);
+    }
+
     var referenceTreeName;
     switch(referenceTreeID) {
         // these are the only ids allowed for now
@@ -2090,9 +2142,9 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
             referenceTreeName = 'Synthetic Tree of Life';
             break;
         default:
-            hideModalScreen()
-            console.error('fetchTreeConflictStatus(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
-            return;
+            referenceTreeName = referenceTreeID;  // echo studyID#treeID here
+            referenceTreeID = referenceTreeID.replace( /@|%40/g , '%23' );  // encode '@' as '#' for the API
+            break;
     }
     var conflictURL = treeConflictStatus_url
         .replace(/&amp;/g, '&')  // restore all naked ampersands (for query-string args)
@@ -2114,6 +2166,9 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
             if (textStatus !== 'success') {
                 if (jqXHR.status >= 500) {
                     // major server-side error, just show raw response for tech support
+                    console.log(">>ERROR fetching conflict report!")
+                    console.log(">>  status: "+ jqXHR.status);
+                    console.log(">>  statusText: "+ jqXHR.statusText);
                     var errMsg = 'Sorry, there was an error generating a conflict report. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
                     hideModalScreen();
                     showErrorMessage(errMsg);
@@ -2152,6 +2207,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
                 return;
             }
             callback(conflictInfo);
+            updateTreeConflictWidgets(conflictInfo);
             hideModalScreen();
         }
     });
@@ -2170,6 +2226,9 @@ function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
     );
 }
 function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID, options) {
+    /* NB - This is typically (always?) called from an onclick handler, so
+     * arguments are probably wrong/missing. (This is handled downstream.)
+     */
     if (!options) options = {SHOW_SPINNER: true};
     /* TODO: Reconsider this, if we can do it quickly and maintain SELECT value
     if (treeViewerIsInUse) {
@@ -2192,6 +2251,9 @@ function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID, options) 
             if (options.SHOW_SPINNER) {
                 hideModalScreen();
             }
+
+            // refresh UI (study + tree selectors) if we just opened this page
+            updateTreeConflictWidgets( conflictInfo );
         },
         false  // don't reuse a cached response
     );
@@ -2203,7 +2265,10 @@ function showTreeConflictDetailsFromPopup(tree) {
         console.warn("showTreeConflictDetailsFromPopup(): No tree specified!");
         return;
     }
-    var newReferenceTreeID = $('#treeview-reference-select').val();
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+    var newReferenceTreeID = $container.find('.treeview-reference-select option:selected').val();
     if (!newReferenceTreeID) {
         hideTreeConflictDetails( tree );
     } else {
@@ -2257,9 +2322,41 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
     }
 
     if (treeViewerIsInUse) {
-        // update the reference-tree selector
-        $('#treeview-reference-select').val(tree.conflictDetails.referenceTreeID);
+        updateTreeConflictWidgets(tree.conflictDetails);
         $('#treeview-clear-conflict').show();
+    }
+}
+
+function updateTreeConflictWidgets(conflictInfo) {
+    // this should work even for incoming URLs, esp. for conflict with a published tree
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+
+    var referenceTreeID = conflictInfo.referenceTreeID;
+    //$container.find('.treeview-reference-select option:selected').val();
+
+    var selectedTreeID = $container.find('[name=tree-lookup] option:selected').val();
+    if (!selectedTreeID) {
+        // we need to populate the selection widgets to match!
+        if (referenceTreeID.indexOf('@') !== -1) {
+            // it's a compound ID (study and tree IDs)!
+            var idParts = referenceTreeID.split('@');
+            var studyID = idParts[0];
+            var treeID = idParts[1];
+            /* TODO: update the study+tree selectors to reflect incoming conflict URL?
+             * (for now, we just show a sensible footer message)
+             */
+            var studyURL = getViewURLFromStudyID(studyID);
+            studyURL += ("/?tab=home&tree=" + treeID);
+            showErrorMessage('Showing conflict vs. <a target="_blank" href="'+ studyURL +'">reference tree '+ treeID +' from study '+ studyID +'</a>.');
+            //$container.find('.treeview-reference-select').val( 'STUDYID_TREEID' );
+        } else {
+            // a simpler update to the reference-tree selector
+            $container.find('.treeview-reference-select').val( referenceTreeID );
+        }
+    } else {
+        console.log("NO NEED to update study + tree selectors.");
     }
 }
 
@@ -2300,20 +2397,41 @@ function removeConflictInfoFromTree( treeOrID ) {
         delete node.conflictDetails;
     });
     if (treeViewerIsInUse) {
+        var context = getPhylesystemLookupContext();
+        // what's the parent element for study+tree lookup UI?
+        var $container = getPhylesystemLookupPanel( context );
         // update the reference-tree selector
-        $('#treeview-reference-select').val('');
+        $container.find('.treeview-reference-select').val('');
+        // TODO: clear study+tree selectors
         $('#treeview-clear-conflict').hide();
     }
 }
 
 function showConflictDetailsWithHistory(tree, referenceTreeID) {
     // triggered from tree-view popup UI, works via History
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
     if (typeof referenceTreeID !== 'string') {
-        referenceTreeID = $('#treeview-reference-select').val();
+        referenceTreeID = $container.find('.treeview-reference-select').val();
     }
     if (!referenceTreeID) {
         showErrorMessage('Please choose a target (reference) tree for comparison');
         return;
+    }
+    var comparingToPhylesystemTree = (referenceTreeID == 'STUDYID_TREEID');
+    if (comparingToPhylesystemTree) {
+        // replace reference tree ID with found study AND tree ids
+        var chosenStudyID = $container.find('[name=study-lookup-id]').val();
+        var chosenTreeID = $container.find('[name=tree-lookup] option:selected').val();
+        if (!chosenStudyID || !chosenTreeID) {
+            console.log("choose study+tree (A)");
+            console.log('  chosenStudyID: '+ chosenStudyID);
+            console.log('  chosenTreeID: '+ chosenTreeID);
+            showErrorMessage('Please choose a study and tree for comparison');
+            return;
+        }
+        referenceTreeID = encodeURIComponent(chosenStudyID +'@'+ chosenTreeID);
     }
     if (studyHasUnsavedChanges) {
         showInfoMessage('REMINDER: Conflict analysis uses the last-saved version of this study!');
@@ -4290,7 +4408,6 @@ function showTreeViewer( tree, options ) {
     });
 
     // enable collection search (in tree-viewer popup)
-    console.warn('BINDING COLLECTION SEARCH');
     $('input[name=collection-search]').unbind('keyup change')
                                       .bind('keyup change', setCollectionSearchFuse )
                                       .unbind('keydown')  // block errant form submission
@@ -4394,6 +4511,7 @@ function showTreeViewer( tree, options ) {
         }
 
         ///hideModalScreen();
+        bindStudyAndTreeLookups();
     }
 
     var $treeViewerTabs = $('#tree-viewer .modal-header a[data-toggle="tab"]');
@@ -7592,14 +7710,30 @@ function getNodeConflictDescription(tree, node) {
                         */
                         witnessURL = "/opentree/argus/@{NODE_ID}".replace('{NODE_ID}', witnessID);
                     } else {
-                        // it's a numeric OTT taxon ID (e.g. '1234')
+                        // it's an (legacy?) numeric OTT taxon ID (e.g. '1234')
                         witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', witnessID);
                     }
-                    break;
 
                 default:
-                    console.error('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
-                    return;
+                    /* The reference tree is presumably a curated tree in a
+                     * published study, e.g. 'pg_2866%23tree6656' or
+                     * 'pg_2866#tree6656'. We should build our typical URL to
+                     * point directly to a node in the curation app's tree
+                     * viewer.
+                     */
+                    // split the referenceTreeID into study and tree IDs, or complain if we can't
+                    var possibleDelimiters = /#|@|%23/s ;  // regex tests for all possible delimiters
+                    var studyAndTreeIDs = (tree.conflictDetails.referenceTreeID).split( possibleDelimiters );
+                    if (studyAndTreeIDs.length < 2) {
+                        console.error(">> Unable to find study and tree IDs in witnessID: '"+ witnessID +"'");
+                    } else {
+                        var witnessStudyID = studyAndTreeIDs[0];
+                        var witnessTreeID = studyAndTreeIDs[1];
+                        witnessURL = getViewURLFromStudyID( witnessStudyID )
+                            +"?tab=home&tree="+ witnessTreeID
+                            +"&node="+ witnessID;
+                    }
+                    break;
             }
 
             witnessHTML += '<a href="'+ witnessURL +'" target="_blank">'+ (witnessName || witnessID) +'</a>';
@@ -7621,7 +7755,7 @@ function getNodeConflictDescription(tree, node) {
                 witnessHTML = "anonymous synth node";
                 break;
             default:
-                console.error('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
+                witnessHTML = "anonymous source-tree node";
                 return;
         }
     }
