@@ -374,6 +374,20 @@ body {
                </div>
               </div>
 
+               <!-- ko if: studyContainsScriptManagedTrees() -->
+                <div class="empty-list-prompt">
+                    This study contains 
+                    <a target="_blank"
+                       href="https://github.com/OpenTreeOfLife/script-managed-trees/blob/master/README.md">script-managed trees</a> 
+                    that are too large to store in phylesystem.
+                    These cannot be managed in the curation web app, nor can
+                    this study's OTUs, but you can edit the study's metadata
+                    and see its revision history.
+                </div>
+
+               <!-- /ko -->
+
+               <!-- ko if: ! studyContainsScriptManagedTrees() -->
                 <div class="empty-list-prompt" data-bind="visible: viewModel.filteredTrees().pagedItems().length === 0">
                     No matching trees found! Add new trees or clear the
                     filter above to see trees in this study.
@@ -525,6 +539,7 @@ body {
                     </li>
                   </ul>
                 </div>
+               <!-- /ko -->
 
             </div>
 
@@ -1702,11 +1717,11 @@ body {
           <div class="tab-pane" id="Analyses">
            <div class="span8"><!-- main column... -->
 
-             <form class="form-inline">
+             <form id="analyses-tree-chooser" class="form-inline">
                  <label>Analyze tree</label>
                  <select id="tree-select"
                          onchange="(this); return false;"
-                         data-bind="options: viewModel.elementTypes.tree.gatherAll(viewModel.nexml),
+                         data-bind="options: viewModel.elementTypes.tree.gatherAll(viewModel.nexml, {INCLUDE_SCRIPT_MANAGED_TREES: false}),
                                     optionsValue: '@id',
                                     optionsText: '@label',
                                     optionsCaption: 'Choose a tree from this study...',
@@ -1714,17 +1729,72 @@ body {
                  </select>
 
                  <label>against target</label>
-                 <select id="reference-select">
+                 <select id="reference-select"
+                         onchange="updatePhylesystemLookupWidgets(this);">
                      <option value="">Choose a target...</option>
                      <option value="synth">Synthetic Tree of Life</option>
                      <option value="ott">Open Tree Taxonomy</option>
+                     <option value="STUDYID_TREEID">Source tree from a published study</option>
                  </select>
-                 <button class="btn btn-info" data-bind="click: fetchAndShowTreeConflictSummary">GO!</button>
+                 <button id="simple-conflict-button" class="btn btn-info form-action"
+                         data-bind="click: fetchAndShowTreeConflictSummary">GO!</button>
+
+                 <!-- Optional widgets to choose a study+tree from phylesystem -->
+                 <div class="lookup-widgets"
+                      style="display: none; text-align: right; padding-top: 8px;">
+                    <div class="Xdropup" style="position: relative; margin-left: 274px; text-align: left;">
+                        <ul id="study-lookup-results" class="dropdown-menu" role="menu"
+                            style="top: 24px; left: 45px;">
+                            ...
+                        </ul>
+                    </div>
+                    <label style="display: inline-block;">Choose a study &nbsp;</label>
+                    <!-- "active" wiget for study lookup -->
+                    <i class="icon-search study-lookup-active" style="position: absolute; margin: 8px 0 0 7px; pointer-events: none;"></i>
+                    <input type="text" name="study-lookup"
+                        autocomplete="off"
+                        class="input-xlarge study-lookup-active" style="margin-bottom: 2px; padding-left: 25px;"
+                        placeholder="Enter its title, DOI, reference, tag, ID..."
+                        data-bind="value: '',
+                                   valueUpdate: ['afterkeydown', 'input'],
+                                   event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
+                                   "
+                    ></input>
+                    <!-- hidden field to store chosen ID -->
+                    <input type="hidden" name="study-lookup-id"
+                           data-bind="value: '',
+                                      event: { change: updateTreeLookupUI }
+                                     "></input>
+                    <!-- "passive" wiget once study is chosen -->
+                    <a class="btn btn-small study-lookup-passive" style="display: none; margin: 3px 0 3px;"
+                       onclick="resetStudyLookup(); return false;">
+                        <i class="icon-search"></i>
+                    </a>
+                    <a class="study-lookup-indicator study-lookup-passive"
+                       style="font-weight: bold; display: none;"
+                       title="" href="" target="_blank">...</a>
+
+                    <label style="padding-left: 1em; display: inline-block;">&nbsp; and one of its trees &nbsp;</label>
+                    <select name="tree-lookup"
+                        class="input-xlarge" style="margin-bottom: 2px;"
+                        disabled="disabled"
+                        placeholder="Enter its name, ID, ingroup clade..."
+                        data-bind="value: '',
+                                   valueUpdate: ['afterkeydown', 'input'],
+                                   event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
+                                   "
+                    >
+                        <option disabled="disabled" value="">Choose a study first</option>
+                    </select>
+                 </div>
+
              </form>
 
-            <div id="analysis-results">
-              <em>Analysis results will appear here...</em>
-            </div>
+             <div id="analysis-results">
+               <em>Analysis results will appear here...</em>
+             </div>
+
+            <!-- /ko -->
 
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
@@ -3105,6 +3175,7 @@ cat, Felis catus, 563166"
     </div>
     <div class="modal-footer">
       <div id="tree-phylogram-options" class="pull-left form-inline" style="display: none;">
+        <div style="display: inline-block; vertical-align: top;">
           <!-- N.B. data bindings mimic toggleRadialTreeLayoutInViewer() -->
           <label class="checkbox" style="margin-left: 25px;" for="branch-length-toggle"
                  data-bind="attr: getBranchLengthToggleAttributes($data),
@@ -3121,11 +3192,66 @@ cat, Felis catus, 563166"
           </label>
 
           <label style="margin-left: 25px; position: relative; top: 1px;">Show conflict versus</label>
-          <select id="treeview-reference-select" data-bind="value: $data.conflictDetails ? $data.conflictDetails.referenceTreeID : ''">
+          <select class="treeview-reference-select"
+                  data-bind="value: $data.conflictDetails ? $data.conflictDetails.referenceTreeID : ''"
+                  onchange="updatePhylesystemLookupWidgets(this);">
               <option value="">Choose a target...</option>
               <option value="synth">Synthetic Tree of Life</option>
               <option value="ott">Open Tree Taxonomy</option>
+              <option value="STUDYID_TREEID">Source tree from a published study</option>
           </select>
+
+          <!-- Optional widgets to choose a study+tree from phylesystem -->
+          <div class="lookup-widgets"
+               style="display: none; text-align: right; padding-top: 8px;">
+             <div class="dropup" style="position: relative; margin-left: 110px; text-align: left;">
+                <ul id="study-lookup-results" class="dropdown-menu" role="menu"
+                    style="margin-top: 28px; Xmargin-left: 164px;">
+                    ...
+                </ul>
+             </div>
+             <label style="display: inline-block;">Choose a study &nbsp;</label>
+             <!-- "active" wiget for study lookup -->
+             <i class="icon-search study-lookup-active" style="position: absolute; margin: 8px 0 0 7px; pointer-events: none;"></i>
+             <input type="text" name="study-lookup"
+                 autocomplete="off"
+                 class="input-xlarge study-lookup-active" style="margin-bottom: 2px; padding-left: 25px;"
+                 placeholder="Enter its title, DOI, reference, tag, ID..."
+                 data-bind="value: '',
+                            valueUpdate: ['afterkeydown', 'input'],
+                            event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
+                            "
+             ></input>
+             <!-- hidden field to store chosen ID -->
+             <input type="hidden" name="study-lookup-id"
+                    data-bind="value: '',
+                               event: { change: updateTreeLookupUI }
+                              "></input>
+             <!-- "passive" wiget once study is chosen -->
+             <a class="btn btn-small study-lookup-passive" style="display: none; margin: 3px 0 3px;"
+                onclick="resetStudyLookup(); return false;">
+                 <i class="icon-search"></i>
+             </a>
+             <a class="study-lookup-indicator study-lookup-passive"
+                style="font-weight: bold; display: none;"
+                title="" href="" target="_blank">...</a>
+ 
+             <label style="padding-left: 1em; display: inline-block;">&nbsp; and one of its trees &nbsp;</label>
+             <select name="tree-lookup"
+                 class="input-xlarge" style="margin-bottom: 2px;"
+                 disabled="disabled"
+                 placeholder="Enter its name, ID, ingroup clade..."
+                 data-bind="value: '',
+                            valueUpdate: ['afterkeydown', 'input'],
+                            event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
+                            "
+             >
+                 <option disabled="disabled" value="">Choose a study first</option>
+             </select>
+          </div>
+
+        </div>
+
           <button id="treeview-fetch-conflict" class="btn btn-info" data-bind="click: showConflictDetailsWithHistory">GO!</button>
           <button id="treeview-clear-conflict" class="btn" data-bind="click: hideConflictDetailsWithHistory">Hide conflict</button>
       </div>

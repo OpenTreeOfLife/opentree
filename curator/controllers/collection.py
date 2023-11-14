@@ -108,6 +108,17 @@ def load():
 def store():
     return dict(message="collection/store")
 
+def synthesis_dashboard():
+    """
+    Allow any visitor to view (read-only!) a queue of recent custom-synthesis runs
+    """
+    response.view = 'collection/synthesis_dashboard.html'
+    view_dict = get_opentree_services_method_urls(request)
+    view_dict['maintenance_info'] = get_maintenance_info(request)
+    view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
+    view_dict['userCanEdit'] = auth.is_logged_in() and True or False
+    return view_dict
+
 """ TODO: Adapt this for current collection status, based on new APIs """
 def _get_latest_synthesis_details_for_collection_id( collection_id ):
     # Fetch the last SHA for this collection that was used in the latest
@@ -137,15 +148,6 @@ def _get_latest_synthesis_details_for_collection_id( collection_id ):
         # Draft code is based on schema proposed in
         # https://github.com/OpenTreeOfLife/phylesystem-api/issues/228
 
-        # fetch the full source list, then look for this study and its trees
-        commit_SHA_in_synthesis = None
-        # if key (collection ID, e.g. "opentreeoflife/default") matches, read its details
-        for c_id, collection_details in source_dict.items():
-            if c_id == collection_id:
-                # this is the collection we're interested in!
-                commit_SHA_in_synthesis = collection_details['git_sha']
-        return commit_SHA_in_synthesis  # TODO: return more information?
-
         # fetch the full source list, then look for this collection and its SHA
         # if key (collection ID, e.g. "opentreeoflife/default") matches, read its details
         for c_id, collection_details in source_dict.items():
@@ -155,4 +157,5 @@ def _get_latest_synthesis_details_for_collection_id( collection_id ):
         return None
     except Exception, e:
         # throw 403 or 500 or just leave it
-        raise HTTP(500, T('Unable to retrieve latest synthesis details for collection {u}'.format(u=collection)))
+        ##raise HTTP(500, T('Unable to retrieve latest synthesis details for collection {u}'.format(u=collection_id)))
+        raise HTTP(500, T('Unable to retrieve latest synthesis details for collection {u}:\n\n{e}'.format(u=collection_id, e=e)))

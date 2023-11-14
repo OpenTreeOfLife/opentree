@@ -539,6 +539,7 @@ function slugify(str) {
 var userLogin;
 var userDisplayName;
 var singlePropertySearchForTrees_url;
+var requestNewSynthesisRun_url;
 
 function fetchAndShowCollection( collectionID, specialHandling ) {
     /* Fetch a known-good collection from the tree-collections API, and open it
@@ -657,7 +658,7 @@ async function showCollectionViewer( collection, options ) {
             $newTreeOptionsPanels.find('input').val('');
             $newTreeByURLButton.attr('disabled', 'disabled')
                 .addClass('btn-info-disabled');
-            updateNewCollTreeUI();
+            updateTreeLookupUI();
             // (re)bind study and tree lookups
             loadStudyListForLookup();
             // disable the Add Tree button until they finish or cancel
@@ -778,57 +779,76 @@ function getFullGitHubURLForCollection(collection) {
     return '';
 }
 
-function updateNewCollTreeUI() {
+function updateTreeLookupUI() {
+    // find the correct UI components for the current context
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
     // update by-lookup widgets
     var $addByLookupPanel = $('#new-collection-tree-by-lookup');
     var $submitByLookupButton = $addByLookupPanel.find('button').eq(0);
     var $studyIDField = $addByLookupPanel.find('input[name=study-lookup-id]');
     var $treeSelector = $addByLookupPanel.find('select[name=tree-lookup]');
-    var $submitByAnyInputButton = $('#add-tree-by-any-input');
-    if (collectionUI === 'FULL_PAGE') {
-        // disable our all-purpose add-tree button, then check below
-        $submitByAnyInputButton.attr('disabled', 'disabled')
-                               .addClass('btn-info-disabled');
-    }
+    switch(context) {
+        case 'COLLECTION_EDITOR_ADD_TREE':
+            var $submitByAnyInputButton = $('#add-tree-by-any-input');
+            if (collectionUI === 'FULL_PAGE') {
+                // disable our all-purpose add-tree button, then check below
+                $submitByAnyInputButton.attr('disabled', 'disabled')
+                                       .addClass('btn-info-disabled');
+            }
 
-    if (($.trim($studyIDField.val()) == '') || ($.trim($treeSelector.val()) == '')) {
-        // no ids found!
-        if (collectionUI === 'POPUP') {
-            $submitByLookupButton.attr('disabled', 'disabled')
-                                 .addClass('btn-info-disabled');
-        }
-    } else {
-        // both ids found!
-        if (collectionUI === 'POPUP') {
-            $submitByLookupButton.attr('disabled', null)
-                                 .removeClass('btn-info-disabled');
-        } else {
-            $submitByAnyInputButton.attr('disabled', null)
-                                   .removeClass('btn-info-disabled');
-        }
-    }
+            if (($.trim($studyIDField.val()) == '') || ($.trim($treeSelector.val()) == '')) {
+                // no ids found!
+                if (collectionUI === 'POPUP') {
+                    $submitByLookupButton.attr('disabled', 'disabled')
+                                         .addClass('btn-info-disabled');
+                }
+            } else {
+                // both ids found!
+                if (collectionUI === 'POPUP') {
+                    $submitByLookupButton.attr('disabled', null)
+                                         .removeClass('btn-info-disabled');
+                } else {
+                    $submitByAnyInputButton.attr('disabled', null)
+                                           .removeClass('btn-info-disabled');
+                }
+            }
 
-    // update by-URL widgets
-    var $addByURLPanel = $('#new-collection-tree-by-url');
-    var $urlField = $addByURLPanel.find('input[name=tree-url]');
-    var $submitByURLButton = $addByURLPanel.find('button').eq(0);
-    if ($.trim($urlField.val()) == '') {
-        if (collectionUI === 'POPUP') {
-            $submitByURLButton.attr('disabled', 'disabled')
-                              .addClass('btn-info-disabled');
-        }
-    } else {
-        if (collectionUI === 'POPUP') {
-            $submitByURLButton.attr('disabled', null)
-                              .removeClass('btn-info-disabled');
-        } else {
-            $submitByAnyInputButton.attr('disabled', null)
-                                   .removeClass('btn-info-disabled');
-        }
+            // update by-URL widgets
+            var $addByURLPanel = $('#new-collection-tree-by-url');
+            var $urlField = $addByURLPanel.find('input[name=tree-url]');
+            var $submitByURLButton = $addByURLPanel.find('button').eq(0);
+            if ($.trim($urlField.val()) == '') {
+                if (collectionUI === 'POPUP') {
+                    $submitByURLButton.attr('disabled', 'disabled')
+                                      .addClass('btn-info-disabled');
+                }
+            } else {
+                if (collectionUI === 'POPUP') {
+                    $submitByURLButton.attr('disabled', null)
+                                      .removeClass('btn-info-disabled');
+                } else {
+                    $submitByAnyInputButton.attr('disabled', null)
+                                           .removeClass('btn-info-disabled');
+                }
+            }
+            break;
+        case 'PHYLOGRAM_CONFLICT_CHOOSE_TREE2':
+            break;
+        case 'ANALYSES_CONFLICT_CHOOSE_TREE2':
+            break;
+        default:  // missing/unknown context!
+            return;
     }
 }
 
-/* Sensible autocomplete behavior requires the use of timeouts
+/* Look up study and tree IDs easily.
+ *
+ * This logic was originally used only in the collection editor, but
+ * we need to generalize it for use in other contexts like conflict reporting.
+ *
+ * NB - Sensible autocomplete behavior requires the use of timeouts
  * and sanity checks for unchanged content, etc.
  */
 clearTimeout(studyLookupTimeoutID);  // in case there's a lingering search from last page!
@@ -842,6 +862,12 @@ function setStudyLookupFuse(e) {
     }
     // reset the timeout for another n milliseconds
     studyLookupTimeoutID = setTimeout(searchForMatchingStudy, lookupDelay);
+
+    // find the correct UI components for the current context
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+    var $lookupResults = $container.find('[id=study-lookup-results]');     // display matching stuff
 
     /* If the last key pressed was the ENTER key, stash the current (trimmed)
      * string and auto-jump if it's a valid taxon name.
@@ -858,7 +884,7 @@ function setStudyLookupFuse(e) {
             case 39:
             case 40:
                 // down or right arrows should try to select first result
-                $('#study-lookup-results a:eq(0)').focus();
+                $lookupResults.find('a:eq(0)').focus();
                 break;
             default:
                 hopefulStudyLookupName = null;
@@ -868,33 +894,98 @@ function setStudyLookupFuse(e) {
     }
 }
 
+function getPhylesystemLookupContext() {
+    /* Check for open (and topmost) popup, then active tab
+     *
+     * NB - It's entirely possible to open the source-tree viewer, then
+     * the collection editor on top of that. Choose wisely!
+     */
+    if ($('#tree-collection-viewer').is(":visible") ||
+       $('div#Home [id=tree-collection-viewer]').length === 1) {
+        // we're editing a collection, either in a popup modal OR the full-page editor
+        return 'COLLECTION_EDITOR_ADD_TREE';
+    }
+
+    var $tabBar = $('ul.nav-tabs:eq(0)');
+    var activeTabName = $.trim($tabBar.find('li.active a').text());
+    if (activeTabName.indexOf('Analyses') === 0) {
+        return 'ANALYSES_CONFLICT_CHOOSE_TREE2';
+    }
+
+    if ((activeTabName.indexOf('Home') === 0) ||
+       $('#tree-viewer').is(":visible") ||
+       treeViewerIsInUse) {
+        return 'PHYLOGRAM_CONFLICT_CHOOSE_TREE2';
+    }
+
+    console.error("getPhylesystemLookupContext(): UNKNOWN context!");
+    return null;
+}
+
+function getPhylesystemLookupPanel( context ) {
+    // find the nearest containing element for all phylesystem-lookup widgets
+    context = context || getPhylesystemLookupContext();
+    var $container;    // parent element for study+tree lookup UI
+    switch(context) {
+        case 'COLLECTION_EDITOR_ADD_TREE':
+            $container = $('#new-collection-tree-by-lookup');
+            break;
+        case 'PHYLOGRAM_CONFLICT_CHOOSE_TREE2':
+            $container = $('#tree-phylogram-options');
+            break;
+        case 'ANALYSES_CONFLICT_CHOOSE_TREE2':
+            $container = $('#analyses-tree-chooser');
+            break;
+        default:  // missing/unknown context!
+            console.error("getPhylesystemLookupPanel(): UNKNOWN context '"+ context +"'!");
+            return null;
+    }
+    return $container;
+}
+
 var showingResultsForStudyLookupText = '';
 function searchForMatchingStudy() {
     // clear any pending lookup timeout and ID
     clearTimeout(studyLookupTimeoutID);
     studyLookupTimeoutID = null;
 
-    var $input = $('input[name=study-lookup]');
-    if ($input.length === 0) {
-        $('#study-lookup-results').html('');
+    // find the correct UI components for the current context
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+    switch(context) {
+        case 'COLLECTION_EDITOR_ADD_TREE':
+            break;
+        case 'PHYLOGRAM_CONFLICT_CHOOSE_TREE2':
+            break;
+        case 'ANALYSES_CONFLICT_CHOOSE_TREE2':
+            break;
+        default:  // missing/unknown context!
+            return;
+    }
+    var $studyNameInput = $container.find('input[name=study-lookup]');    // search text field
+    var $lookupResults = $container.find('[id=study-lookup-results]');     // display matching stuff
+
+    if ($studyNameInput.length === 0) {
+        $container.find('#study-lookup-results').html('');
         console.log("Input field not found!");
         return false;
     }
-    var searchText = $.trim( $input.val() );
+    var searchText = $.trim( $studyNameInput.val() );
     var searchTokens = tokenizeSearchTextKeepingQuotes(searchText);
 
     if ((searchTokens.length === 0) ||
         (searchTokens.length === 1 && searchTokens[0].length < 2)) {
-        $('#study-lookup-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
+        $container.find('').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
         return false;
     }
 
     // stash the search-text used to generate these results
     showingResultsForStudyLookupText = searchText;
-    $('#study-lookup-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
-    $('#study-lookup-results').show();
-    $('#study-lookup-results').dropdown('toggle');
-    $('#study-lookup-results').html('');
+    $lookupResults.html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
+    $lookupResults.show();
+    $lookupResults.dropdown('toggle');
+    $lookupResults.html('');
 
     var maxResults = 5;
     var visibleResults = 0;
@@ -955,7 +1046,7 @@ function searchForMatchingStudy() {
         $.each(matchingStudies, function(i, studyInfo) {
             if (visibleResults > maxResults) {
                 // Add one final prompt
-                $('#study-lookup-results').append(
+                $lookupResults.append(
                     '<li class="disabled"><a href=""><span class="muted">Add more search text to see hidden matches.</span></a></li>'
                 );
                 return false;
@@ -963,13 +1054,13 @@ function searchForMatchingStudy() {
             var matchURL = getViewURLFromStudyID(studyInfo['ot:studyId']);
             var matchText = fullToCompactReference(studyInfo['ot:studyPublicationReference']);
             var mouseOver = studyInfo['ot:studyPublicationReference'];
-            $('#study-lookup-results').append(
+            $lookupResults.append(
                 '<li><a href="'+ matchURL +'" title="'+ mouseOver +'">'+ matchText +'</a></li>'
             );
             visibleResults++;
         });
 
-        $('#study-lookup-results a')
+        $lookupResults.find('a')
             .click(function(e) {
                 var $link = $(this);
                 if ($link.attr('href') === '') return false;
@@ -978,18 +1069,19 @@ function searchForMatchingStudy() {
                 // update hidden field
                 $('input[name=study-lookup-id]').val( studyID );
                 // hide menu and reset search field
-                $('#study-lookup-results').html('');
-                $('#study-lookup-results').hide();
+                clearTimeout(studyLookupTimeoutID);
+                $lookupResults.html('');
+                $lookupResults.hide();
                 // replace input field with static indicator (and trigger to search again?)
-                $('.study-lookup-active').hide();
-                $('#study-lookup-indicator')
+                $container.find('.study-lookup-active').hide();
+                $container.find('a.study-lookup-indicator')
                     .attr({'href': $link.attr('href'), 'title': $link.attr('title')})
                     .html( $link.html() );
-                $('.study-lookup-passive').show();
+                $container.find('.study-lookup-passive').show();
                 // Load + enable tree lookup
-                $('select[name=tree-lookup]').val('');
-                $('select[name=tree-lookup]').attr('disabled','disabled');
-                updateNewCollTreeUI();
+                $container.find('select[name=tree-lookup]').val('');
+                $container.find('select[name=tree-lookup]').attr('disabled','disabled');
+                updateTreeLookupUI();
                 $.ajax({
                     global: false,  // suppress web2py's aggressive error handling
                     type: 'POST',
@@ -1038,7 +1130,7 @@ function searchForMatchingStudy() {
                                     var foundStudy = responseObj['matched_studies'][0];
                                     var foundTrees = foundStudy['matched_trees'];
                                     // TODO: Remove all but the prompting OPTION element
-                                    var $treeSelector = $('select[name=tree-lookup]');
+                                    var $treeSelector = $container.find('select[name=tree-lookup]');
                                     $treeSelector.find('option').remove();
                                     if (foundTrees.length === 0) {
                                         // no such study
@@ -1067,7 +1159,9 @@ function searchForMatchingStudy() {
                                         $treeSelector.append( $newOption );
                                     });
                                     $treeSelector.attr('disabled', null);
-                                    updateNewCollTreeUI();
+                                    if (context == '') {
+                                        updateTreeLookupUI();
+                                    }
                                     return;
 
                                 default:
@@ -1090,31 +1184,34 @@ function searchForMatchingStudy() {
                 });
 
             });
-        $('#study-lookup-results').dropdown('toggle');
+        $lookupResults.dropdown('toggle');
     }
     if (visibleResults === 0) {
-        $('#study-lookup-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
-        $('#study-lookup-results').dropdown('toggle');
+        $lookupResults.html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
+        $lookupResults.dropdown('toggle');
     };
 
     return false;
 }
 function resetStudyLookup() {
     // Clear/disable tree lookup
-    var $treeSelector = $('select[name=tree-lookup]');
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+    var $treeSelector = $container.find('select[name=tree-lookup]');
     $treeSelector.find('option').remove();
-    var $promptOption = $('<option disabled="disabled" value="">Find the study above first</option>');
+    var $promptOption = $('<option disabled="disabled" value="">Choose a study first</option>');
     $treeSelector.append( $promptOption );
-    $('select[name=tree-lookup]').val('');
-    $('select[name=tree-lookup]').attr('disabled','disabled');
+    $container.find('select[name=tree-lookup]').val('');
+    $container.find('select[name=tree-lookup]').attr('disabled','disabled');
 
     // Toggle the study-lookup widget (vs. indicator)
-    $('.study-lookup-passive').hide();
-    $('.study-lookup-active').show();
+    $container.find('.study-lookup-passive').hide();
+    $container.find('.study-lookup-active').show();
     // N.B. The icon element will shift if its display is set to block
-    $('i.study-lookup-active').css('display', 'inline-block');
+    $container.find('i.study-lookup-active').css('display', 'inline-block');
 
-    updateNewCollTreeUI();
+    updateTreeLookupUI();
 }
 
 function createNewTreeCollection() {
@@ -2001,7 +2098,7 @@ function bindStudyAndTreeLookups() {
     $newTreeStartButton.attr('disabled', null)
                        .removeClass('btn-info-disabled');
 }
-function loadStudyListForLookup() {
+function loadStudyListForLookup( context ) {
     ///console.warn('STARTING loadStudyListForLookup');
     // if list is available, bind UI and return
     if (studyListForLookup) {
@@ -2009,10 +2106,17 @@ function loadStudyListForLookup() {
         return true;
     }
 
-    // disable "Add tree" button until the list is loaded
-    var $newTreeStartButton = $('#new-collection-tree-start');
-    $newTreeStartButton.attr('disabled', 'disabled')
-                       .addClass('btn-info-disabled');
+    // find the correct UI components for the current context
+    if (!context) {
+        context = getPhylesystemLookupContext();
+    }
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+
+    // disable lookup form until the list is loaded
+    var $formInitButtons = $container.parent().find('.form-init');
+    $formInitButtons.attr('disabled', 'disabled')
+                    .addClass('btn-info-disabled');
 
     $.ajax({
         type: 'POST',
@@ -2020,8 +2124,7 @@ function loadStudyListForLookup() {
         url: findAllStudies_url,
         data: { verbose: true },
         success: function( data, textStatus, jqXHR ) {
-            // this should be properly parsed JSON
-
+            // this should be properly parsed JSON;
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
                 showErrorMessage('Sorry, there was an error loading the list of studies.');
@@ -2031,10 +2134,11 @@ function loadStudyListForLookup() {
                 showErrorMessage('Sorry, there is a problem with the study-list data.');
                 return;
             }
-
+            // save global lookup list!
             studyListForLookup = data['matched_studies'];
             bindStudyAndTreeLookups();
-            if (collectionUI === 'FULL_PAGE') {
+            if (context === 'COLLECTION_EDITOR_ADD_TREE' &&
+                collectionUI === 'FULL_PAGE') {
                 // refresh tree list in collections editor
                 nudgeTickler('TREES', {modelHasChanged: false});
             }
@@ -2881,3 +2985,927 @@ async function confirmHyperlink( link, message ) {
     }
 }
 
+// Keep a safe copy of our UI markup, for re-use as a Knockout template (see below)
+var $stashedSynthRunPopup = null;
+var synthRunSpec;
+function showSynthesisRunPopup(options) {
+    /* Prompt for settings and request a new attempt at custom synthesis.
+     * This might initiate a new run, or it might be redirected to an existing
+     * run with identical settings and versions.
+     *
+     * NB: This can be triggered from different contexts:
+     *   - from the main synthesis queue
+     *   - from a single collection (editor)
+     *
+     * Options can include collection IDs to start the list, if we're doing this
+     * from a particular context like the collection-curation tool.
+     */
+    options = options || {};
+    synthRunSpec = {
+        'runner': ko.observable({
+            'login': userLogin,
+            'displayName': userDisplayName,
+            'email': ko.observable(userEmail)
+        }),
+        // use any initial values provided above
+        'description': ko.observable(options.DESCRIPTION || ''),
+        'rootTaxonID': ko.observable(options.ROOT_TAXON_OTTID || ''),
+        'rootTaxonName': ko.observable(options.ROOT_TAXON_NAME || ''),
+        'collections': ko.observableArray(options.COLLECTIONS || [ ])
+    };
+    // any change should prompt QUIET validation
+    synthRunSpec.runner.subscribe(validateSynthRunSpec);
+    synthRunSpec.rootTaxonID.subscribe(validateSynthRunSpec);
+    synthRunSpec.collections.subscribe(validateSynthRunSpec);
+    // TODO: add more subscriptions here?
+
+    // add any missing/empty 'rank' properties
+    ensureSynthRunRanking(synthRunSpec);
+
+    // show a shared popup (from shared page template)
+    var $synthRunPopup = $('#define-synth-run-popup');
+    // stash the pristine markup before binding our UI for the first time
+    if ($stashedSynthRunPopup === null) {
+        $stashedSynthRunPopup = $synthRunPopup.clone();
+    } else {
+        // Replace with pristine markup to avoid weird results when loading a new nameset
+        $synthRunPopup.contents().replaceWith(
+            $stashedSynthRunPopup.clone().contents()
+        );
+    }
+    var popup = $synthRunPopup[0];
+    ko.cleanNode(popup);
+    ko.applyBindings(synthRunSpec, popup);
+    $('#define-synth-run-popup').off('hidden').on('hidden', function () {
+        // clear any proposed spec for next time
+        ko.cleanNode(popup);
+        synthRunSpec = null;
+    });
+
+    // enable taxon search
+    $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
+    $('select[name=taxon-search-context]').unbind('change').bind('change', searchForMatchingTaxa );
+
+    // don't trigger unrelated form submission when pressing ENTER here
+    $('input[name=taxon-search], select[name=taxon-search-context]')
+        .unbind('keydown')
+        .bind('keydown', function(e) { return e.which !== 13; });
+
+    // enable collection search (in synth-run details popup)
+    console.warn('BINDING COLLECTION SEARCH (SYNTH)');
+    $('input[name=collection-search]').unbind('keyup change')
+                                      .bind('keyup change', setCollectionSearchFuse )
+                                      .unbind('keydown')  // block errant form submission
+                                      .bind('keydown', function(e) { return e.which !== 13; });
+    $('#add-collection-search-form').unbind('submit').submit(function() {
+        searchForMatchingCollections( {CONTEXT: 'ADD_COLLECTION_TO_SYNTHESIS_RUN'} );
+        return false;
+    });
+    resetExistingCollectionPrompt( {CONTEXT: 'ADD_COLLECTION_TO_SYNTHESIS_RUN'} );
+
+    $('#define-synth-run-popup').modal('show');
+    // TODO validate initial settings and warn if needed
+    // TODO Upon submission, show response from synth-API server (run started, or redirected, or ???)
+}
+function createSynthesisRunRequest( synthRunInfo ) {
+    /* Actual initiation of synth run, the result of hitting Submit in the
+     * popup above (or any equivalent action). This should bundle up a
+     * submission along with personala identity and credentials, then report
+     * any immediate error or result codes.
+     *
+     * If the submission was accepted, we should clear the synth-queue cache
+     * (if any) and prompt for a fresh listing, then perhaps highlight the
+     * newly-submitted item in the list..?
+     */
+    showInfoMessage("Now I'd submit those detailed settings...");
+}
+
+/* Sensible autocomplete behavior requires the use of timeouts
+ * and sanity checks for unchanged content, etc.
+ */
+clearTimeout(searchTimeoutID);  // in case there's a lingering search from last page!
+var searchTimeoutID = null;
+var searchDelay = 1000; // milliseconds
+var hopefulSearchName = null;
+function setTaxaSearchFuse(e) {
+    if (searchTimeoutID) {
+        // kill any pending search, apparently we're still typing
+        clearTimeout(searchTimeoutID);
+    }
+    // reset the timeout for another n milliseconds
+    searchTimeoutID = setTimeout(searchForMatchingTaxa, searchDelay);
+
+    /* If the last key pressed was the ENTER key, stash the current (trimmed)
+     * string and auto-jump if it's a valid taxon name.
+     */
+    if (e.type === 'keyup') {
+        switch (e.which) {
+            case 13:
+                hopefulSearchName = $('input[name=taxon-search]').val().trim();
+                autoApplyExactMatch();  // use existing menu, if found
+                break;
+            case 17:
+                // do nothing (probably a second ENTER key)
+                break;
+            case 39:
+            case 40:
+                // down or right arrows should try to select first result
+                $('#search-results a:eq(0)').focus();
+                break;
+            default:
+                hopefulSearchName = null;
+        }
+    } else {
+        hopefulSearchName = null;
+    }
+}
+
+var showingResultsForSearchText = '';
+var showingResultsForSearchContextName = '';
+function searchForMatchingTaxa() {
+    // clear any pending search timeout and ID
+    clearTimeout(searchTimeoutID);
+    searchTimeoutID = null;
+
+    var $input = $('input[name=taxon-search]');
+    var searchText = $input.val().trimLeft();
+
+    if (searchText.length === 0) {
+        $('#search-results').html('');
+        return false;
+    } else if (searchText.length < 2) {
+        $('#search-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
+        $('#search-results').dropdown('toggle');
+        return false;
+    }
+
+    // groom trimmed text based on our search rules
+    var searchContextName = $('select[name=taxon-search-context]').val();
+
+    // is this unchanged from last time? no need to search again..
+    if ((searchText == showingResultsForSearchText) && (searchContextName == showingResultsForSearchContextName)) {
+        ///console.log("Search text and context UNCHANGED!");
+        return false;
+    }
+
+    // stash these to use for later comparison (to avoid redundant searches)
+    var queryText = searchText; // trimmed above
+    var queryContextName = searchContextName;
+    $('#search-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
+    $('#search-results').show();
+    $('#search-results').dropdown('toggle');
+
+    $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
+        url: doTNRSForAutocomplete_url,  // NOTE that actual server-side method name might be quite different!
+        type: 'POST',
+        dataType: 'json',
+        data: JSON.stringify({
+            "name": searchText,
+            "context_name": searchContextName,
+            "include_suppressed": false
+        }),  // data (asterisk required for completion suggestions)
+        crossDomain: true,
+        contentType: "application/json; charset=utf-8",
+        success: function(data) {    // JSONP callback
+            // stash the search-text used to generate these results
+            showingResultsForSearchText = queryText;
+            showingResultsForSearchContextName = queryContextName;
+
+            $('#search-results').html('');
+            var maxResults = 100;
+            var visibleResults = 0;
+            /*
+             * The returned JSON 'data' is a simple list of objects. Each object is a matching taxon (or name?)
+             * with these properties:
+             *      ott_id         // taxon ID in OTT taxonomic tree
+             *      unique_name    // the taxon name, or unique name if it has one
+             *      is_higher      // points to a genus or higher taxon? T/F
+             */
+            if (data && data.length && data.length > 0) {
+                // sort results to show exact match(es) first, then higher taxa, then others
+                // initial sort on higher taxa (will be overridden by exact matches)
+                // N.B. As of the v3 APIs, an exact match will be returned as the only result.
+                data.sort(function(a,b) {
+                    if (a.is_higher === b.is_higher) return 0;
+                    if (a.is_higher) return -1;
+                    if (b.is_higher) return 1;
+                });
+
+                // show all sorted results, up to our preset maximum
+                var matchingNodeIDs = [ ];  // ignore any duplicate results (point to the same taxon)
+                for (var mpos = 0; mpos < data.length; mpos++) {
+                    if (visibleResults >= maxResults) {
+                        break;
+                    }
+                    var match = data[mpos];
+                    var matchingName = match.unique_name;
+                    var matchingID = match.ott_id;
+                    if ($.inArray(matchingID, matchingNodeIDs) === -1) {
+                        // we're not showing this yet; add it now
+                        $('#search-results').append(
+                            '<li><a href="'+ matchingID +'">'+ matchingName +'</a></li>'
+                        );
+                        matchingNodeIDs.push(matchingID);
+                        visibleResults++;
+                    }
+                }
+
+                $('#search-results a')
+                    .click(function(e) {
+                        var $link = $(this);
+                        if ($link.closest('#study-metadata-popup').length === 1) {
+                            /* WE'RE EDITING A STUDY */
+                            // modify its focal clade (name and ottid)
+                            viewModel.nexml['^ot:focalCladeOTTTaxonName'] = $link.text();
+                            viewModel.nexml['^ot:focalClade'] = $link.attr('href');
+                            // hide menu and reset search field
+                            $('#search-results').html('');
+                            $('#search-results').hide();
+                            $('input[name=taxon-search]').val('');
+                            nudgeTickler('GENERAL_METADATA');
+                        } else {
+                            /* WE'RE IN THE SYNTH DASHBOARD OR A TREE COLLECTION */
+                            // in either case, we're defining a new synth run in a shared popup
+                            synthRunSpec['rootTaxonName']( $link.text() );
+                            synthRunSpec['rootTaxonID']( $link.attr('href') );
+                            // hide menu and reset search field
+                            $('#search-results').html('');
+                            $('#search-results').hide();
+                            $('input[name=taxon-search]').val('');
+                        }
+
+                    });
+                $('#search-results').dropdown('toggle');
+
+                autoApplyExactMatch();
+            } else {
+                $('#search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
+                $('#search-results').dropdown('toggle');
+            }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            // report errors or malformed data, if any (else ignore)
+            if (textStatus !== 'success') {
+                if (jqXHR.status >= 500) {
+                    // major TNRS error! offer the raw response for tech support
+                    var errMsg = jqXHR.statusText +' ('+ jqXHR.status +') searching for<br/>'
++'<strong style="background-color: #edd; padding: 0 3px; margin: 0 -3px;">'+ queryText +'</strong><br/>'
++'Please modify your search and try again.<br/>'
++'<span class="detail-toggle" style="text-decoration: underline !important;">Show details in footer</span>';
+                    $('#search-results').html('<li class="disabled"><a><span style="color: #933;">'+ errMsg +'</span></a></li>');
+                    var errDetails = 'TNRS error details:<pre class="error-details">'+ jqXHR.responseText +'</pre>';
+                    $('#search-results').find('span.detail-toggle').click(function(e) {
+                        e.preventDefault();
+                        showErrorMessage(errDetails);
+                        return false;
+                    });
+                    $('#search-results').dropdown('toggle');
+                }
+            }
+            return;
+        }
+    });
+
+    return false;
+}
+
+function autoApplyExactMatch() {
+    // if the user hit the ENTER key, and there's an exact match, apply it automatically
+    if (hopefulSearchName) {
+        $('#search-results a').each(function() {
+            var $link = $(this);
+            if ($link.text().toLowerCase() === hopefulSearchName.toLowerCase()) {
+                $link.trigger('click');
+                return false;
+            }
+        });
+    }
+}
+
+async function promptToAddCollection(clicked) {
+    // show the autocomplete widget and mute this button
+    var $btn = $(clicked);
+    $btn.addClass('disabled');
+    var $collectionPrompt = $('#add-collection-search-form');
+    $collectionPrompt.show()
+    $collectionPrompt.find('input').eq(0).focus();
+}
+
+function resetExistingCollectionPrompt( options ) {
+    options = options || {};
+    if (!options.CONTEXT) {
+        // are we editing synth-run details or adding a tree?
+        options.CONTEXT = 'ADD_TREE_TO_COLLECTION';
+    }
+    var promptSelector,
+        resultsSelector;
+    switch (options.CONTEXT) {
+        case 'ADD_TREE_TO_COLLECTION':
+            promptSelector = '#collection-search-form';
+            resultsSelector = '#collection-search-results';
+            break;
+        case 'ADD_COLLECTION_TO_SYNTHESIS_RUN':
+            promptSelector = '#add-collection-search-form';
+            resultsSelector = '#add-collection-search-results';
+            break;
+        default:
+           console.error("resetExistingCollectionPrompt(): ERROR, unknown context: '"+ options.CONTEXT +"'!");
+           return;
+    }
+    var $collectionPrompt = $(promptSelector);
+    var $collectionResults = $(resultsSelector);
+
+    var $btn = $collectionPrompt.prev('.btn');
+    $btn.removeClass('disabled');
+    $collectionPrompt.hide();
+    $collectionPrompt.find('input').val('');
+    $collectionResults.html('');
+    $collectionResults.hide();
+}
+
+/* More autocomplete behavior for tree-collection search.
+ */
+clearTimeout(collectionSearchTimeoutID);  // in case there's a lingering search from last page!
+var collectionSearchTimeoutID = null;
+var collectionSearchDelay = 250; // milliseconds
+var hopefulCollectionSearchString = null;
+function setCollectionSearchFuse(e) {
+    if (collectionSearchTimeoutID) {
+        // kill any pending search, apparently we're still typing
+        clearTimeout(collectionSearchTimeoutID);
+    }
+    var CONTEXT;
+    if ($(e.target).closest('#define-synth-run-popup').length === 1) {
+        CONTEXT = 'ADD_COLLECTION_TO_SYNTHESIS_RUN';
+    } else {
+        CONTEXT = 'ADD_TREE_TO_COLLECTION';
+    }
+    // reset the timeout for another n milliseconds
+    collectionSearchTimeoutID = setTimeout(function() {
+        searchForMatchingCollections( {CONTEXT: CONTEXT} );
+    }, collectionSearchDelay);
+
+    /* If the last key pressed was the ENTER key, stash the current (trimmed)
+     * string and auto-jump if it's a valid taxon name.
+     */
+    if (e.type === 'keyup') {
+        switch (e.which) {
+            case 13:
+                hopefulCollectionSearchString = $('input[name=collection-search]').val().trim();
+                // TODO? jumpToExactMatch();  // use existing menu, if found
+                break;
+            case 17:
+                // do nothing (probably a second ENTER key)
+                break;
+            case 39:
+            case 40:
+                // down or right arrow should try to tab to first result
+                $('#collection-search-results a:eq(0)').focus();
+                break;
+            default:
+                hopefulCollectionSearchString = null;
+        }
+    } else {
+        hopefulCollectionSearchString = null;
+    }
+}
+
+var showingResultsForCollectionSearchText = '';
+function searchForMatchingCollections( options ) {
+    options = options || {};
+    if (!options.CONTEXT) {
+        // are we editing synth-run details or adding a tree?
+        options.CONTEXT = 'ADD_TREE_TO_COLLECTION';
+    }
+    var promptSelector,
+        resultsSelector,
+        linkViewBehavior;
+    switch (options.CONTEXT) {
+        case 'ADD_TREE_TO_COLLECTION':
+            promptSelector = '#collection-search-form';
+            resultsSelector = '#collection-search-results';
+            linkViewBehavior = 'POPUP';
+            break;
+        case 'ADD_COLLECTION_TO_SYNTHESIS_RUN':
+            promptSelector = '#add-collection-search-form';
+            resultsSelector = '#add-collection-search-results';
+            linkViewBehavior = 'FULL_PAGE';  // suppress popup on click
+            break;
+        default:
+           console.error("resetExistingCollectionPrompt(): ERROR, unknown context: '"+ options.CONTEXT +"'!");
+           return;
+    }
+    var $collectionPrompt = $(promptSelector);
+    var $collectionResults = $(resultsSelector);
+
+    // clear any pending search timeout and ID
+    clearTimeout(collectionSearchTimeoutID);
+    collectionSearchTimeoutID = null;
+
+    var $input = $('input[name=collection-search]'); // in all contexts!
+    var searchText = $input.val().trimLeft();
+
+    if (searchText.length === 0) {
+        $collectionResults.html('');
+        return false;
+    } else if (searchText.length < 2) {
+        $collectionResults.html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
+        $collectionResults.dropdown('toggle');
+        return false;
+    }
+
+    // is this unchanged from last time? no need to search again..
+    if (searchText == showingResultsForCollectionSearchText) {
+        ///console.log("Search text and context UNCHANGED!");
+        return false;
+    }
+
+    // search local viewModel.allCollections for any matches
+    var searchNotAvailable = (!viewModel.allCollections || viewModel.allCollections.length === 0);
+    var statusMsg;
+    if (searchNotAvailable) {
+        // block search (no collection data in the view model)
+        statusMsg = 'Unable to search (no collections found)';
+    } else {
+        // stash our search text to use for later comparison (to avoid redundant searches)
+        showingResultsForCollectionSearchText = searchText; // trimmed above
+        statusMsg = 'Search in progress...';
+    }
+
+    $collectionResults.html('<li class="disabled"><a><span class="text-warning">'
+        + statusMsg +'</span></a></li>');
+    $collectionResults.show();
+    $collectionResults.dropdown('toggle');
+
+    if (searchNotAvailable) {
+        return false;
+    }
+
+    var matchWithDiacriticals = addDiacriticalVariants(searchText),
+        matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' ),
+        wholeSlugMatchPattern = new RegExp( '^'+ $.trim(matchWithDiacriticals) +'$' );
+
+    var matchingCollections = ko.utils.arrayFilter(
+        viewModel.allCollections,
+        function(collection) {
+            // skip collections that already include this tree
+            var allCollections;
+            switch (options.CONTEXT) {
+                case 'ADD_TREE_TO_COLLECTION':
+                    allCollections = viewModel.filteredCollections()();
+                    break;
+                case 'ADD_COLLECTION_TO_SYNTHESIS_RUN':
+                    allCollections = synthRunSpec.collections();
+                    break;
+            }
+            if ($.inArray(collection, allCollections) !== -1) {
+                console.warn("SKIPPING collection that's already listed!");
+                return false;
+            }
+            // match entered text against collections (id, owner, description...)
+            var id = $.trim(collection['id']);
+            var idParts = id.split('/');
+            var ownerSlug = idParts[0];
+            var titleSlug = (idParts.length === 2) ? idParts[1] : '';
+            var name = $.trim(collection['name']);
+            var description = $.trim(collection['description']);
+            // extract names and IDs of all stakeholders (incl. creator!)
+            if ($.isPlainObject(collection['creator'])) {
+                creator = $.trim(collection['creator'].name)
+                    +'|'+ $.trim(collection['creator'].login);
+            } else {
+                creator = "";
+            }
+            if ($.isArray(collection['contributors'])) {
+                contributors = "";
+                $.each(collection['contributors'], function(i,c) {
+                    contributors += ('|'+ $.trim(c.name) +'|'+ $.trim(c.login));
+                });
+            } else {
+                contributors = "";
+            }
+            // skip collections that don't match on any field
+            if (!wholeSlugMatchPattern.test(id) && !wholeSlugMatchPattern.test(ownerSlug) && !wholeSlugMatchPattern.test(titleSlug) && !matchPattern.test(name) && !matchPattern.test(description) && !matchPattern.test(creator) && !matchPattern.test(contributors)) {
+                return false;
+            }
+            return true;
+        }
+    );
+
+    $collectionResults.html('');
+    var maxResults = 10;
+    var visibleResults = 0;
+    if (matchingCollections.length > 0) {
+        // show all sorted results, up to our preset maximum
+        $.each(matchingCollections, function(i, collection) {
+            if (visibleResults >= maxResults) {
+                $collectionResults.append(
+                    '<li class="disabled"><a><span class="text-warning">'
+                      +'Refine your search text to see other results'
+                   +'</span></a></li>'
+                );
+                return false;
+            }
+            $collectionResults.append(
+                '<li>'+ getCollectionViewLink(collection, {VIEW: linkViewBehavior}) +'</li>'
+            );
+            visibleResults++;
+        });
+
+        $collectionResults.find('li:not(.disabled) a')
+            .click(function(e) {
+                var $link = $(this);
+                // Override its default onclick behavior to add the tree, then
+                // refresh the associated-collections list.
+                //
+                // hide menu and reset search field
+                $collectionResults.html('');
+                $collectionResults.hide();
+                $('input[name=collection-search]').val('');
+                if (options.CONTEXT === 'ADD_TREE_TO_COLLECTION') {
+                    nudgeTickler('COLLECTIONS_LIST');
+                }
+                // retrieve the collection ID from the link's text
+                var itsCollectionID = $link.find('.collection-id').text();
+                // insert this tree before opening the editor
+                switch (options.CONTEXT) {
+                    case 'ADD_TREE_TO_COLLECTION':
+                        fetchAndShowCollection( itsCollectionID, addCurrentTreeToCollection );
+                        break;
+                    case 'ADD_COLLECTION_TO_SYNTHESIS_RUN':
+                        var collectionInfo = ko.observable({
+                            id: itsCollectionID,
+                            rank: null,
+                            status: null
+                        });
+                        synthRunSpec.collections.push( collectionInfo );
+                        // (re)assert sensible rankings
+                        resetSynthRunRanking( synthRunSpec );
+                        e.preventDefault();
+                        break;
+                }
+                return false;
+            });
+        $collectionResults.dropdown('toggle');
+    } else {
+        $collectionResults.html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
+        $collectionResults.dropdown('toggle');
+    }
+
+    return false;
+}
+
+function validateSynthRunSpec( options ) {
+    // Ignore the specific value, validate the entire spec
+    var verbose = (options && options.VERBOSE) || false;
+    // do some basic sanity checks on the requested synthesis run
+    if (!synthRunSpec) {
+        console.error("EXPECTED to find synthRunSpec in this page!");
+        return false;
+    }
+    // it should have at least one collection
+    if (synthRunSpec.collections().length < 1) {
+        if (verbose) showErrorMessage('Synthesis requires at least one input tree collection');
+        return false;
+    }
+    // it should have a specified taxonomic root (id and name)
+    if ($.trim(synthRunSpec.rootTaxonID()) === '') {
+        if (verbose) showErrorMessage('Synthesis requires a specified root taxon');
+        return false;
+    }
+    // TODO: block submissions by anonymous users?
+    return true;
+}
+function requestNewSynthRun() {
+    /* Try sending this to the server, and respond with a ticket (if successful),
+     * a message if REDIRECTed (due to an prior/identical synth run), or an error message.
+     *
+     * NB - Our payload is constructed using `synthRunSpec`, a persistent, page-level singleton
+     */
+    if (!validateSynthRunSpec({VERBOSE:true})) {
+        return false;
+    }
+    showModalScreen( "Requesting synthesis run...", {SHOW_BUSY_BAR:true});
+    var flattenedCollections = $.map(
+        ko.unwrap(synthRunSpec.collections),
+        function( collectionInfo, i ) {
+            // ignore collection rank and status, keep just the IDs
+            return collectionInfo.id;
+        }
+    );
+    var payload = {
+        'input_collection': flattenedCollections,
+        'root_id': ko.unwrap(synthRunSpec.rootTaxonID),
+        // more good stuff we should use in the API
+        'description': ko.unwrap(synthRunSpec.description),
+        'root_name': ko.unwrap(synthRunSpec.rootTaxonID),
+        'runner': ko.unwrap(synthRunSpec.runner)
+    };
+
+    $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: requestNewSynthesisRun_url,
+        data: payload,
+        processData: false,
+        complete: function( jqXHR, textStatus ) {
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                if (jqXHR.status >= 500) {
+                    // major server-side error, just show raw response for tech support
+                    var errMsg = 'Sorry, there was an error requesting ths run.. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [auto-parsed]</pre>';
+                    hideModalScreen();
+                    showErrorMessage(errMsg);
+                    if (typeof(errorCallback) === 'function') errorCallback();
+                    return;
+                }
+                // Server blocked the operation due to validation errors(?)
+                var data = $.parseJSON(jqXHR.responseText);
+                // TODO: this should be properly parsed JSON, show it more sensibly
+                // (but for now, repeat the crude feedback used above)
+                var errMsg = 'Sorry, there was an error requesting this run. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [parsed in JS]</pre>';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                if (typeof(errorCallback) === 'function') errorCallback();
+                return;
+            }
+            /* if we're still here, use the success callback provided
+             * NB - We should expect a "run status" object as described here:
+             *   https://github.com/OpenTreeOfLife/ws_wrapper/blob/synth-on-demand/synth-on-demand.md#response-1
+             */
+            var responseObj = $.parseJSON(jqXHR.responseText);
+            debugger;
+/*
+            if ($.isArray(responseObj['matched_studies'])) {
+                var matchingStudyIDs = [];
+                $.each(responseObj['matched_studies'], function(i,obj) {
+                    matchingStudyIDs.push( obj['ot:studyId'] );
+                });
+            } else {
+                var errMsg = 'Sorry, there was an error checking for duplicate studies. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">Missing or malformed "matching_studies" in JSON response:\n\n'+
+                    jqXHR.responseText+'</pre>';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                return;
+            }
+*/
+        }
+    });
+}
+
+/* Adapt tree-ordering features (from tree collection editor) for ordering the
+ * collections in a proposed synth-run
+ */
+function indexOfObservable( array, item ) {
+    // unwrap array items to find the target
+    var foundPosition = -1;
+    $.each(array, function(i, wrappedItem) {
+        if (ko.unwrap(wrappedItem) === item) {
+            foundPosition = i;
+            return false;  // skip the rest
+        }
+    });
+    return foundPosition;
+}
+function moveInSynthesisRun( collection, synthRun, newPosition ) {
+    // Move this collection to an explicit position in the list
+    // N.B. We use zero-based counting here!
+    var collectionListObservable = synthRun.collections,
+        collectionList = collectionListObservable();
+    var oldPosition = indexOfObservable( collectionList, collection );
+    if (oldPosition === -1) {
+        // this should *never* happen
+        console.warn('No such collection in this synthesis run!');
+        return false;
+    }
+
+    // Find the new position using simple "stepper" widgets or an
+    // explicit/stated rank.
+    switch(newPosition) {
+        case 'UP':
+            newPosition = Math.max(0, oldPosition - 1);
+            break;
+
+        case 'DOWN':
+            newPosition = Math.min(collectionList.length, oldPosition + 1);
+            break;
+
+        default:
+            // stated rank should be an integer or int-as-string
+            if (isNaN(Number(collection['rank'])) || ($.trim(collection['rank']) == '')) {
+                // don't move if it's not a valid rank!
+                console.log(">> INVALID rank: "+ collection['rank'] +" <"+ typeof(collection['rank']) +">");
+                return false;
+            }
+            var movingRank = Number(collection['rank']);
+            // displace the first collection that has the same or higher stated rank
+            var movingCollection = collection;
+            var sameRankOrHigher = $.grep(collectionList, function(testCollection, i) {
+                testCollection = ko.unwrap(testCollection);
+                if (testCollection === movingCollection) {
+                    return false;  // skip the moving collection!
+                }
+                // Does its stated 'rank' match its list position? N.B. that we're not
+                // looking for an exact match, just relative value vs. its neighbors
+                // in the collection list.
+                var statedRank = Number(testCollection['rank']);
+                if (isNaN(statedRank) || ($.trim(testCollection['rank']) == '')) {
+                    // treat invalid/missing values as zero, I guess
+                    statedRank = 0;
+                }
+                if (statedRank >= movingRank) {
+                    return true;
+                }
+                return false;
+            });
+            var nextCollection;
+            if (sameRankOrHigher.length === 0) {
+                // looks like we're moving to the end of the list
+                newPosition = collectionList.length - 1;
+            } else {
+                // displace the first matching collection
+                nextCollection = sameRankOrHigher[0];
+                nextCollection = ko.unwrap(nextCollection);
+                newPosition = indexOfObservable( collectionList, nextCollection );
+            }
+            break;
+    }
+
+    // just grab the moving item and move (or append) it
+    var grabbedItem = collectionListObservable.splice( oldPosition, 1 )[0];
+    collectionListObservable.splice(newPosition, 0, grabbedItem);
+
+    resetSynthRunRanking( synthRun );
+}
+
+function showSynthRunMoveUI( collection, itsElement, synthRun ) {
+    // show/add? a simple panel with Move, Move All, and Cancel buttons
+
+    // build the panel if it's not already hidden in the DOM
+    var $synthRunMoveUI = $('#synthrun-move-ui');
+    if ($synthRunMoveUI.length === 0) {
+        $synthRunMoveUI = $(
+          '<div id="synthrun-move-ui" class="synthrun-move-panel btn-group">'
+             +'<button class="btn">Move</button>'
+             +'<button class="btn" disabled="disabled">Move All</button>'
+             +'<button class="btn btn-danger">Cancel</button>'
+         +'</div>'
+        );
+    }
+
+    // check for integer value, and alert if not valid!
+    if (isNaN(Number(collection['rank'])) || ($.trim(collection['rank']) == '')) {
+        $(itsElement).css('color','#f33');
+        $synthRunMoveUI.hide();
+        return false;
+    } else {
+        $(itsElement).css('color', '');
+    }
+
+    // (re)bind buttons to this collection
+    $synthRunMoveUI.find('button:contains(Move)')
+                     .unbind('click').click(function() {
+                        var newPosition = (Number(collection.rank) - 1) || 0;
+                        moveInSynthesisRun( collection, synthRun, newPosition );
+                        resetSynthRunRanking( synthRun );
+                        $('#synthrun-move-ui').hide();
+                        return false;
+                      });
+    $synthRunMoveUI.find('button:contains(Move All)')
+                     .unbind('click').click(function() {
+                        // sort all collections by rank-as-number, in ascending order
+                        var collectionListObservable = synthRun.collections,
+                            collectionList = collectionListObservable();
+                        collectionListObservable.sort(function(a,b) {
+                            // N.B. This works even if there's no such property.
+                            a = ko.unwrap(a);
+                            b = ko.unwrap(b);
+                            var aStatedRank = Number(a['rank']);
+                            var bStatedRank = Number(b['rank']);
+                            // if either field has an invalid rank value, freeze this pair
+                            if (isNaN(aStatedRank) || ($.trim(a['rank']) == '')
+                             || isNaN(bStatedRank) || ($.trim(b['rank']) == '')) {
+                                return 0;
+                            }
+                            if (aStatedRank === bStatedRank) {
+                                return 0;
+                            }
+                            // sort these from low to high
+                            return (aStatedRank > bStatedRank) ? 1 : -1;
+                        });
+                        resetSynthRunRanking( synthRun );
+                        $('#synthrun-move-ui').hide();
+                        return false;
+                      });
+    $synthRunMoveUI.find('button:contains(Cancel)')
+                     .unbind('click').click(function() {
+                        resetSynthRunRanking( synthRun );
+                        $('#synthrun-move-ui').hide();
+                        return false;
+                      });
+
+    // en/disable widgets in the move UI, based on how many pending moves
+    var highestRankSoFar = -1;
+    var collectionsOutOfPlace = $.grep(synthRun.collections(), function(collection, i) {
+        // Does its stated 'rank' match its list position? N.B. that we're not
+        // looking for an exact match, just relative value vs. its neighbors
+        // in the collection list.
+        if (isNaN(Number(collection['rank'])) || ($.trim(collection['rank']) == '')) {
+            // weird values should prompt us to move+refresh
+            return true;
+        }
+        var statedRank = Number(collection['rank']);
+        if (statedRank < highestRankSoFar) {
+            return true;
+        }
+        highestRankSoFar = statedRank;
+        return false;
+    });
+    switch(collectionsOutOfPlace.length) {
+        case 0:
+            // don't show the UI, nothing to move!
+            $('#synthrun-move-ui').hide();
+            return false;
+        case 1:
+            $synthRunMoveUI.find('button:contains(Move)')
+                             .attr('disabled', null);
+            $synthRunMoveUI.find('button:contains(Move All)')
+                             .attr('disabled', 'disabled');
+            break;
+        default:
+            $synthRunMoveUI.find('button:contains(Move)')
+                             .attr('disabled', null);
+            $synthRunMoveUI.find('button:contains(Move All)')
+                             .attr('disabled', null);
+    }
+
+    // float this panel alongside the specified collection, IF it's not already there
+    if ($(itsElement).nextAll('#synthrun-move-ui:visible').length === 0) {
+        $synthRunMoveUI.insertAfter(itsElement);
+    }
+    $synthRunMoveUI.css('display','inline-block');
+}
+
+function ensureSynthRunRanking( synthRun ) {
+    // add a 'rank' property to any collection that doesn't have one; if any are
+    // missing, reset ALL values based on their "natural" order in the array
+    var missingRankProperties = false;
+    // check for any missing properties (if so, reset all)
+    $.each(synthRun.collections(), function(i, collection) {
+        collection = ko.unwrap( observable );
+        if (!('rank' in collection)) {
+            collection['rank'] = null;
+            missingRankProperties = true;
+            observable.notifySubscribers();
+        }
+    });
+    if (missingRankProperties) {
+        resetSynthRunRanking( synthRun );
+    }
+}
+function resetSynthRunRanking( synthRun ) {
+    // update existing 'rank' property to each of its collections, using
+    // their "natural" order in the array
+    $.each(synthRun.collections(), function(i, observable) {
+        collection = ko.unwrap( observable );
+        collection.rank = (i+1);
+        observable.notifySubscribers();
+    });
+}
+function stripSynthRunRanking( synthRun ) {
+    // remove explicit 'rank' properties before saving a collection, since the
+    // JSON array already has the current order
+    var collectionList = synthRun.collections();
+    $.each(collectionList, function(i, collection) {
+        collection = ko.unwrap( collection );
+        delete collection['rank'];
+    });
+}
+function stripSynthRunStatusMarkers( synthRun ) {
+    // remove temporary 'status' properties before submitting a synthesis run,
+    // since these are only used to review after updating collections from phylesystem
+    var collectionList = synthRun.collections();
+    $.each(collectionList, function(i, collection) {
+        collection = ko.unwrap( collection );
+        delete collection['status'];
+    });
+}
+
+async function removeCollectionFromSynthRun(collection, synthRun) {
+    if (await asyncConfirm('Are you sure you want to remove this collection from synthesis?')) {
+        var collectionListObservable = synthRun.collections,
+            collectionList = collectionListObservable();
+        var oldPosition = indexOfObservable( collectionList, collection );
+        if (oldPosition === -1) {
+            // this should *never* happen
+            console.warn('No such collection in this synthesis run!');
+            return false;
+        }
+        collectionListObservable.splice(oldPosition, 1);
+        resetSynthRunRanking( synthRun );
+    }
+}

@@ -19,7 +19,8 @@ db.define_table('plugin_localcomments_comment',
                 Field('sourcetree_node_id',readable=True,writable=False),
                 Field('ottol_id',readable=True,writable=False),
                 # first comment in thread can suggest scope (re: synthetic tree placement? OTT taxon?)
-                Field('intended_scope','text'),
+                # NOTE that we're disabling this, but will leave this field for now
+                #Field('intended_scope','text'),
                 # fallback 'url' for other web pages (vs tree-views)
                 Field('url',readable=True,writable=False),
                 # allow for threaded/nested comments?
@@ -47,10 +48,10 @@ db.plugin_localcomments_comment.created_by.requires = IS_NOT_EMPTY()
 def plugin_localcomments(filter='skip_comments',url='',synthtree_id='',synthtree_node_id='',sourcetree_id='',ottol_id='',target_node_label='',parent_id=None):
     return LOAD('plugin_localcomments',vars=dict(
         filter=filter,  # show messages matching on these fields
-        url=url, 
-        synthtree_id=synthtree_id, 
-        synthtree_node_id=synthtree_node_id, 
-        sourcetree_id=sourcetree_id, 
-        ottol_id=ottol_id, 
-        target_node_label=target_node_label, 
+        url=url,
+        synthtree_id=synthtree_id,
+        synthtree_node_id=synthtree_node_id,
+        sourcetree_id=sourcetree_id,
+        ottol_id=ottol_id,
+        target_node_label=target_node_label,
         thread_parent_id=parent_id))
