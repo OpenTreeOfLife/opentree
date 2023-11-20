@@ -10,7 +10,10 @@ from synthetic_tree_viewer.opentreewebapputil import (
     latest_CrossRef_URL,
     fetch_current_TNRS_context_names,
     )
-from pyramid.httpexceptions import HTTPNotFound, HTTPSeeOther
+from pyramid.httpexceptions import (
+    HTTPNotFound,
+    HTTPSeeOther,
+    )
 
 def _minimal_about_viewdict(request):
     # First, copy our boilerplate config vars (getDraftTreeID_url, etc)
@@ -36,12 +39,17 @@ def _minimal_about_viewdict(request):
     return view_dict
 
 
-@view_config(route_name='about_open_tree_of_life',
-             renderer='synthetic_tree_viewer:templates/about/open_tree_of_life.jinja2')
 @view_config(route_name='about',
+             renderer='synthetic_tree_viewer:templates/about/open_tree_of_life.jinja2')
+def about_default_redirect(request):
+    raise HTTPSeeOther(location='/about/open-tree-of-life')
+
+@view_config(route_name='about_open_tree_of_life',
              renderer='synthetic_tree_viewer:templates/about/open_tree_of_life.jinja2')
 @view_config(route_name='about_references',
              renderer='synthetic_tree_viewer:templates/about/references.jinja2')
+@view_config(route_name='about_privacy_policy',
+             renderer='synthetic_tree_viewer:templates/about/privacy_policy.jinja2')
 def about_open_tree_of_life(request):
     # provide view context for a dumb template
     view_dict = _minimal_about_viewdict(request)

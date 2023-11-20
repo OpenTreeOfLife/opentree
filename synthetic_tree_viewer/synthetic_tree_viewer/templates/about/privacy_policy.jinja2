@@ -1,5 +1,6 @@
-{{extend 'layout.html'}}
+{% extends "../layout.jinja2" %}
 
+{% block center %}
 <div class="container">
 <h1 id="main-title">Privacy Policy</h1>
 <div class="row">
@@ -147,10 +148,11 @@ like your personal information to be removed, please send a message to
 </div>
 
 <h3 id="comment-header">Comments <i></i></h3>
-{{=plugin_localcomments(filter='url',url=request.url)}}
+{# plugin_localcomments(filter='url',url=request.url) #}
 
 </div><!-- end of .container -->
 
 <script type="text/javascript">
     // add any page-specific behavior here
 </script>
+{% endblock center %}
