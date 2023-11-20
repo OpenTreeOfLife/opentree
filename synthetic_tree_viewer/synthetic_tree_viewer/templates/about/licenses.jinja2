@@ -1,5 +1,6 @@
-{{extend 'layout.html'}}
+{% extends "../layout.jinja2" %}
 
+{% block center %}
 <div class="container">
 
       <h1 id="main-title">Data rights</h1>
@@ -44,189 +45,189 @@
                       <th>Un-minified source code</th>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/html5shiv.js') }}">html5shiv.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/html5shiv.js') }}">html5shiv.js</a></td>
                       <td><a href="http://www.gnu.org/licenses/gpl-2.0.html">GPL 2</a></td>
                       <td><a href="https://github.com/aFarkas/html5shiv/blob/master/src/html5shiv.js">html5shiv.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','plugin_layouts/superfish.js') }}">superfish.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/plugin_layouts/superfish.js') }}">superfish.js</a></td>
                       <td><a href="http://www.jclark.com/xml/copying.txt">Expat (as MIT)</a></td>
-                      <td><a href="{{= URL('static','plugin_layouts/superfish.js') }}">superfish.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/plugin_layouts/superfish.js') }}">superfish.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/argus/raphael-min.js') }}">raphael-min.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/argus/raphael-min.js') }}">raphael-min.js</a></td>
                       <td><a href="http://www.jclark.com/xml/copying.txt">Expat (as MIT)</a></td>
                       <td><a href="https://raw.githubusercontent.com/DmitryBaranovskiy/raphael/7ba1a8258be64fdb517bc78fde44ff0e6188ca05/raphael.js">raphael.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/treeview.js') }}">drawtree.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/treeview.js') }}">drawtree.js</a></td>
                       <td><a href="http://www.freebsd.org/copyright/freebsd-license.html">FreeBSD (as BSD 2-Clause)</a></td>
-                      <td><a href="{{= URL('static','js/treeview.js') }}">drawtree.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/treeview.js') }}">drawtree.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/argus/drawtree.js') }}">drawtree.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/argus/drawtree.js') }}">drawtree.js</a></td>
                       <td><a href="http://www.freebsd.org/copyright/freebsd-license.html">FreeBSD (as BSD 2-Clause)</a></td>
-                      <td><a href="{{= URL('static','js/argus/drawtree.js') }}">drawtree.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/argus/drawtree.js') }}">drawtree.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/jquery.history.js') }}">jquery.history.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/jquery.history.js') }}">jquery.history.js</a></td>
                       <td><a href="magnet:?xt=urn:btih:c80d50af7d3db9be66a4d0a86db0286e4fd33292&dn=bsd-3-clause.txt">BSD 3-Clause (as New BSD)</a></td>
                       <td><a href="https://github.com/browserstate/history.js/blob/master/scripts/bundled-uncompressed/html5/jquery.history.js">jquery.history.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/jquery.splitter-0.6.js') }}">jquery.splitter-0.6.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/jquery.splitter-0.6.js') }}">jquery.splitter-0.6.js</a></td>
                       <td><a href="http://www.gnu.org/licenses/gpl-3.0.html">GPL 3</a></td>
-                      <td><a href="{{= URL('static','js/jquery.splitter-0.6.js') }}">jquery.splitter-0.6.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/jquery.splitter-0.6.js') }}">jquery.splitter-0.6.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/bootstrap-transition.js') }}">bootstrap-transition.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-transition.js') }}">bootstrap-transition.js</a></td>
                       <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
-                      <td><a href="{{= URL('static','js/bootstrap-transition.js') }}">bootstrap-transition.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-transition.js') }}">bootstrap-transition.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/bootstrap-alert.js') }}">bootstrap-alert.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-alert.js') }}">bootstrap-alert.js</a></td>
                       <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
-                      <td><a href="{{= URL('static','js/bootstrap-alert.js') }}">bootstrap-alert.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-alert.js') }}">bootstrap-alert.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/bootstrap-modal.js') }}">bootstrap-modal.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-modal.js') }}">bootstrap-modal.js</a></td>
                       <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
-                      <td><a href="{{= URL('static','js/bootstrap-modal.js') }}">bootstrap-modal.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-modal.js') }}">bootstrap-modal.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/bootstrap-dropdown.js') }}">bootstrap-dropdown.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-dropdown.js') }}">bootstrap-dropdown.js</a></td>
                       <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
-                      <td><a href="{{= URL('static','js/bootstrap-dropdown.js') }}">bootstrap-dropdown.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-dropdown.js') }}">bootstrap-dropdown.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/bootstrap-scrollspy.js') }}">bootstrap-scrollspy.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-scrollspy.js') }}">bootstrap-scrollspy.js</a></td>
                       <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
-                      <td><a href="{{= URL('static','js/bootstrap-scrollspy.js') }}">bootstrap-scrollspy.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-scrollspy.js') }}">bootstrap-scrollspy.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/bootstrap-tab.js') }}">bootstrap-tab.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-tab.js') }}">bootstrap-tab.js</a></td>
                       <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
-                      <td><a href="{{= URL('static','js/bootstrap-tab.js') }}">bootstrap-tab.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-tab.js') }}">bootstrap-tab.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/bootstrap-tooltip.js') }}">bootstrap-tooltip.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-tooltip.js') }}">bootstrap-tooltip.js</a></td>
                       <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
-                      <td><a href="{{= URL('static','js/bootstrap-tooltip.js') }}">bootstrap-tooltip.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-tooltip.js') }}">bootstrap-tooltip.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/bootstrap-popover.js') }}">bootstrap-popover.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-popover.js') }}">bootstrap-popover.js</a></td>
                       <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
-                      <td><a href="{{= URL('static','js/bootstrap-popover.js') }}">bootstrap-popover.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-popover.js') }}">bootstrap-popover.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/bootstrap-button.js') }}">bootstrap-button.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-button.js') }}">bootstrap-button.js</a></td>
                       <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
-                      <td><a href="{{= URL('static','js/bootstrap-button.js') }}">bootstrap-button.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-button.js') }}">bootstrap-button.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/bootstrap-collapse.js') }}">bootstrap-collapse.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-collapse.js') }}">bootstrap-collapse.js</a></td>
                       <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
-                      <td><a href="{{= URL('static','js/bootstrap-collapse.js') }}">bootstrap-collapse.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-collapse.js') }}">bootstrap-collapse.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/bootstrap-carousel.js') }}">bootstrap-carousel.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-carousel.js') }}">bootstrap-carousel.js</a></td>
                       <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
-                      <td><a href="{{= URL('static','js/bootstrap-carousel.js') }}">bootstrap-carousel.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-carousel.js') }}">bootstrap-carousel.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/bootstrap-typeahead.js') }}">bootstrap-typeahead.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-typeahead.js') }}">bootstrap-typeahead.js</a></td>
                       <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
-                      <td><a href="{{= URL('static','js/bootstrap-typeahead.js') }}">bootstrap-typeahead.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/bootstrap-typeahead.js') }}">bootstrap-typeahead.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/web2py.js') }}">web2py.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/web2py.js') }}">web2py.js</a></td>
                       <td><a href="http://www.gnu.org/licenses/lgpl-3.0.html">Lesser GPL</a></td>
-                      <td><a href="{{= URL('static','js/web2py.js') }}">web2py.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/web2py.js') }}">web2py.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/calendar.js') }}">calendar.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/calendar.js') }}">calendar.js</a></td>
                       <td><a href="http://www.gnu.org/licenses/lgpl-3.0.html">Lesser GPL</a></td>
                       <td><a href="http://www.dynarch.com/projects/calendar">calendar.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('static','js/moment.min.js') }}">moment.min.js</a></td>
+                      <td><a href="{{ request.static_url('synthetic_tree_viewer:static/js/moment.min.js') }}">moment.min.js</a></td>
                       <td><a href="http://www.jclark.com/xml/copying.txt">Expat (as MIT)</a></td>
                       <td><a href="https://github.com/moment/moment/releases/tag/2.8.3">archive2.8.3.zip</a></td>
                   </tr>
                   <!-- Additional scripts in curation app -->
                   <tr>
-                      <td><a href="{{= URL('curator','static','js/study-creation.js') }}">study-creation.js</a></td>
+                      <td><a href="/curator/static/js/study-creation.js">study-creation.js</a></td>
                       <td><a href="http://www.freebsd.org/copyright/freebsd-license.html">FreeBSD (as BSD 2-Clause)</a></td>
-                      <td><a href="{{= URL('curator','static','js/study-creation.js') }}">study-creation.js</a></td>
+                      <td><a href="/curator/static/js/study-creation.js">study-creation.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('curator','static','js/study-editor.js') }}">study-editor.js</a></td>
+                      <td><a href="/curator/static/js/study-editor.js">study-editor.js</a></td>
                       <td><a href="http://www.freebsd.org/copyright/freebsd-license.html">FreeBSD (as BSD 2-Clause)</a></td>
-                      <td><a href="{{= URL('curator','static','js/study-editor.js') }}">study-editor.js</a></td>
+                      <td><a href="/curator/static/js/study-editor.js">study-editor.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('curator','static','js/curation-helpers.js') }}">curation-helpers.js</a></td>
+                      <td><a href="/curator/static/js/curation-helpers.js">curation-helpers.js</a></td>
                       <td><a href="http://www.freebsd.org/copyright/freebsd-license.html">FreeBSD (as BSD 2-Clause)</a></td>
-                      <td><a href="{{= URL('curator','static','js/curation-helpers.js') }}">curation-helpers.js</a></td>
+                      <td><a href="/curator/static/js/curation-helpers.js">curation-helpers.js</a></td>
                   </tr>
 
                   <tr>
-                      <td><a href="{{= URL('curator','static','js/modernizr.custom.js') }}">modernizr.custom.js</a></td>
+                      <td><a href="/curator/static/js/modernizr.custom.js">modernizr.custom.js</a></td>
                       <td><a href="http://www.jclark.com/xml/copying.txt">Expat (as MIT)</a></td>
                       <td><a href="https://github.com/Modernizr/Modernizr/releases/tag/v2.6.2">v2.6.2.zip</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('curator','static','js/json2.js') }}">json2.js</a></td>
+                      <td><a href="/curator/static/js/json2.js">json2.js</a></td>
                       <td><a href="magnet:?xt=urn:btih:e95b018ef3580986a04669f1b5879592219e2a7a&dn=public-domain.txt">Public Domain</a></td>
-                      <td><a href="{{= URL('curator','static','js/json2.js') }}">json2.js</a></td>
+                      <td><a href="/curator/static/js/json2.js">json2.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('curator','static','js/knockout-2.3.0.js') }}">knockout-2.3.0.js</a></td>
+                      <td><a href="/curator/static/js/knockout-2.3.0.js">knockout-2.3.0.js</a></td>
                       <td><a href="http://www.jclark.com/xml/copying.txt">Expat (as MIT)</a></td>
                       <td><a href="https://github.com/knockout/knockout/releases/tag/v2.3.0">v2.3.0.zip</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('curator','static','js/knockout-bootstrap.min.js') }}">knockout-bootstrap.min.js</a></td>
+                      <td><a href="/curator/static/js/knockout-bootstrap.min.js">knockout-bootstrap.min.js</a></td>
                       <td><a href="http://www.jclark.com/xml/copying.txt">Expat (as MIT)</a></td>
                       <td><a href="https://github.com/billpull/knockout-bootstrap/releases/tag/v0.2.1">v0.2.1.zip</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('curator','static','js/knockout-paged-e4a5770702.js') }}">knockout-paged-e4a5770702.js</a></td>
+                      <td><a href="/curator/static/js/knockout-paged-e4a5770702.js">knockout-paged-e4a5770702.js</a></td>
                       <td><a href="http://www.jclark.com/xml/copying.txt">Expat (as MIT)</a></td>
                       <td><a href="https://raw.githubusercontent.com/lelandrichardson/knockout-paged/master/knockout-paged.js">knockout-paged.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('curator','static','jQuery-File-Upload-9.5.2/js/jquery.fileupload.js') }}">jquery.fileupload.js</a></td>
+                      <td><a href="/curator/static/jQuery-File-Upload-9.5.2/js/jquery.fileupload.js">jquery.fileupload.js</a></td>
                       <td><a href="http://www.jclark.com/xml/copying.txt">Expat (as MIT)</a></td>
-                      <td><a href="{{= URL('curator','static','jQuery-File-Upload-9.5.2/js/jquery.fileupload.js') }}">jquery.fileupload.js</a></td>
+                      <td><a href="/curator/static/jQuery-File-Upload-9.5.2/js/jquery.fileupload.js">jquery.fileupload.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('curator','static','jQuery-File-Upload-9.5.2/js/jquery.iframe-transport.js') }}">jquery.iframe-transport.js</a></td>
+                      <td><a href="/curator/static/jQuery-File-Upload-9.5.2/js/jquery.iframe-transport.js">jquery.iframe-transport.js</a></td>
                       <td><a href="http://www.jclark.com/xml/copying.txt">Expat (as MIT)</a></td>
-                      <td><a href="{{= URL('curator','static','jQuery-File-Upload-9.5.2/js/jquery.iframe-transport.js') }}">jquery.iframe-transport.js</a></td>
+                      <td><a href="/curator/static/jQuery-File-Upload-9.5.2/js/jquery.iframe-transport.js">jquery.iframe-transport.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('curator','static','jQuery-File-Upload-9.5.2/js/vendor/jquery.ui.widget.js') }}">jquery.ui.widget.js</a></td>
+                      <td><a href="/curator/static/jQuery-File-Upload-9.5.2/js/vendor/jquery.ui.widget.js">jquery.ui.widget.js</a></td>
                       <td><a href="http://www.jclark.com/xml/copying.txt">Expat (as MIT)</a></td>
-                      <td><a href="{{= URL('curator','static','jQuery-File-Upload-9.5.2/js/vendor/jquery.ui.widget.js') }}">jquery.ui.widget.js</a></td>
+                      <td><a href="/curator/static/jQuery-File-Upload-9.5.2/js/vendor/jquery.ui.widget.js">jquery.ui.widget.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('curator','static','js/bootstrap-tagsinput.min.js') }}">bootstrap-tagsinput.min.js</a></td>
+                      <td><a href="/curator/static/js/bootstrap-tagsinput.min.js">bootstrap-tagsinput.min.js</a></td>
                       <td><a href="http://www.jclark.com/xml/copying.txt">Expat (as MIT)</a></td>
                       <td><a href="https://github.com/TimSchlechter/bootstrap-tagsinput/releases/tag/0.3.9">0.3.9.zip</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('curator','static','js/bootstrap-dropdown.js') }}">bootstrap-dropdown.js</a></td>
+                      <td><a href="/curator/static/js/bootstrap-dropdown.js">bootstrap-dropdown.js</a></td>
                       <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
-                      <td><a href="{{= URL('curator','static','js/bootstrap-dropdown.js') }}"></a></td>
+                      <td><a href="/curator/static/js/bootstrap-dropdown.js"></a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('curator','static','js/d3.phylogram.js') }}">d3.phylogram.js</a></td>
+                      <td><a href="/curator/static/js/d3.phylogram.js">d3.phylogram.js</a></td>
                       <td><a href="http://www.freebsd.org/copyright/freebsd-license.html">FreeBSD (as BSD 2-Clause)</a></td>
-                      <td><a href="{{= URL('curator','static','js/d3.phylogram.js') }}">d3.phylogram.js</a></td>
+                      <td><a href="/curator/static/js/d3.phylogram.js">d3.phylogram.js</a></td>
                   </tr>
                   <tr>
-                      <td><a href="{{= URL('curator','static','js/d3.v3.min.js') }}">d3.v3.min.js</a></td>
+                      <td><a href="/curator/static/js/d3.v3.min.js">d3.v3.min.js</a></td>
                       <td><a href="magnet:?xt=urn:btih:c80d50af7d3db9be66a4d0a86db0286e4fd33292&dn=bsd-3-clause.txt">BSD 3-Clause</a></td>
                       <td><a href="https://github.com/mbostock/d3/blob/master/d3.js">d3.js</a></td>
                   </tr>
@@ -235,10 +236,11 @@
       </div>
 
       <h3 id="comment-header">Comments <i></i></h3>
-      {{=plugin_localcomments(filter='url',url=request.url)}}
+      {# plugin_localcomments(filter='url',url=request.url) #}
 
 </div><!-- end of .container -->
 
 <script type="text/javascript">
     // add any page-specific behavior here
 </script>
+{% endblock center %}
