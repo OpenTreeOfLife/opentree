@@ -54,7 +54,7 @@ def about_default_redirect(request):
              renderer='synthetic_tree_viewer:templates/about/licenses.jinja2')
 @view_config(route_name='about_developer_resources',
              renderer='synthetic_tree_viewer:templates/about/developer_resources.jinja2')
-def about_open_tree_of_life(request):
+def about_misc(request):
     # provide view context for a dumb template
     view_dict = _minimal_about_viewdict(request)
 

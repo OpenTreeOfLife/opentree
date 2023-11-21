@@ -64,6 +64,13 @@ def home(request):
     # redirect to default tree view
     return HTTPSeeOther(location='/opentree/argus')
 
+@view_config(route_name='contact', renderer='synthetic_tree_viewer:templates/contact.jinja2')
+def contact(request):
+    view_dict = get_opentree_services_method_urls(request)
+    view_dict.update({
+        'taxonSearchContextNames': fetch_current_TNRS_context_names(request),
+        })
+    return view_dict
 
 @view_config(route_name='tree_view', renderer='synthetic_tree_viewer:templates/tree_view.jinja2')
 def tree_view(request):
