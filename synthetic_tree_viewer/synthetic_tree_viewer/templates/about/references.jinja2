@@ -1,7 +1,6 @@
 {% extends "../layout.jinja2" %}
 
 {% block center %}
-{# import urllib #}
 {# from pprint import pprint #}
 <style type="text/css">
 -->
@@ -80,10 +79,10 @@ div.contributing-studies div.links .tree-links a {
                     <div style="color: #c33; background-color: #fdd; font-weight: bold; margin-top: 2px; padding: 1px 4px 3px;">
                         <em>
                             No link provided! Try 
-                          <a href="http://scholar.google.com/scholar?q={{ urllib.quote(study.get('ot:studyPublicationReference').encode('utf-8')) }}"
+                          <a href="http://scholar.google.com/scholar?q={{ url_quote(study.get('ot:studyPublicationReference').encode('utf-8')) }}"
                             target="_blank" style="margin-top: 0; display: inline;">
                             Google Scholar</a> or 
-                          <a href="http://search.crossref.org/?q={{ urllib.quote(study.get('ot:studyPublicationReference').encode('utf-8')) }}"
+                          <a href="http://search.crossref.org/?q={{ url_quote(study.get('ot:studyPublicationReference').encode('utf-8')) }}"
                             target="_blank" style=" margin-top: 0; display: inline;">
                             CrossRef.org</a>
                         </em> 
@@ -91,18 +90,20 @@ div.contributing-studies div.links .tree-links a {
                   {% endif %}
               </div>
               <div class="span4 links">
-                  <a target="_blank" href="{{ URL(a='curator', c='study', f='view', args=[ study.get('ot:studyId') ]) }}"
+                  <a target="_blank" 
+                     href="/curator/study/view/{{ study.get('ot:studyId') }}"
                     >Open study in curator application</a>
                   <a href="#" onclick="toggleTreeLinks(this); return false;"
-                      ><span>Show links to included trees</span> ({{ len(study['tree_ids']) }})</a>
+                      ><span>Show links to included trees</span> ({{ study['tree_ids'] | length }})</a>
                   <div class="tree-links">
                      {% for tree_id in study['tree_ids']: %}
-                     <a target="_blank" href="{{ URL(a='curator', c='study', f='view', args=[ study.get('ot:studyId') ], vars={'tab':'trees', 'tree': tree_id }) }}"
+                     <a target="_blank" 
+                        href="/curator/study/view/{{ study.get('ot:studyId') }}?tab=trees&tree={{  tree_id  }}"
                         title="Click to see this tree in the curation app">{{ tree_id }}</a>
                      {% endfor %}
                   </div>
                   <a target="_blank" 
-                    href="{{ URL(a='default', c='default', f='argus', args=['ottol@{}/{}'.format( study.get('ot:focalClade'), study.get('ot:focalCladeOTTTaxonName') ) ] ) }}"
+                    href="/default/default/argus/ottol@{{ study.get('ot:focalClade') }}/{{ study.get('ot:focalCladeOTTTaxonName') }}"
                     >Browse focal clade in synthetic tree</a>
                 <a target="_blank" href="{{ API_load_study_GET_url.replace('{STUDY_ID}', study.get('ot:studyId')) }}"
                     >Download current NexSON</a>
@@ -114,7 +115,7 @@ div.contributing-studies div.links .tree-links a {
                   <a target="_blank" href="http://www.reelab.net/phylografter/study/view/{{ study.get('ot:studyId')}}">Open in phylografter</a>
                   -->
                  {% if study.get('friendlyDepositMessage', None): %}
-                  {{ XML(study.get('friendlyDepositMessage')) }}
+                  {{ study.get('friendlyDepositMessage') |safe }}
                  {% elif study.get('ot:dataDeposit', None): %}
                   <a target="_blank"
                      href="{{ latest_CrossRef_URL(study.get('ot:dataDeposit')) }}">Data deposit DOI/URL</a>

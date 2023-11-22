@@ -1,5 +1,6 @@
 # adapted from web2py (applications.opentree.modules.opentreewebapputil)
 import os
+import re
 import configparser
 
 _CONF_OBJ_DICT = {}
@@ -88,9 +89,10 @@ def get_currently_deployed_opentree_branch(request):
         pass
     return branch_name
 
-def latest_CrossRef_URL():
-    # TODO
-    pass
+def latest_CrossRef_URL(url):
+    if (not url):
+        return ''
+    return url.replace('http://dx.doi.org/', 'https://doi.org/')
 
 def get_opentree_services_domains(request):
     '''
@@ -188,4 +190,28 @@ def unique_ordered_list(seq):
     seen = set()
     seen_add = seen.add
     return [ x for x in seq if x not in seen and not seen_add(x)]
+
+treebase_deposit_doi = re.compile('//purl.org/phylo/treebase/phylows/study/TB2:S(?P<treebase_id>\d+)')
+def get_data_deposit_message(raw_deposit_doi):
+    # Returns a *compact* hyperlink (HTML) to study data, or an empty string if
+    # no DOI/URL is found. Some cryptic dataDeposit URLs require more
+    # explanation or a modified URL to be more web-friendly.
+    #
+    # NOTE that we maintain a client-side counterpart in
+    # curator/static/js/study-editor.js > getDataDepositMessage
+    raw_deposit_doi = raw_deposit_doi.strip()
+    if raw_deposit_doi == '':
+        return ''
+
+    # TreeBASE URLs should point to a web page (vs RDF)
+    # EXAMPLE: http://purl.org/phylo/treebase/phylows/study/TB2:S13451
+    #    => http://treebase.org/treebase-web/search/study/summary.html?id=13451
+    treebase_match = treebase_deposit_doi.search(raw_deposit_doi)
+    if treebase_match:
+        return ('<a href="http://treebase.org/treebase-web/search/study/summary.html?'+
+               'id=%s" target="_blank">Data in Treebase</a>' % treebase_match.group('treebase_id'))
+ 
+    # TODO: Add other substitutions?
+
+    return ('<a target="_blank" href="%s">Data deposit DOI/URL</a>' % raw_deposit_doi)
 
