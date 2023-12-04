@@ -1166,9 +1166,7 @@ function showObjectProperties( objInfo, options ) {
                                 pRef = studyInfo['ot:studyPublicationReference'] || '???';
                                 pCompactRef = fullToCompactReference( pRef );
                                 // show compact reference for each study, with a toggle for more below
-                                displayVal = '<div class="related-study"><div class="compact-ref"><a href="'+ curationProductionWebappURL
-                                           + '/curator/study/view/'+ pID +'" target="_blank" title="Link to this study in curation app">'
-                                           + pCompactRef +'</a></div>';
+                                displayVal = '<div class="related-study"><div class="compact-ref"><a href="/curator/study/view/'+ pID +'" target="_blank" title="Link to this study in curation app">'+ pCompactRef +'</a></div>';
                                 displayVal += '<div class="full-study-details" style="display: none;">';
                                 displayVal += '<div class="full-ref">'+ pRef +'</div>';
 
@@ -1182,14 +1180,12 @@ function showObjectProperties( objInfo, options ) {
                                 displayVal += ('Open Tree curation: <a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>');
                                 */
                                 displayVal += (
-                                    'Open Tree curation of this study: <a href="'+ curationProductionWebappURL
-                                  + '/curator/study/view/'+ pID +'" target="_blank" title="Link to this study in curation app">'+ pID +'</a><br/>'
+                                    'Open Tree curation of this study: <a href="/curator/study/view/'+ pID +'" target="_blank" title="Link to this study in curation app">'+ pID +'</a><br/>'
                                   + 'Supporting '+ (studyInfo.supportingTrees.length > 1 ? 'trees:' : 'tree:')
                                 );
                                 for (var treeID in studyInfo.supportingTrees) {
                                     displayVal += (
-                                        '&nbsp; <a href="'+ curationProductionWebappURL
-                                      + '/curator/study/view/'+ pID +'?tab=trees&tree='+ treeID +'" '
+                                        '&nbsp; <a href="/curator/study/view/'+ pID +'?tab=trees&tree='+ treeID +'" '
                                       + 'target="_blank" title="Link to this supporting tree in curation app">'+ treeID +'</a>'
                                     );
                                 }
@@ -1329,7 +1325,7 @@ function showObjectProperties( objInfo, options ) {
             // Make this name safe for use in our EOL search URL
             // (prefer '+' to '%20', but carefully encode other characters)
             var urlSafeDisplayName = encodeURIComponent(displayName).replace(/%20/g,'+');
-            $details.after('<ul class="external-links">'
+            $details.after('<ul class="external-links">' 
               + '<li><a target="_blank" href="http://eol.org/search?q='+ urlSafeDisplayName +'" id="link-to-EOL">'
               +    'Search EOL for \''+ displayName +'\'</a></li>'
               + '<li><a target="onezoom" href="http://www.onezoom.org/life.html/@='+ itsTaxon.ott_id +'" id="link-to-OneZoom">'
