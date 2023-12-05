@@ -1166,7 +1166,9 @@ function showObjectProperties( objInfo, options ) {
                                 pRef = studyInfo['ot:studyPublicationReference'] || '???';
                                 pCompactRef = fullToCompactReference( pRef );
                                 // show compact reference for each study, with a toggle for more below
-                                displayVal = '<div class="related-study"><div class="compact-ref"><a href="/curator/study/view/'+ pID +'" target="_blank" title="Link to this study in curation app">'+ pCompactRef +'</a></div>';
+                                displayVal = '<div class="related-study"><div class="compact-ref"><a href="'+ curationProductionWebappURL
+                                           + '/study/view/'+ pID +'" target="_blank" title="Link to this study in curation app">'
+                                           + pCompactRef +'</a></div>';
                                 displayVal += '<div class="full-study-details" style="display: none;">';
                                 displayVal += '<div class="full-ref">'+ pRef +'</div>';
 
@@ -1180,12 +1182,14 @@ function showObjectProperties( objInfo, options ) {
                                 displayVal += ('Open Tree curation: <a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>');
                                 */
                                 displayVal += (
-                                    'Open Tree curation of this study: <a href="/curator/study/view/'+ pID +'" target="_blank" title="Link to this study in curation app">'+ pID +'</a><br/>'
+                                    'Open Tree curation of this study: <a href="'+ curationProductionWebappURL
+                                  + '/study/view/'+ pID +'" target="_blank" title="Link to this study in curation app">'+ pID +'</a><br/>'
                                   + 'Supporting '+ (studyInfo.supportingTrees.length > 1 ? 'trees:' : 'tree:')
                                 );
                                 for (var treeID in studyInfo.supportingTrees) {
                                     displayVal += (
-                                        '&nbsp; <a href="/curator/study/view/'+ pID +'?tab=trees&tree='+ treeID +'" '
+                                        '&nbsp; <a href="'+ curationProductionWebappURL
+                                      + '/study/view/'+ pID +'?tab=trees&tree='+ treeID +'" '
                                       + 'target="_blank" title="Link to this supporting tree in curation app">'+ treeID +'</a>'
                                     );
                                 }
