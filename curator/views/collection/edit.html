@@ -402,7 +402,7 @@ body {
                       Update trees <i class="icon-refresh"></i>
               </button>
               <button id="new-collection-tree-start" type="submit"
-                      class="btn btn-info Xbtn-info-disabled"
+                      class="btn btn-info Xbtn-info-disabled form-init"
                       onclick="return false;"
               ><span data-bind="text: ($data.data.decisions.length > 0) ? 'Add another tree' : 'Add a tree to this collection'">ADD TREE</span>
                     &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
@@ -422,24 +422,25 @@ body {
                 <!-- "active" wiget for study lookup -->
                 <i class="icon-search study-lookup-active" style="position: absolute; margin: 8px 0 0 7px; pointer-events: none;"></i>
                 <input type="text" name="study-lookup"
+                    autocomplete="off"
                     class="input-xlarge study-lookup-active" style="margin-bottom: 2px; padding-left: 25px;"
                     placeholder="Enter its title, DOI, reference, tag, ID..."
                     data-bind="value: '',
                                valueUpdate: ['afterkeydown', 'input'],
-                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
                                "
                 ></input>
                 <!-- hidden field to store chosen ID -->
                 <input type="hidden" name="study-lookup-id"
                        data-bind="value: '',
-                                  event: { change: updateNewCollTreeUI }
+                                  event: { change: updateTreeLookupUI }
                                  "></input>
                 <!-- "passive" wiget once study is chosen -->
                 <a class="btn btn-small study-lookup-passive" style="display: none; margin: 3px 0 3px;"
                    onclick="resetStudyLookup(); return false;">
                     <i class="icon-search"></i>
                 </a>
-                <a id="study-lookup-indicator" class="study-lookup-passive"
+                <a class="study-lookup-indicator study-lookup-passive"
                    style="font-weight: bold; display: none;"
                    title="" href="" target="_blank">...</a>
                 <br />
@@ -451,10 +452,10 @@ body {
                     placeholder="Enter its name, ID, ingroup clade..."
                     data-bind="value: '',
                                valueUpdate: ['afterkeydown', 'input'],
-                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
                                "
                 >
-                    <option disabled="disabled" value="">Find the study above first</option>
+                    <option disabled="disabled" value="">Choose a study first</option>
                 </select>
                 <button class="btn btn-info"
                         data-bind="click: function() {addTreeToCollection($data, 'FROM_LOOKUPS'); return false;}"
@@ -470,7 +471,7 @@ body {
                     placeholder=".../curator/study/view/pg_2826/?tab=trees&tree=tree6573"
                     data-bind="value: '',
                                valueUpdate: ['afterkeydown', 'input'],
-                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               event: { keyup: updateTreeLookupUI, change: updateTreeLookupUI }
                                "
                 ></input>
                 <button class="btn btn-info"
@@ -783,16 +784,20 @@ body {
                           <!-- ko if: event['author_name'] -->
                           Version saved by<br/><strong data-bind="text: event['author_name']">?</strong>
                           <!-- /ko -->
-                          <!-- ko if: event['runner_name'] -->
-                          Synthesis run by<br/><strong data-bind="text: event['runner_name']">?</strong>
+                          <!-- ko if: event['synth_id'] -->
+                          Synthesis run <strong data-bind="text: ('#'+ event['queue_order'])">?</strong><br/>
+                          Status: <strong data-bind="text: event['status']">?</strong>
                           <!-- /ko -->
                         </td>
                         <td>
                           <!-- ko if: event['author_name'] -->
                             <pre class="rendered-comment" data-bind="text: event['message_subject'] + (event['message_body'] ? '\n\n'+ event['message_body'] : '')">?</pre>
                           <!-- /ko -->
-                          <!-- ko if: event['runner_name'] -->
-                            <pre class="synth-event" data-bind="text: event['run_comment']">?</pre>
+                          <!-- ko if: event['synth_id'] -->
+                            <pre class="synth-event" data-bind="">This run included <strong data-bind="text: event['collections'].split(',').length"></strong> collection<span data-bind="visible: event['collections'].split(',').length > 1">s</span>:<!-- ko foreach: event['collections'].split(',') -->
+    <a href="#" target="_blank" title="View this collection in a new window" data-bind="text: $data,
+                       attr: {'href': ('/curator/collection/view/'+ $data) }">LINK</a
+><!-- /ko --></pre>
                           <!-- /ko -->
                         </td>
                         <td>
@@ -800,11 +805,11 @@ body {
                             <a href="" target="_blank" title="See detailed differences on GitHub"
                                data-bind="attr: {'href': event['publicDiffURL']}">Diff view</a>
                           <!-- /ko -->
-                          <!-- ko if: event['publicSynthURL'] -->
-                            <a href="" target="_blank" title="More information about this synthesis run"
-                               data-bind="attr: {'href': event['publicSynthURL']}">Synthesis details</a>
+                          <!-- ko if: event['download_url'] -->
+                            <a href="" target="_blank" title="Download complete information about this synthesis run"
+                               data-bind="attr: {'href': event['download_url']}">Synthesis details</a>
                           <!-- /ko -->
-                          <!-- ko if: !event['publicDiffURL'] && !event['publicSynthURL'] -->
+                          <!-- ko if: !event['publicDiffURL'] && !event['download_url'] -->
                             &mdash;
                           <!-- /ko -->
                         </td>
@@ -946,7 +951,7 @@ body {
                 <a id="current-ref-URL" style="display: block;" href="#" target="_blank" onclick="return false;">&nbsp;</a>
             </div>
             <p>
-                Based on the reference text for this study,
+                Based on the reference text (or current DOI) for this study,
                 <a href="http://crossref.org/" target="_blank">CrossRef.org</a>
                 returned these <span class="found-matches-count"></span> matching records (best matches first).
             </p>

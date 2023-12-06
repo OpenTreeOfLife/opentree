@@ -1,0 +1,107 @@
+{{extend 'layout.html'}}
+
+<div class="container">
+  <h1 id="main-title">FAQs</h1>
+
+  <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+
+    <!--Questions about the synthetic tree -->
+    <h3 id="synth-tree">Synthetic tree questions</h3>
+
+    <div class="panel panel-default">
+      <div class="panel-heading" role="tab" id="brlens">
+        <h4 class="panel-title">
+          <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+            Where are branch lengths and/or dates?
+          </a>
+        </h4>
+      </div>
+      <div id="collapseOne" class="panel-collapse collapse " role="tabpanel" aria-labelledby="headingOne">
+        <div class="panel-body">
+          The synthetic tree does not currently record branch lengths or dates.
+          The tree is constructed by an automated procedure from information found in
+          published phylogenetic trees. These trees rarely have branch lengths or dates.
+          When branch lengths are present, their meaning is not consistent across studies and it
+          is not clear how one would calibrate them when combining trees.
+        </div>
+      </div>
+    </div> <!-- end of question -->
+
+    <div class="panel panel-default">
+      <div class="panel-heading" role="tab" id="headingTwo">
+        <h4 class="panel-title">
+          <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+            How do I see to a tree depth greater than 3 (e.g. for a screenshot)?
+          </a>
+        </h4>
+      </div>
+      <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+        <div class="panel-body">
+          We only have the one tree viewer right now, and it is limited to depth of three for performance reasons.
+        </div>
+      </div>
+    </div> <!-- end of question -->
+
+    <div class="panel panel-default">
+      <div class="panel-heading" role="tab" id="headingThree">
+        <h4 class="panel-title">
+          <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+            Can I switch to a different tree viewer?
+          </a>
+        </h4>
+      </div>
+      <div id="collapseThree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
+        <div class="panel-body">
+          We only have the one tree viewer right now. The folks behind OneZoom are interested
+          in visualizing our data, and we hope providing the data will perhaps inspire
+          others to build much cooler visualizations than what we have currently on our site.
+          If you want to look at the tree locally, you can download and view it in Dendroscope
+          (which is the only one we know that can handle a tree of this size).
+        </div>
+      </div>
+    </div> <!-- end of question -->
+
+  </div> <!-- end of div class panel-group -->
+
+</div>
+
+<div class="container">
+
+  <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+
+    <!--Questions about the taxonomy tree -->
+    <h3 id="synth-tree">Taxonomy questions</h3>
+
+    <div class="panel panel-default">
+      <div class="panel-heading" role="tab" id="taxonomyOne">
+        <h4 class="panel-title">
+          <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+            A taxonomy  question
+          </a>
+        </h4>
+      </div>
+      <div id="collapseFour" class="panel-collapse collapse" role="tabpanel" aria-labelledby="taxonomyOne">
+        <div class="panel-body">
+          A taxonomy answer.
+        </div>
+      </div>
+    </div> <!-- end of question -->
+
+    <div class="panel panel-default">
+      <div class="panel-heading" role="tab" id="taxonomyTwo">
+        <h4 class="panel-title">
+          <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
+            Another taxonomy question.
+          </a>
+        </h4>
+      </div>
+      <div id="collapseFive" class="panel-collapse collapse" role="tabpanel" aria-labelledby="taxonomyTwo">
+        <div class="panel-body">
+          Another taxonomy question.
+        </div>
+      </div>
+    </div> <!-- end of question -->
+
+  </div> <!-- end of div class panel-group -->
+
+</div>

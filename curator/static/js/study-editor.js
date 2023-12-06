@@ -146,6 +146,8 @@ if ( History && History.enabled ) {
             goToTab( currentTab );
             switch(slugify(currentTab)) {
                 case 'home':
+                    // enable study+tree lookup in tree-viewer popup
+                    loadStudyListForLookup();
                     activeFilter = viewModel.listFilters.TREES;
                     filterDefaults = listFilterDefaults.TREES;
                     break;
@@ -158,6 +160,12 @@ if ( History && History.enabled ) {
                 case 'otu-mapping':
                     activeFilter = viewModel.listFilters.OTUS;
                     filterDefaults = listFilterDefaults.OTUS;
+                    break;
+
+                case 'analyses':
+                    // enable study+tree lookup in Analyses tab
+                    loadStudyListForLookup();
+                    console.log('LOADING STUDY LIST...');
                     break;
             }
             if (activeFilter) {
@@ -184,6 +192,13 @@ if ( History && History.enabled ) {
                 }
                 // omit conflict spinner when handling inbound URLs; it conflicts with others
                 if (conflictReferenceTree) {
+                    // bare-bones conflict metadata
+                    var minimalConflictInfo = {
+                        inputTreeID: currentTree,
+                        referenceTreeID: conflictReferenceTree,
+                        referenceTreeName: conflictReferenceTree
+                    }
+                    updateTreeConflictWidgets( minimalConflictInfo );
                     fetchAndShowTreeConflictDetails(currentTree, conflictReferenceTree, {SHOW_SPINNER: false});
                 } else {
                     hideTreeConflictDetails(currentTree, {SHOW_SPINNER: false});
@@ -804,12 +819,16 @@ function loadSelectedStudy() {
                 },
                 'tree': {
                     highestOrdinalNumber: null,
-                    gatherAll: function(nexml) {
+                    gatherAll: function(nexml, options) {
                         // return an array of all matching elements
+                        if (!options) options = {INCLUDE_SCRIPT_MANAGED_TREES: true};
                         var allTrees = [];
                         var allTreesCollections = viewModel.elementTypes.trees.gatherAll(nexml);
                         $.each(allTreesCollections, function(i, treesCollection) {
                             $.each(treesCollection.tree, function(i, tree) {
+                                if (!options.INCLUDE_SCRIPT_MANAGED_TREES) {
+                                    if (isScriptManagedTree(tree)) return true;
+                                }
                                 allTrees.push( tree );
                             });
                         });
@@ -907,8 +926,21 @@ function loadSelectedStudy() {
                 }
                 data.nexml['^ot:candidateTreeForSynthesis'] =
                     makeArray(data.nexml['^ot:candidateTreeForSynthesis']);
-            } else {
-                data.nexml['^ot:candidateTreeForSynthesis'] = [ ];
+                /* Shift "preferred" status to a per-tree property with default
+                 * value, then remove the deprecated study property.
+                 */
+                var preferredTreeIDs = data.nexml['^ot:candidateTreeForSynthesis'];
+                var allTrees = viewModel.elementTypes.tree.gatherAll(data.nexml);
+                $.each(allTrees, function( i, tree ) {
+                    if ($.inArray(tree['@id'], preferredTreeIDs) !== -1) {
+                        // this was a preferred tree (chosen for inclusion in synthesis)
+                        tree['^ot:candidateForSynthesis'] = 'ot:include';
+                    } else {
+                        // not a preferred tree, play it safe with default value
+                        tree['^ot:candidateForSynthesis'] = 'ot:notReviewed';
+                    }
+                });
+                delete data.nexml['^ot:candidateTreeForSynthesis'];
             }
             if ('^ot:tag' in data.nexml) {
                 data.nexml['^ot:tag'] = makeArray(data.nexml['^ot:tag']);
@@ -1265,6 +1297,10 @@ function loadSelectedStudy() {
                 if ($.isArray(chosenTrees)) {
                     // it's a list of zero or more trees
                     $.each( chosenTrees, function(i, tree) {
+                        if (isScriptManagedTree(tree)) {
+                            // ignore "empty" (script-managed) trees
+                            return;
+                        }
                         // check this tree's nodes for this OTU id
                         $.each( tree.node, function( i, node ) {
                             if (node['@otu']) {
@@ -1822,6 +1858,23 @@ function getBranchLengthToggleStyle(tree) {
     return {'color': '#999999'};
 }
 
+function updatePhylesystemLookupWidgets(chooser) {
+    var newValue = $(chooser).val();
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+    if (newValue == 'STUDYID_TREEID') {
+        // show study + tree lookup widgets, clearing old values for both
+        // TODO: Try to keep old tree+study values, if any
+        resetStudyLookup();
+        $container.find('.lookup-widgets').show();
+    } else {
+        // hide 'em
+        $container.find('.lookup-widgets').hide();
+    }
+    updateTreeViewerHeight({'MAINTAIN_SCROLL': true});
+}
+
 /* Support conflict display in the tree viewer */
 function getTreeConflictSummary(conflictInfo) {
     // Expects a JS object from conflict service; returns an object with
@@ -2080,6 +2133,26 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
         return;
     }
     var fullInputTreeID = (studyID +"%23"+ inputTreeID);
+
+    var comparingToPhylesystemTree = (referenceTreeID == 'STUDYID_TREEID');
+    if (comparingToPhylesystemTree) {
+        // build and parse from study and tree selector widgets
+        var context = getPhylesystemLookupContext();
+        // what's the parent element for study+tree lookup UI?
+        var $container = getPhylesystemLookupPanel( context );
+        // replace reference tree ID with found study AND tree ids
+        var chosenStudyID = $container.find('[name=study-lookup-id]').val();
+        var chosenTreeID = $container.find('[name=tree-lookup] option:selected').val();
+        if (!chosenStudyID || !chosenTreeID) {
+            console.log("choose study+tree (B)");
+            console.log('  chosenStudyID: '+ chosenStudyID);
+            console.log('  chosenTreeID: '+ chosenTreeID);
+            showErrorMessage('Please choose a study and tree for comparison');
+            return;
+        }
+        referenceTreeID = (chosenStudyID +'@'+ chosenTreeID);
+    }
+
     var referenceTreeName;
     switch(referenceTreeID) {
         // these are the only ids allowed for now
@@ -2090,9 +2163,9 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
             referenceTreeName = 'Synthetic Tree of Life';
             break;
         default:
-            hideModalScreen()
-            console.error('fetchTreeConflictStatus(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
-            return;
+            referenceTreeName = referenceTreeID;  // echo studyID#treeID here
+            referenceTreeID = referenceTreeID.replace( /@|%40/g , '%23' );  // encode '@' as '#' for the API
+            break;
     }
     var conflictURL = treeConflictStatus_url
         .replace(/&amp;/g, '&')  // restore all naked ampersands (for query-string args)
@@ -2114,6 +2187,9 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
             if (textStatus !== 'success') {
                 if (jqXHR.status >= 500) {
                     // major server-side error, just show raw response for tech support
+                    console.log(">>ERROR fetching conflict report!")
+                    console.log(">>  status: "+ jqXHR.status);
+                    console.log(">>  statusText: "+ jqXHR.statusText);
                     var errMsg = 'Sorry, there was an error generating a conflict report. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
                     hideModalScreen();
                     showErrorMessage(errMsg);
@@ -2152,6 +2228,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCach
                 return;
             }
             callback(conflictInfo);
+            updateTreeConflictWidgets(conflictInfo);
             hideModalScreen();
         }
     });
@@ -2170,6 +2247,9 @@ function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
     );
 }
 function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID, options) {
+    /* NB - This is typically (always?) called from an onclick handler, so
+     * arguments are probably wrong/missing. (This is handled downstream.)
+     */
     if (!options) options = {SHOW_SPINNER: true};
     /* TODO: Reconsider this, if we can do it quickly and maintain SELECT value
     if (treeViewerIsInUse) {
@@ -2192,6 +2272,9 @@ function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID, options) 
             if (options.SHOW_SPINNER) {
                 hideModalScreen();
             }
+
+            // refresh UI (study + tree selectors) if we just opened this page
+            updateTreeConflictWidgets( conflictInfo );
         },
         false  // don't reuse a cached response
     );
@@ -2203,7 +2286,10 @@ function showTreeConflictDetailsFromPopup(tree) {
         console.warn("showTreeConflictDetailsFromPopup(): No tree specified!");
         return;
     }
-    var newReferenceTreeID = $('#treeview-reference-select').val();
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+    var newReferenceTreeID = $container.find('.treeview-reference-select option:selected').val();
     if (!newReferenceTreeID) {
         hideTreeConflictDetails( tree );
     } else {
@@ -2257,9 +2343,41 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
     }
 
     if (treeViewerIsInUse) {
-        // update the reference-tree selector
-        $('#treeview-reference-select').val(tree.conflictDetails.referenceTreeID);
+        updateTreeConflictWidgets(tree.conflictDetails);
         $('#treeview-clear-conflict').show();
+    }
+}
+
+function updateTreeConflictWidgets(conflictInfo) {
+    // this should work even for incoming URLs, esp. for conflict with a published tree
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+
+    var referenceTreeID = conflictInfo.referenceTreeID;
+    //$container.find('.treeview-reference-select option:selected').val();
+
+    var selectedTreeID = $container.find('[name=tree-lookup] option:selected').val();
+    if (!selectedTreeID) {
+        // we need to populate the selection widgets to match!
+        if (referenceTreeID.indexOf('@') !== -1) {
+            // it's a compound ID (study and tree IDs)!
+            var idParts = referenceTreeID.split('@');
+            var studyID = idParts[0];
+            var treeID = idParts[1];
+            /* TODO: update the study+tree selectors to reflect incoming conflict URL?
+             * (for now, we just show a sensible footer message)
+             */
+            var studyURL = getViewURLFromStudyID(studyID);
+            studyURL += ("/?tab=home&tree=" + treeID);
+            showErrorMessage('Showing conflict vs. <a target="_blank" href="'+ studyURL +'">reference tree '+ treeID +' from study '+ studyID +'</a>.');
+            //$container.find('.treeview-reference-select').val( 'STUDYID_TREEID' );
+        } else {
+            // a simpler update to the reference-tree selector
+            $container.find('.treeview-reference-select').val( referenceTreeID );
+        }
+    } else {
+        console.log("NO NEED to update study + tree selectors.");
     }
 }
 
@@ -2300,20 +2418,41 @@ function removeConflictInfoFromTree( treeOrID ) {
         delete node.conflictDetails;
     });
     if (treeViewerIsInUse) {
+        var context = getPhylesystemLookupContext();
+        // what's the parent element for study+tree lookup UI?
+        var $container = getPhylesystemLookupPanel( context );
         // update the reference-tree selector
-        $('#treeview-reference-select').val('');
+        $container.find('.treeview-reference-select').val('');
+        // TODO: clear study+tree selectors
         $('#treeview-clear-conflict').hide();
     }
 }
 
 function showConflictDetailsWithHistory(tree, referenceTreeID) {
     // triggered from tree-view popup UI, works via History
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
     if (typeof referenceTreeID !== 'string') {
-        referenceTreeID = $('#treeview-reference-select').val();
+        referenceTreeID = $container.find('.treeview-reference-select').val();
     }
     if (!referenceTreeID) {
         showErrorMessage('Please choose a target (reference) tree for comparison');
         return;
+    }
+    var comparingToPhylesystemTree = (referenceTreeID == 'STUDYID_TREEID');
+    if (comparingToPhylesystemTree) {
+        // replace reference tree ID with found study AND tree ids
+        var chosenStudyID = $container.find('[name=study-lookup-id]').val();
+        var chosenTreeID = $container.find('[name=tree-lookup] option:selected').val();
+        if (!chosenStudyID || !chosenTreeID) {
+            console.log("choose study+tree (A)");
+            console.log('  chosenStudyID: '+ chosenStudyID);
+            console.log('  chosenTreeID: '+ chosenTreeID);
+            showErrorMessage('Please choose a study and tree for comparison');
+            return;
+        }
+        referenceTreeID = encodeURIComponent(chosenStudyID +'@'+ chosenTreeID);
     }
     if (studyHasUnsavedChanges) {
         showInfoMessage('REMINDER: Conflict analysis uses the last-saved version of this study!');
@@ -2945,6 +3084,9 @@ function normalizeTree( tree ) {
         // safest value, forces the curator to assert correctness
         tree['^ot:unrootedTree'] = true;
     }
+    if (!(['^ot:candidateForSynthesis'] in tree)) {
+        tree['^ot:candidateForSynthesis'] = 'ot:notReviewed';
+    }
 
     // metadata fields (with empty default values)
     var metatags = [
@@ -3151,6 +3293,10 @@ function getRootedStatusForTree( tree ) {
 // Let's check for some/all/none with separate functions.
 function anyBranchLengthsFoundInTree( tree ) {
     var foundBranchWithLength = false;
+    if (isScriptManagedTree(tree)) {
+        // ignore "empty" (script-managed) trees
+        return false;
+    }
     $.each(tree.edge, function(i, edge) {
         if ('@length' in edge) {
             foundBranchWithLength = true;
@@ -3161,6 +3307,10 @@ function anyBranchLengthsFoundInTree( tree ) {
 }
 function allBranchLengthsFoundInTree( tree ) {
     var foundBranchWithoutLength = false;
+    if (isScriptManagedTree(tree)) {
+        // ignore "empty" (script-managed) trees
+        return false;
+    }
     $.each(tree.edge, function(i, edge) {
         if (!('@length' in edge)) {
             foundBranchWithoutLength = true;
@@ -4290,7 +4440,6 @@ function showTreeViewer( tree, options ) {
     });
 
     // enable collection search (in tree-viewer popup)
-    console.warn('BINDING COLLECTION SEARCH');
     $('input[name=collection-search]').unbind('keyup change')
                                       .bind('keyup change', setCollectionSearchFuse )
                                       .unbind('keydown')  // block errant form submission
@@ -4394,6 +4543,7 @@ function showTreeViewer( tree, options ) {
         }
 
         ///hideModalScreen();
+        bindStudyAndTreeLookups();
     }
 
     var $treeViewerTabs = $('#tree-viewer .modal-header a[data-toggle="tab"]');
@@ -7592,14 +7742,30 @@ function getNodeConflictDescription(tree, node) {
                         */
                         witnessURL = "/opentree/argus/@{NODE_ID}".replace('{NODE_ID}', witnessID);
                     } else {
-                        // it's a numeric OTT taxon ID (e.g. '1234')
+                        // it's an (legacy?) numeric OTT taxon ID (e.g. '1234')
                         witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', witnessID);
                     }
-                    break;
 
                 default:
-                    console.error('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
-                    return;
+                    /* The reference tree is presumably a curated tree in a
+                     * published study, e.g. 'pg_2866%23tree6656' or
+                     * 'pg_2866#tree6656'. We should build our typical URL to
+                     * point directly to a node in the curation app's tree
+                     * viewer.
+                     */
+                    // split the referenceTreeID into study and tree IDs, or complain if we can't
+                    var possibleDelimiters = /#|@|%23/s ;  // regex tests for all possible delimiters
+                    var studyAndTreeIDs = (tree.conflictDetails.referenceTreeID).split( possibleDelimiters );
+                    if (studyAndTreeIDs.length < 2) {
+                        console.error(">> Unable to find study and tree IDs in witnessID: '"+ witnessID +"'");
+                    } else {
+                        var witnessStudyID = studyAndTreeIDs[0];
+                        var witnessTreeID = studyAndTreeIDs[1];
+                        witnessURL = getViewURLFromStudyID( witnessStudyID )
+                            +"?tab=home&tree="+ witnessTreeID
+                            +"&node="+ witnessID;
+                    }
+                    break;
             }
 
             witnessHTML += '<a href="'+ witnessURL +'" target="_blank">'+ (witnessName || witnessID) +'</a>';
@@ -7621,7 +7787,7 @@ function getNodeConflictDescription(tree, node) {
                 witnessHTML = "anonymous synth node";
                 break;
             default:
-                console.error('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
+                witnessHTML = "anonymous source-tree node";
                 return;
         }
     }
@@ -8659,207 +8825,20 @@ function getAssociatedTreeLabels( fileInfo ) {
     return treeLabels;
 }
 
-/* Sensible autocomplete behavior requires the use of timeouts
- * and sanity checks for unchanged content, etc.
- */
-clearTimeout(searchTimeoutID);  // in case there's a lingering search from last page!
-var searchTimeoutID = null;
-var searchDelay = 1000; // milliseconds
-var hopefulSearchName = null;
-function setTaxaSearchFuse(e) {
-    if (searchTimeoutID) {
-        // kill any pending search, apparently we're still typing
-        clearTimeout(searchTimeoutID);
-    }
-    // reset the timeout for another n milliseconds
-    searchTimeoutID = setTimeout(searchForMatchingTaxa, searchDelay);
-
-    /* If the last key pressed was the ENTER key, stash the current (trimmed)
-     * string and auto-jump if it's a valid taxon name.
-     */
-    if (e.type === 'keyup') {
-        switch (e.which) {
-            case 13:
-                hopefulSearchName = $('input[name=taxon-search]').val().trim();
-                autoApplyExactMatch();  // use existing menu, if found
-                break;
-            case 17:
-                // do nothing (probably a second ENTER key)
-                break;
-            case 39:
-            case 40:
-                // down or right arrows should try to select first result
-                $('#search-results a:eq(0)').focus();
-                break;
-            default:
-                hopefulSearchName = null;
-        }
-    } else {
-        hopefulSearchName = null;
-    }
-}
-
-var showingResultsForSearchText = '';
-var showingResultsForSearchContextName = '';
-function searchForMatchingTaxa() {
-    // clear any pending search timeout and ID
-    clearTimeout(searchTimeoutID);
-    searchTimeoutID = null;
-
-    var $input = $('input[name=taxon-search]');
-    var searchText = $input.val().trimLeft();
-
-    if (searchText.length === 0) {
-        $('#search-results').html('');
-        return false;
-    } else if (searchText.length < 2) {
-        $('#search-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
-        $('#search-results').dropdown('toggle');
-        return false;
-    }
-
-    // groom trimmed text based on our search rules
-    var searchContextName = $('select[name=taxon-search-context]').val();
-
-    // is this unchanged from last time? no need to search again..
-    if ((searchText == showingResultsForSearchText) && (searchContextName == showingResultsForSearchContextName)) {
-        ///console.log("Search text and context UNCHANGED!");
-        return false;
-    }
-
-    // stash these to use for later comparison (to avoid redundant searches)
-    var queryText = searchText; // trimmed above
-    var queryContextName = searchContextName;
-    $('#search-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
-    $('#search-results').show();
-    $('#search-results').dropdown('toggle');
-
-    $.ajax({
-        global: false,  // suppress web2py's aggressive error handling
-        url: doTNRSForAutocomplete_url,  // NOTE that actual server-side method name might be quite different!
-        type: 'POST',
-        dataType: 'json',
-        data: JSON.stringify({
-            "name": searchText,
-            "context_name": searchContextName,
-            "include_suppressed": false
-        }),  // data (asterisk required for completion suggestions)
-        crossDomain: true,
-        contentType: "application/json; charset=utf-8",
-        success: function(data) {    // JSONP callback
-            // stash the search-text used to generate these results
-            showingResultsForSearchText = queryText;
-            showingResultsForSearchContextName = queryContextName;
-
-            $('#search-results').html('');
-            var maxResults = 100;
-            var visibleResults = 0;
-            /*
-             * The returned JSON 'data' is a simple list of objects. Each object is a matching taxon (or name?)
-             * with these properties:
-             *      ott_id         // taxon ID in OTT taxonomic tree
-             *      unique_name    // the taxon name, or unique name if it has one
-             *      is_higher      // points to a genus or higher taxon? T/F
-             */
-            if (data && data.length && data.length > 0) {
-                // sort results to show exact match(es) first, then higher taxa, then others
-                // initial sort on higher taxa (will be overridden by exact matches)
-                // N.B. As of the v3 APIs, an exact match will be returned as the only result.
-                data.sort(function(a,b) {
-                    if (a.is_higher === b.is_higher) return 0;
-                    if (a.is_higher) return -1;
-                    if (b.is_higher) return 1;
-                });
-
-                // show all sorted results, up to our preset maximum
-                var matchingNodeIDs = [ ];  // ignore any duplicate results (point to the same taxon)
-                for (var mpos = 0; mpos < data.length; mpos++) {
-                    if (visibleResults >= maxResults) {
-                        break;
-                    }
-                    var match = data[mpos];
-                    var matchingName = match.unique_name;
-                    var matchingID = match.ott_id;
-                    if ($.inArray(matchingID, matchingNodeIDs) === -1) {
-                        // we're not showing this yet; add it now
-                        $('#search-results').append(
-                            '<li><a href="'+ matchingID +'">'+ matchingName +'</a></li>'
-                        );
-                        matchingNodeIDs.push(matchingID);
-                        visibleResults++;
-                    }
-                }
-
-                $('#search-results a')
-                    .click(function(e) {
-                        var $link = $(this);
-                        // modify focal clade name and ottid
-                        viewModel.nexml['^ot:focalCladeOTTTaxonName'] = $link.text();
-                        viewModel.nexml['^ot:focalClade'] = $link.attr('href');
-                        // hide menu and reset search field
-                        $('#search-results').html('');
-                        $('#search-results').hide();
-                        $('input[name=taxon-search]').val('');
-                        nudgeTickler('GENERAL_METADATA');
-                    });
-                $('#search-results').dropdown('toggle');
-
-                autoApplyExactMatch();
-            } else {
-                $('#search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
-                $('#search-results').dropdown('toggle');
-            }
-        },
-        error: function(jqXHR, textStatus, errorThrown) {
-            // report errors or malformed data, if any (else ignore)
-            if (textStatus !== 'success') {
-                if (jqXHR.status >= 500) {
-                    // major TNRS error! offer the raw response for tech support
-                    var errMsg = jqXHR.statusText +' ('+ jqXHR.status +') searching for<br/>'
-+'<strong style="background-color: #edd; padding: 0 3px; margin: 0 -3px;">'+ queryText +'</strong><br/>'
-+'Please modify your search and try again.<br/>'
-+'<span class="detail-toggle" style="text-decoration: underline !important;">Show details in footer</span>';
-                    $('#search-results').html('<li class="disabled"><a><span style="color: #933;">'+ errMsg +'</span></a></li>');
-                    var errDetails = 'TNRS error details:<pre class="error-details">'+ jqXHR.responseText +'</pre>';
-                    $('#search-results').find('span.detail-toggle').click(function(e) {
-                        e.preventDefault();
-                        showErrorMessage(errDetails);
-                        return false;
-                    });
-                    $('#search-results').dropdown('toggle');
-                }
-            }
-            return;
-        }
-    });
-
-    return false;
-}
-
-function autoApplyExactMatch() {
-    // if the user hit the ENTER key, and there's an exact match, apply it automatically
-    if (hopefulSearchName) {
-        $('#search-results a').each(function() {
-            var $link = $(this);
-            if ($link.text().toLowerCase() === hopefulSearchName.toLowerCase()) {
-                $link.trigger('click');
-                return false;
-            }
-        });
-    }
-}
-
 function lookUpDOI() {
     // try to find a match, based on existing metadata
     var referenceText = $.trim( $('#ot_studyPublicationReference').val() );
+    // toss in the current URL as well, in case this is the latest input
+    var urlText = $.trim( $('#ot_studyPublication').val() );
+    var combinedSearchText = referenceText +" "+ urlText;
     var lookupURL;
-    if (referenceText === '') {
+    if ($.trim(combinedSearchText) === '') {
         // try a generic search in a new window
         lookupURL = 'http://search.crossref.org/';
         window.open(lookupURL,'lookup');
     } else {
         // see if we get lucky..
-        lookupURL = '/curator/search_crossref_proxy?' + encodeURIComponent(referenceText).replace(/\(/g,'%28').replace(/\)/g,'%29');
+        lookupURL = '/curator/search_crossref_proxy?' + encodeURIComponent(combinedSearchText).replace(/\(/g,'%28').replace(/\)/g,'%29');
 
         // show potential matches in popup? or new frame?
         showModalScreen("Looking up DOI...", {SHOW_BUSY_BAR:true});
@@ -8870,7 +8849,7 @@ function lookUpDOI() {
             // crossdomain: true,
             // contentType: "application/json; charset=utf-8",
             url: lookupURL,
-            //data: {'q': referenceText},
+            //data: {'q': combinedSearchText},
             complete: function( jqXHR, textStatus ) {
                 hideModalScreen();
                 if (textStatus !== 'success') {
@@ -9094,7 +9073,9 @@ function getUnresolvedDuplicatesInTree( tree, options ) {
     // have't been resolved, ie, curator has not chosen an exemplar.
     var includeMonophyleticDuplicates = options && ('INCLUDE_MONOPHYLETIC' in options) ? options.INCLUDE_MONOPHYLETIC : false;
     var unresolvedDuplicates = {};
+    var startTime = new Date();
     var allDuplicates = getDuplicateNodesInTree( tree );
+    console.log(">>>>>> total elapsed to gather conflicting nodes: "+ (new Date() - startTime) +" ms");
     for (var taxonID in allDuplicates) {
         var allNodesAlreadyMarked = true; // we can disprove this from any node
         var itsMappings = allDuplicates[taxonID];
@@ -9129,10 +9110,10 @@ function getDuplicateNodesInTree( tree ) {
 
     // Pull from cached information, if any (else populate the cache)
     if (tree.taxonMappingInfo) {
-        ///console.log('!!!!! getConflictingNodesInTree (treeid='+ tree['@id'] +'...) using cached taxon-mapping info');
+        ///console.log('!!!!! getDuplicateNodesInTree (treeid='+ tree['@id'] +'...) using cached taxon-mapping info');
         return tree.taxonMappingInfo;
     }
-    ///console.log('..... getConflictingNodesInTree (treeid='+ tree['@id'] +'...) building fresh taxon-mapping info');
+    ///console.log('..... getDuplicateNodesInTree (treeid='+ tree['@id'] +'...) building fresh taxon-mapping info');
 
     var taxonMappings = { };
     $.each(tree.node, function( i, node ) {
@@ -9157,7 +9138,7 @@ function getDuplicateNodesInTree( tree ) {
     });
 
     // Gather all duplicate mappings, but mark them to distinguish trivial cases
-    // (the duplicates are siblings) from more interesting cases (there is
+    // (the duplicates are monophyletic) from more interesting cases (there is
     // ambiguity about placement of the OT taxon because duplicates in multiple
     // places in the tree)
     // N.B. Trivial duplicates will be reconciled on the server in any case, but this
@@ -9186,6 +9167,7 @@ function getDuplicateNodesInTree( tree ) {
     tree.taxonMappingInfo = duplicateNodes;
     return duplicateNodes;
 }
+
 function tipsAreMonophyletic(tipIDs, tree) {
     ///return false;
     // general fast check for monophyly in a specified tree
@@ -9346,9 +9328,8 @@ function clearTaxonExemplar( treeID, chosenNodeID, options ) {
     }
 }
 function resolveMonophyleticDuplicatesInTree(tree) {
-    // Find and resolve all simple conflicts between sibling nodes, and any
-    // others where the conflicting nodes constitute a clade. In all cases, our
-    // choice is arbitrary; we simply select the first node found as the exemplar.
+    // Find and resolve all trivial duplicates - sibling nodes mapped to same OT
+    // taxon, or other monophyletic sets - by selecting the first as the exemplar.
     var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: true} );
     for (var taxonID in duplicateData) {
         var duplicateInfo = duplicateData[taxonID];
@@ -9494,6 +9475,11 @@ function getAmbiguousLabelsInTree(tree) {
         return labelData;
     }
 
+    if (isScriptManagedTree(tree)) {
+        // ignore "empty" (script-managed) trees
+        return labelData;
+    }
+
     $.each( tree.node, function(i, node) {
         if (node['^ot:isLeaf'] === true) {
             /* We sometimes save a misspelled taxon name as `node[@label]` so
@@ -9506,6 +9492,7 @@ function getAmbiguousLabelsInTree(tree) {
             labelData[ nodeID ] = node['@label'];
         }
     });
+
     return labelData;
 }
 function showAmbiguousLabelsInTreeViewer(tree) {
@@ -9657,6 +9644,24 @@ function studyContributedToLatestSynthesis() {
 function currentStudyVersionContributedToLatestSynthesis() {
     // compare SHA values and return true if they match
     return (viewModel.startingCommitSHA === latestSynthesisSHA);
+}
+function treeContributedToLatestSynthesis(tree) {
+    // check for a valid SHA from last synthesis
+    return ($.inArray( tree['@id'], latestSynthesisTreeIDs ) !== -1);
+}
+
+function studyContainsScriptManagedTrees() {
+    // check for signature for this in Nexson (to modify UI, hide/block some features?)
+    var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+    var bigTrees = ko.utils.arrayFilter(
+        allTrees,
+        isScriptManagedTree
+    );
+    return (bigTrees.length > 0);
+}
+function isScriptManagedTree(tree) {
+    // if this property is found (even if it's an empty object), assume it's a huge script-managed tree
+    return (tree["^ot:external_data"] !== undefined);
 }
 
 function getNormalizedStudyPublicationURL() {
@@ -10137,187 +10142,6 @@ async function addTreeToExistingCollection(clicked) {
             loginAndReturn();
         }
     }
-}
-function resetExistingCollectionPrompt() {
-    var $collectionPrompt = $('#collection-search-form');
-    var $btn = $collectionPrompt.prev('.btn');
-    $btn.removeClass('disabled');
-    $collectionPrompt.hide();
-    $collectionPrompt.find('input').val('');
-    $('#collection-search-results').html('');
-    $('#collection-search-results').hide();
-}
-
-/* More autocomplete behavior for tree-collection search.
- */
-clearTimeout(collectionSearchTimeoutID);  // in case there's a lingering search from last page!
-var collectionSearchTimeoutID = null;
-var collectionSearchDelay = 250; // milliseconds
-var hopefulCollectionSearchString = null;
-function setCollectionSearchFuse(e) {
-    if (collectionSearchTimeoutID) {
-        // kill any pending search, apparently we're still typing
-        clearTimeout(collectionSearchTimeoutID);
-    }
-    // reset the timeout for another n milliseconds
-    collectionSearchTimeoutID = setTimeout(searchForMatchingCollections, collectionSearchDelay);
-
-    /* If the last key pressed was the ENTER key, stash the current (trimmed)
-     * string and auto-jump if it's a valid taxon name.
-     */
-    if (e.type === 'keyup') {
-        switch (e.which) {
-            case 13:
-                hopefulCollectionSearchString = $('input[name=collection-search]').val().trim();
-                // TODO? jumpToExactMatch();  // use existing menu, if found
-                break;
-            case 17:
-                // do nothing (probably a second ENTER key)
-                break;
-            case 39:
-            case 40:
-                // down or right arrow should try to tab to first result
-                $('#collection-search-results a:eq(0)').focus();
-                break;
-            default:
-                hopefulCollectionSearchString = null;
-        }
-    } else {
-        hopefulCollectionSearchString = null;
-    }
-}
-
-var showingResultsForCollectionSearchText = '';
-function searchForMatchingCollections() {
-    // clear any pending search timeout and ID
-    clearTimeout(collectionSearchTimeoutID);
-    collectionSearchTimeoutID = null;
-
-    var $input = $('input[name=collection-search]');
-    var searchText = $input.val().trimLeft();
-
-    if (searchText.length === 0) {
-        $('#collection-search-results').html('');
-        return false;
-    } else if (searchText.length < 2) {
-        $('#collection-search-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
-        $('#search-results').dropdown('toggle');
-        return false;
-    }
-
-    // is this unchanged from last time? no need to search again..
-    if (searchText == showingResultsForCollectionSearchText) {
-        ///console.log("Search text and context UNCHANGED!");
-        return false;
-    }
-
-    // search local viewModel.allCollections for any matches
-    var searchNotAvailable = (!viewModel.allCollections || viewModel.allCollections.length === 0);
-    var statusMsg;
-    if (searchNotAvailable) {
-        // block search (no collection data in the view model)
-        statusMsg = 'Unable to search (no collections found)';
-    } else {
-        // stash our search text to use for later comparison (to avoid redundant searches)
-        showingResultsForCollectionSearchText = searchText; // trimmed above
-        statusMsg = 'Search in progress...';
-    }
-
-    $('#collection-search-results').html('<li class="disabled"><a><span class="text-warning">'
-        + statusMsg +'</span></a></li>');
-    $('#collection-search-results').show();
-    $('#collection-search-results').dropdown('toggle');
-
-    if (searchNotAvailable) {
-        return false;
-    }
-
-    var matchWithDiacriticals = addDiacriticalVariants(searchText),
-        matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' ),
-        wholeSlugMatchPattern = new RegExp( '^'+ $.trim(matchWithDiacriticals) +'$' );
-
-    var matchingCollections = ko.utils.arrayFilter(
-        viewModel.allCollections,
-        function(collection) {
-            // skip collections that already include this tree
-            if ($.inArray(collection, viewModel.filteredCollections()()) !== -1) {
-                console.warn("SKIPPING collection that's already listed!");
-                return false;
-            }
-            // match entered text against collections (id, owner, description...)
-            var id = $.trim(collection['id']);
-            var idParts = id.split('/');
-            var ownerSlug = idParts[0];
-            var titleSlug = (idParts.length === 2) ? idParts[1] : '';
-            var name = $.trim(collection['name']);
-            var description = $.trim(collection['description']);
-            // extract names and IDs of all stakeholders (incl. creator!)
-            if ($.isPlainObject(collection['creator'])) {
-                creator = $.trim(collection['creator'].name)
-                    +'|'+ $.trim(collection['creator'].login);
-            } else {
-                creator = "";
-            }
-            if ($.isArray(collection['contributors'])) {
-                contributors = "";
-                $.each(collection['contributors'], function(i,c) {
-                    contributors += ('|'+ $.trim(c.name) +'|'+ $.trim(c.login));
-                });
-            } else {
-                contributors = "";
-            }
-            // skip collections that don't match on any field
-            if (!wholeSlugMatchPattern.test(id) && !wholeSlugMatchPattern.test(ownerSlug) && !wholeSlugMatchPattern.test(titleSlug) && !matchPattern.test(name) && !matchPattern.test(description) && !matchPattern.test(creator) && !matchPattern.test(contributors)) {
-                return false;
-            }
-            return true;
-        }
-    );
-
-    $('#collection-search-results').html('');
-    var maxResults = 10;
-    var visibleResults = 0;
-    if (matchingCollections.length > 0) {
-        // show all sorted results, up to our preset maximum
-        $.each(matchingCollections, function(i, collection) {
-            if (visibleResults >= maxResults) {
-                $('#collection-search-results').append(
-                    '<li class="disabled"><a><span class="text-warning">'
-                      +'Refine your search text to see other results'
-                   +'</span></a></li>'
-                );
-                return false;
-            }
-            $('#collection-search-results').append(
-                '<li>'+ getCollectionViewLink(collection) +'</li>'
-            );
-            visibleResults++;
-        });
-
-        $('#collection-search-results li:not(.disabled) a')
-            .click(function(e) {
-                var $link = $(this);
-                // Override its default onclick behavior to add the tree, then
-                // refresh the associated-collections list.
-                //
-                // hide menu and reset search field
-                $('#collection-search-results').html('');
-                $('#collection-search-results').hide();
-                $('input[name=collection-search]').val('');
-                nudgeTickler('COLLECTIONS_LIST');
-                // retrieve the collection ID from the link's text
-                var itsCollectionID = $link.find('.collection-id').text();
-                // insert this tree before opening the editor
-                fetchAndShowCollection( itsCollectionID, addCurrentTreeToCollection );
-                return false;
-            });
-        $('#collection-search-results').dropdown('toggle');
-    } else {
-        $('#collection-search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
-        $('#collection-search-results').dropdown('toggle');
-    }
-
-    return false;
 }
 
 function addCurrentTreeToCollection( collection ) {

@@ -470,6 +470,7 @@ def to_nexson():
     _LOG = get_logger(request, 'to_nexson')
     if request.env.request_method == 'OPTIONS':
         raise HTTP(200, T('Preflight approved!'))
+
     orig_args = {}
     is_upload = False
     # several of our NexSON use "uploadid" instead of "uploadId" so we should accept either
@@ -622,7 +623,7 @@ def to_nexson():
                 try:
                     assert(os.path.exists(exe_path))
                 except:
-                    response.view = 'generic.json'; return {'hb':exe_path}
+                    #response.view = 'generic.json'; return {'hb':exe_path}
                     _LOG.warn("Could not find the 2nexml executable")
                     raise HTTP(501, T("Server is misconfigured for 2nexml conversion"))
                 invoc = [exe_path, '-f{f}'.format(f=inp_format), ]
