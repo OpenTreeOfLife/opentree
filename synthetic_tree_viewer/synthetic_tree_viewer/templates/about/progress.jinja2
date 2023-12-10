@@ -1,12 +1,14 @@
-{{response.title = "Progress - Open Tree of Life"
-  ### response.files.append("/curator/static/js/d3.v3.js")
-  response.files.append("/curator/static/js/d3.v3.min.js") }}
-{{extend 'layout.html'}}
-{{import urllib}}
-{{from pprint import pprint}}
-{{### Add support scripts for parsing ISO-8601 dates
-  #response.files.append(URL('static','js/moment.min.js'))
-}}
+{% extends "../layout.jinja2" %}
+
+{# import urllib #}
+{# from pprint import pprint #}
+
+{% block javascript %}
+  <script src="{{ request.static_url('synthetic_tree_viewer:static/js/d3.v3_min.js') }}"></script>
+  <script src="{{ request.static_url('synthetic_tree_viewer:static/js/moment.min.js') }}"></script>
+{% endblock %}
+
+{% block center %}
 <style type="text/css">
 .axis path,
 .axis line {
@@ -107,14 +109,14 @@ circle.taxo-release-marker {
       <div id="stacked-bar-div"></div>
 
       <h3 id="comment-header">Comments <i></i></h3>
-      {{=plugin_localcomments(filter='url',url=request.url)}}
+      {# plugin_localcomments(filter='url',url=request.url) #}
 
 </div><!-- end of .container -->
 
 <script type="text/javascript">
 // pass statistics as JSON to client for stepping, plotting, etc.
 // NOTE that these are correctly date-sorted from the server!
-var otu_stats = {{= XML(json.dumps(otu_stats)) }}
+var otu_stats = {{ otu_stats |default([ ]) |tojson |safe }}
 
 var sortedSynthesisProfileKeys = null;
 var currentSynthesisProfileIndex = 0;
@@ -126,7 +128,7 @@ for (i = 0; i < otu_stats.length ; ++i) {
 }
 
 // provide a crude UI for viewing "dubious data" caveats
-var warnings = {{= XML(warnings)}};
+var warnings = {{ warnings |safe }};
 if (warnings.length === 0) {
     $('#warnings-toggle').hide();
 } else {
@@ -741,3 +743,4 @@ function getSynthesisSparklineData(prop, lastProfileDate) {
 }
 
 </script>
+{% endblock center %}
