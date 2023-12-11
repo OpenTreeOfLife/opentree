@@ -325,8 +325,8 @@ def progress(request):
 
         #print( date, ott_synth_version_info['date'], (ott_synth_version_info['date'] == date and "true" or "false") )
         #print( date, (synth.get(date, None) and "true" or "false") )
-        has_synthesis_release = synth.get(date, None) and True or False
-        synth_version_released_today = has_synthesis_release and synth.get(date).get('version') or str('')
+        has_synthesis_release = synth.get(date, None) and 'true' or 'false'
+        synth_version_released_today = (has_synthesis_release == 'true') and synth.get(date).get('version') or str('')
         date_has_taxonomy = ott_new_version_info and "true" or "false"
         date_has_phylesystem = phylesystem.get(date, None) and "true" or "false"
             # why are these values added as strings, vs. boolean above?
