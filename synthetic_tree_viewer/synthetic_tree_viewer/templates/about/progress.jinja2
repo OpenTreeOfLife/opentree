@@ -412,13 +412,13 @@ var populateSVG = function(data) {
     .enter().append("g")
       .attr("class", function(d,i) {
           className = 'event-marker';
-          if (d['Date has synthesis release'] === 'true') {
+          if (d['Date has synthesis release'] === true) {
               className += ' date-with-synthesis';
           }
-          if (d['Date has taxonomy version'] === 'true') {
+          if (d['Date has taxonomy version'] === true) {
               className += ' date-with-taxonomy';
           }
-          if (d['Date has phylesystem info'] === 'true') {
+          if (d['Date has phylesystem info'] === true) {
               className += ' date-with-phylesystem';
           }
           return className;
@@ -572,9 +572,9 @@ var populateSVG = function(data) {
       });
 
       // show markers for synthesis and/or taxonomy release, IF found for this date
-      var dateHasSynthRelease = (profileData['Date has synthesis release'] === 'true');
-      var dateHasTaxoVersion = (profileData['Date has taxonomy version'] === 'true');
-      var dateHasPhylesystemInfo = (profileData['Date has phylesystem info'] === 'true');
+      var dateHasSynthRelease = (profileData['Date has synthesis release'] === true);
+      var dateHasTaxoVersion = (profileData['Date has taxonomy version'] === true);
+      var dateHasPhylesystemInfo = (profileData['Date has phylesystem info'] === true);
       if (dateHasSynthRelease && dateHasTaxoVersion) {
           // shift the taxo-release markers down to second row
           highlightDetailsStats.select('circle.taxo-release-marker')
