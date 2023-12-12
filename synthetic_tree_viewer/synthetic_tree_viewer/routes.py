@@ -6,7 +6,7 @@ def includeme(config):
     config.add_route('about_open_tree_of_life', '/about/open-tree-of-life')
     config.add_route('about_references', '/about/references')
     config.add_route('about_progress', '/about/progress')
-    config.add_route('about_synthesis_release', '/about/synthesis_release/{release:.*}')
+    config.add_route('about_synthesis_release', '/about/synthesis-release/{release:.*}')
     config.add_route('about_taxonomy_version', '/about/taxonomy-version/{version:.*}')
     config.add_route('about_developer_resources', '/about/developer-resources')
     config.add_route('about_privacy_policy', '/about/privacy_policy')

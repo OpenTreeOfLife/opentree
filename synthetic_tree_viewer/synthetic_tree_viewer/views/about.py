@@ -18,6 +18,7 @@ from pyramid.httpexceptions import (
 from urllib.parse import quote
 import requests
 import json
+import markdown
 from datetime import datetime
 
 def _minimal_about_viewdict(request):
@@ -437,4 +438,126 @@ def get_latest_ott_version_info_by_date(date):
     if closest_previous_version is None:
         raise Exception('No OTT version before this date: %s' % date)
     return closest_previous_version
+
+@view_config(route_name='about_synthesis_release',
+             renderer='synthetic_tree_viewer:templates/about/references.jinja2')
+def synthesis_release(request):
+    view_dict = _minimal_about_viewdict(request)
+    # examine the full path to customize this view
+    full_path = request.matchdict['release']
+    path_parts = full_path.split('/')
+    # NB we only expect one part, e.g. 'v6.1'
+
+    # Load each JSON document into a list or dict, so we can compile daily entries.
+    # NB: For simplicity and uniformity, filter these to use only simple dates
+    # with no time component!
+    # EXAMPLE u'2015-01-16T23Z' ==> u'2015-01-16'
+    raw = json.loads(fetch_local_synthesis_stats() or '{}')
+    # Pre-sort its raw date strings, so we can discard all the but latest info
+    # for each date (e.g. we might toss the morning stats but keep the evening).
+    sorted_dates = sorted(raw.keys(), reverse=False)
+    synth = {}
+    for d in sorted_dates:
+        raw_data = raw[d]
+        simple_date = _force_to_simple_date_string(d)
+        synth[ simple_date ] = raw_data
+        # this should overwrite data from earlier in the day
+
+    if len(synth.keys()) == 0:
+        # report this error on the page
+        view_dict['release_version'] = 'NO RELEASES FOUND'
+        view_dict['synthesis_stats'] = synth
+        return view_dict
+
+    # Get date or version from URL, or bounce to the latest release by default
+
+    if len(path_parts) == 0:
+        release_date = sorted(synth.keys(), reverse=False)[-1]
+        release_version = synth[release_date].get('version')
+        redirect(URL('opentree', 'about', 'synthesis_release',
+            vars={},
+            args=[release_version]))
+
+    # Still here? Let's grab the version from URL
+    synth_release_version = path_parts[0]
+    view_dict['release_version'] = synth_release_version
+    view_dict['synthesis_stats'] = synth
+
+    # fetch and render Markdown release notes as HTML
+    import requests
+    from gluon.contrib.markdown.markdown2 import markdown
+    fetch_url = 'https://raw.githubusercontent.com/OpenTreeOfLife/germinator/master/doc/ot-synthesis-{v}.md'.format(v=synth_release_version)
+    try:
+        version_notes_response = requests.get(url=fetch_url).text
+        # N.B. We assume here that any hyperlinks have the usual Markdown braces!
+        version_notes_html = markdown(version_notes_response).encode('utf-8')
+        # scrub HTML output with bleach
+        version_notes_html = ot_cleaner.clean(version_notes_html)
+    except:
+        version_notes_html = None
+    view_dict['synthesis_release_notes'] = version_notes_html
+
+    return view_dict
+
+@view_config(route_name='about_taxonomy_version',
+             renderer='synthetic_tree_viewer:templates/about/references.jinja2')
+def taxonomy_version(request):
+    view_dict = _minimal_about_viewdict(request)
+    # examine the full path to customize this view
+    full_path = request.matchdict['version']
+    path_parts = full_path.split('/')
+    # NB we only expect one part, e.g. 'ott3.0'
+
+    # load taxonomy-version history and basic stats
+    ott = json.loads(fetch_local_ott_stats() or '[]')
+    if len(ott) == 0:
+        # report this error on the page
+        view_dict['taxonomy_version'] = 'NO VERSIONS FOUND'
+        view_dict['taxonomy_stats'] = ott
+        return view_dict
+
+    # Get OTT version from URL, or bounce to the latest version by default
+    if len(path_parts) == 0:
+        # safer to sort by date-strings [yyyy-mm-dd] than version strings
+        sorted_ott = sorted(ott, key=lambda v: v['date'], reverse=False)
+        taxonomy_version = sorted_ott[-1].get('version')
+        # bounce to the latest version by default
+        redirect(URL('opentree', 'about', 'taxonomy_version',
+            vars={},
+            args=[taxonomy_version]))
+
+    # Still here? Let's grab the version from URL
+    taxo_version = path_parts[0]
+    view_dict['taxonomy_version'] = taxo_version
+    view_dict['taxonomy_stats'] = ott
+
+    # fetch and render Markdown release notes as HTML
+    import requests
+    from gluon.contrib.markdown.markdown2 import markdown
+    fetch_url = 'https://raw.githubusercontent.com/OpenTreeOfLife/reference-taxonomy/master/doc/{v}.md'.format(v=taxo_version)
+    try:
+        version_notes_response = requests.get(url=fetch_url).text
+        # N.B. We assume here that any hyperlinks have the usual Markdown braces!
+        version_notes_html = markdown(version_notes_response).encode('utf-8')
+        # scrub HTML output with bleach
+        version_notes_html = ot_cleaner.clean(version_notes_html)
+    except:
+        version_notes_html = None
+    view_dict['taxonomy_version_notes'] = version_notes_html
+
+    # List all synthesis releases that used this OTT version
+    synth = json.loads(fetch_local_synthesis_stats() or '{}')
+    related_releases = []
+    for date in synth:
+        synth_ott_version = synth[date]['OTT_version']
+        if synth_ott_version:
+            # If a draft was provided (eg, "ott2.9draft8"), truncate this
+            # to specify the main version (in this case, "ott2.9")
+            synth_ott_version = synth_ott_version.split('draft')[0]
+        if synth_ott_version == taxo_version:
+            related_releases.append(synth[date]['version'])
+    view_dict['related_synth_releases'] = related_releases
+
+    return view_dict
+
 

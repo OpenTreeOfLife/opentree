@@ -1,6 +1,7 @@
 bleach==5.0.1
   - six [required: >=1.9.0, installed: 1.16.0]
   - webencodings [required: Any, installed: 0.5.1]
+configparser==5.3.0
 cookiecutter==2.1.1
   - binaryornot [required: >=0.4.4, installed: 0.4.4]
     - chardet [required: >=3.0.2, installed: 5.0.0]
@@ -22,7 +23,10 @@ cookiecutter==2.1.1
     - idna [required: >=2.5,<4, installed: 3.3]
     - urllib3 [required: >=1.21.1,<1.27, installed: 1.26.12]
 locket==0.1.1
-pip==22.2.2
+Markdown==3.5.1
+  - importlib-metadata [required: >=4.4, installed: 7.0.0]
+    - zipp [required: >=0.5, installed: 3.17.0]
+pip==23.3.1
 pipdeptree==2.3.1
 pytest-cov==3.0.0
   - coverage [required: >=5.2.1, installed: 6.4.4]

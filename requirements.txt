@@ -7,6 +7,8 @@ python-jwt==3.3.0
 pyramid==2.0
 pipdeptree==2.3.1
 cookiecutter==2.1.1
+configparser==5.3.0
+Markdown==3.5.1
 ## The following requirements were added by pip freeze:
 arrow==0.15.8
 attrs==22.1.0
@@ -22,6 +24,7 @@ cryptography==38.0.1
 Deprecated==1.2.13
 hupper==1.10.3
 idna==3.3
+importlib-metadata==7.0.0
 iniconfig==1.1.1
 Jinja2==3.1.2
 jinja2-time==0.2.0
@@ -46,7 +49,7 @@ PyYAML==6.0
 repoze.lru==0.7
 six==1.16.0
 soupsieve==2.3.2.post1
--e git+ssh://git@github.com/OpenTreeOfLife/webapp-tree-viewer.git@645ded743b6b5c0660c2eaa0b92c4f9b7e839fe2#egg=synthetic_tree_viewer&subdirectory=synthetic_tree_viewer
+-e git+ssh://git@github.com/OpenTreeOfLife/webapp-tree-viewer.git@9ec2e8caa543096980db27146db6067054b30326#egg=synthetic_tree_viewer&subdirectory=synthetic_tree_viewer
 text-unidecode==1.3
 tomli==2.0.1
 translationstring==1.4
@@ -57,5 +60,6 @@ webencodings==0.5.1
 WebOb==1.8.7
 WebTest==3.0.0
 wrapt==1.14.1
+zipp==3.17.0
 zope.deprecation==4.4.0
 zope.interface==5.4.0
