@@ -100,7 +100,8 @@ def index():
     return treeview_dict
 
 def error():
-    return dict()
+    # NB - We need some configuration values here!
+    return default_view_dict.copy()
 
 def download_subtree():
     id_type = request.args(0)  # 'ottol-id' or 'node-id'
