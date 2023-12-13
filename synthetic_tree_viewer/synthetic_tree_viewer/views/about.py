@@ -20,6 +20,25 @@ import requests
 import json
 import markdown
 from datetime import datetime
+import bleach
+from bleach.sanitizer import Cleaner
+
+# Define a consistent cleaner to sanitize user input. We need a few
+# elements that are common in our markdown but missing from the Bleach
+# whitelist.
+# N.B. HTML comments are stripped by default. Non-allowed tags will appear
+# "naked" in output, so we can identify any bad actors.
+common_version_notes_tags = [u'p', u'br', u'pre',
+                             u'h1', u'h2', u'h3', u'h4', u'h5', u'h6',
+                             u'table', u'tbody', u'tr', u'td', u'th',
+                             ]
+ot_markdown_tags = list(set( bleach.sanitizer.ALLOWED_TAGS + common_version_notes_tags))
+common_version_notes_attributes={u'table': [u'class'],
+                                 }
+ot_markdown_attributes = bleach.sanitizer.ALLOWED_ATTRIBUTES.copy()
+ot_markdown_attributes.update(common_version_notes_attributes)
+ot_cleaner = Cleaner(tags=ot_markdown_tags, attributes=ot_markdown_attributes)
+
 
 def _minimal_about_viewdict(request):
     # First, copy our boilerplate config vars (getDraftTreeID_url, etc)
@@ -168,7 +187,6 @@ def progress(request):
     # NB: For simplicity and uniformity, filter these to use only simple dates
     # with no time component!
     # EXAMPLE u'2015-01-16T23Z' ==> u'2015-01-16'
-    #import pdb; pdb.set_trace()
     raw = json.loads(fetch_local_synthesis_stats() or '{}')
     # Pre-sort its raw date strings, so we can discard all the but latest info
     # for each date (e.g. we might toss the morning stats but keep the evening).
@@ -440,13 +458,12 @@ def get_latest_ott_version_info_by_date(date):
     return closest_previous_version
 
 @view_config(route_name='about_synthesis_release',
-             renderer='synthetic_tree_viewer:templates/about/references.jinja2')
+             renderer='synthetic_tree_viewer:templates/about/synthesis_release.jinja2')
 def synthesis_release(request):
     view_dict = _minimal_about_viewdict(request)
-    # examine the full path to customize this view
-    full_path = request.matchdict['release']
-    path_parts = full_path.split('/')
-    # NB we only expect one part, e.g. 'v6.1'
+    # Get the synth release and clean it up (remove leading slash and any
+    # trailing whitespace).
+    synth_release_version = request.matchdict['release'].lstrip('/').strip()
 
     # Load each JSON document into a list or dict, so we can compile daily entries.
     # NB: For simplicity and uniformity, filter these to use only simple dates
@@ -470,27 +487,21 @@ def synthesis_release(request):
         return view_dict
 
     # Get date or version from URL, or bounce to the latest release by default
-
-    if len(path_parts) == 0:
+    if synth_release_version == "":
         release_date = sorted(synth.keys(), reverse=False)[-1]
         release_version = synth[release_date].get('version')
-        redirect(URL('opentree', 'about', 'synthesis_release',
-            vars={},
-            args=[release_version]))
+        raise HTTPSeeOther(location='/about/synthesis-release/{v}'.format(v=release_version))
 
     # Still here? Let's grab the version from URL
-    synth_release_version = path_parts[0]
     view_dict['release_version'] = synth_release_version
     view_dict['synthesis_stats'] = synth
 
     # fetch and render Markdown release notes as HTML
-    import requests
-    from gluon.contrib.markdown.markdown2 import markdown
     fetch_url = 'https://raw.githubusercontent.com/OpenTreeOfLife/germinator/master/doc/ot-synthesis-{v}.md'.format(v=synth_release_version)
     try:
         version_notes_response = requests.get(url=fetch_url).text
         # N.B. We assume here that any hyperlinks have the usual Markdown braces!
-        version_notes_html = markdown(version_notes_response).encode('utf-8')
+        version_notes_html = markdown.markdown(version_notes_response)
         # scrub HTML output with bleach
         version_notes_html = ot_cleaner.clean(version_notes_html)
     except:
@@ -500,13 +511,12 @@ def synthesis_release(request):
     return view_dict
 
 @view_config(route_name='about_taxonomy_version',
-             renderer='synthetic_tree_viewer:templates/about/references.jinja2')
+             renderer='synthetic_tree_viewer:templates/about/taxonomy_version.jinja2')
 def taxonomy_version(request):
     view_dict = _minimal_about_viewdict(request)
-    # examine the full path to customize this view
-    full_path = request.matchdict['version']
-    path_parts = full_path.split('/')
-    # NB we only expect one part, e.g. 'ott3.0'
+    # Get the taxo version and clean it up (remove leading slash and any
+    # trailing whitespace).
+    taxo_version = request.matchdict['version'].lstrip('/').strip()
 
     # load taxonomy-version history and basic stats
     ott = json.loads(fetch_local_ott_stats() or '[]')
@@ -517,28 +527,23 @@ def taxonomy_version(request):
         return view_dict
 
     # Get OTT version from URL, or bounce to the latest version by default
-    if len(path_parts) == 0:
+    if taxo_version == "":
         # safer to sort by date-strings [yyyy-mm-dd] than version strings
         sorted_ott = sorted(ott, key=lambda v: v['date'], reverse=False)
         taxonomy_version = sorted_ott[-1].get('version')
         # bounce to the latest version by default
-        redirect(URL('opentree', 'about', 'taxonomy_version',
-            vars={},
-            args=[taxonomy_version]))
+        raise HTTPSeeOther(location='/about/taxonomy-version/{v}'.format(v=taxonomy_version))
 
     # Still here? Let's grab the version from URL
-    taxo_version = path_parts[0]
     view_dict['taxonomy_version'] = taxo_version
     view_dict['taxonomy_stats'] = ott
 
     # fetch and render Markdown release notes as HTML
-    import requests
-    from gluon.contrib.markdown.markdown2 import markdown
     fetch_url = 'https://raw.githubusercontent.com/OpenTreeOfLife/reference-taxonomy/master/doc/{v}.md'.format(v=taxo_version)
     try:
         version_notes_response = requests.get(url=fetch_url).text
         # N.B. We assume here that any hyperlinks have the usual Markdown braces!
-        version_notes_html = markdown(version_notes_response).encode('utf-8')
+        version_notes_html = markdown.markdown(version_notes_response)
         # scrub HTML output with bleach
         version_notes_html = ot_cleaner.clean(version_notes_html)
     except:

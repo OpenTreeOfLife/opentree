@@ -116,7 +116,7 @@ circle.taxo-release-marker {
 <script type="text/javascript">
 // pass statistics as JSON to client for stepping, plotting, etc.
 // NOTE that these are correctly date-sorted from the server!
-var otu_stats = {{ otu_stats |default([ ]) |tojson |safe }}
+var otu_stats = {{ otu_stats |default([ ]) |tojson |safe }};
 
 var sortedSynthesisProfileKeys = null;
 var currentSynthesisProfileIndex = 0;

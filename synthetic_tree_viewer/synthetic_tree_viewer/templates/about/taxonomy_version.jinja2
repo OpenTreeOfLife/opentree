@@ -1,10 +1,13 @@
-{{response.title = "Taxonomy release {v} - Open Tree of Life".format(v=taxonomy_version)}}
-{{extend 'layout.html'}}
-{{import urllib}}
-{{from pprint import pprint}}
-{{### Add support scripts for parsing ISO-8601 dates
-  #response.files.append(URL('static','js/moment.min.js'))
-}}
+{% extends "../layout.jinja2" %}
+
+{# response.title = "Taxonomy release {v} - Open Tree of Life".format(v=taxonomy_version) #}
+
+{% block javascript %}
+  <script src="{{ request.static_url('synthetic_tree_viewer:static/js/d3.v3_min.js') }}"></script>
+  <script src="{{ request.static_url('synthetic_tree_viewer:static/js/moment.min.js') }}"></script>
+{% endblock %}
+
+{% block center %}
 <style type="text/css">
 <!--
 //-->
@@ -32,7 +35,7 @@
 
               <div style="margin-top: -16px;">
                   <a id="progress-highlight-link" 
-                     href="/about/progress?highlight={{= taxonomy_version }}">Highlight this version in the history of Open Tree</a>
+                     href="/about/progress?highlight={{ taxonomy_version }}">Highlight this version in the history of Open Tree</a>
               </div>
               <div id="browse-current-ott" class="alert alert-success" style="display: none; position:relative;top:0.5em;">
                   This is the latest version of the Open Tree taxonomy.
@@ -53,24 +56,24 @@
 
               <h3>Release notes</h3>
               <em>A fuller release history (including early draft versions) is available in the <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/tree/master/doc" target="_blank">OTT documentation</a>:</em>
-            {{ if taxonomy_version_notes: }}
+            {% if taxonomy_version_notes: %}
               <div id="taxonomy-version-notes"
                    style="background-color: #f5f5f5; padding: 1em; border-radius: 6px;">
-                  {{ # REMINDER: web2py's sanitize can't handle Unicode! }}
-                  {{= XML(taxonomy_version_notes, sanitize=False) }}
+                  {# REMINDER: web2py's sanitize can't handle Unicode! #}
+                  {{ taxonomy_version_notes |safe }}
               </div>
-            {{ else: }}
+            {% else: %}
               <div class="alert alert-error">
                   No release notes found for this taxonomy version!
               </div>
-            {{ pass }}
+            {% endif %}
 
           </div>
 
       </div>
 
       <h3 id="comment-header">Comments <i></i></h3>
-      {{=plugin_localcomments(filter='url',url=request.url)}}
+      {# plugin_localcomments(filter='url',url=request.url) #}
 
 </div><!-- end of .container -->
 
@@ -79,14 +82,14 @@
 // These provide version history (version numbers, eg 'ott2.8') to enable stepwise navigation.
 
 // pass statistics as JSON to client for stepping, plotting, etc.
-{{ if taxonomy_stats: 
-    # NOTE that we use XML() here to decode HTML entities like &quot; }}
-var taxonomy_stats = {{= XML(json.dumps(taxonomy_stats)) }};
-{{ else: }}
+{% if taxonomy_stats: %}
+    {# NOTE that we use XML() here to decode HTML entities like &quot; #}
+var taxonomy_stats = {{ taxonomy_stats |default([ ]) |tojson |safe}};
+{% else: %}
 var taxonomy_stats = null;
-{{ pass }}
+{% endif %}
 
-var warnings = [ ]; {{## = XML(warnings)}};
+var warnings = [ ];
 for (i = 0; i < warnings.length; ++i) {
     $('#warnings-panel').append("<p style=\"font-weight:bold;color:red\">" + warnings[i] + "</p>");
 }
@@ -95,8 +98,8 @@ var sortedTaxonomyVersions = null;
 var currentTaxonomyVersion = null;
 var currentTaxoVersionInfo = null;
 
-var taxonomyVersion = '{{= taxonomy_version }}';
-var relatedSynthReleases = {{= XML(json.dumps(related_synth_releases )) }};
+var taxonomyVersion = '{{ taxonomy_version }}';
+var relatedSynthReleases = {{ related_synth_releases |default([ ]) |tojson |safe }};
 
 $(document).ready(function() {
     // show current profiles, or a notice if no data was found 
@@ -327,3 +330,4 @@ function getSynthesisSparklineData(prop, lastTaxoVersion) {
 
 
 </script>
+{% endblock center %}
