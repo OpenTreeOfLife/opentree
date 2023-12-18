@@ -44,10 +44,6 @@ def get_conf_as_dict(request):
     config = get_conf(request)
     return {s:dict(config.items(s)) for s in config.sections()}
 
-def get_user_display_name():
-    # TODO
-    pass
-
 def get_domain_banner_text(request):
     # Add an optional CSS banner to indicate a test domain, or none if
     # we're on a production server.
