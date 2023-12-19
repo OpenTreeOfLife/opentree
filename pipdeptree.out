@@ -1,3 +1,4 @@
+Authomatic==1.2.1
 bleach==5.0.1
   - six [required: >=1.9.0, installed: 1.16.0]
   - webencodings [required: Any, installed: 0.5.1]
