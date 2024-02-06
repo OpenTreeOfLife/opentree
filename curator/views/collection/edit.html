@@ -80,7 +80,7 @@ body {
             onclick="confirmHyperlink(this, 'Are you sure you want to edit this collection?'); return false;"
            {{ pass }}
           >Edit Collection</a>
-          <a onclick="copyCollection(); return false;"
+          <a onclick="copyCollection(viewModel); return false;"
              title="Copy this collection (you will own the copy)"
              class="pull-right btn" style="margin-right: 8px;">
                 Save a copy <i class="icon-repeat"></i>
@@ -93,7 +93,7 @@ body {
             onclick="confirmHyperlink(this, 'Are you sure you want to edit this collection?'); return false;"
            {{ pass }}
           >Login to Edit Collection</a>
-          <a onclick="copyCollection(); return false;"
+          <a onclick="copyCollection(viewModel); return false;"
              title="Copy this collection (requires login)"
              class="pull-right btn" style="margin-right: 8px;">
                 Save a copy <i class="icon-repeat"></i>
@@ -220,17 +220,6 @@ body {
                             class="pull-right btn btn-mini row-controls-ghosted"
                             style="margin-left: 4px; opacity: 0.5;">
                             <i class="icon-list-alt"></i>
-                        </button>
-                        -->
-
-                        <!-- DUPLICATE button
-                        <button data-bind="click: copyCollection,
-                                            visible: true,
-                                            attr: {'title': userIsLoggedIn() ? 'Copy this collection (you will own the copy)' : 'Copy this collection (requires login)'}"
-                            title=""
-                            class="pull-right btn btn-mini row-controls-ghosted"
-                            style="margin-left: 4px;">
-                            Save a copy <i class="icon-repeat"></i>
                         </button>
                         -->
                        <!-- /ko -->
