@@ -2396,7 +2396,7 @@ function saveTreeCollection( collection ) {
         contentType: "application/json; charset=utf-8",
         url: saveURL,
         processData: false,
-        data: JSON.stringify(collection.data),
+        data: ko.toJSON(collection.data), // converts KO observables to simple values!
         //data: collection,  // OR collection.data?
         complete: function( jqXHR, textStatus ) {
             // report errors or malformed data, if any
