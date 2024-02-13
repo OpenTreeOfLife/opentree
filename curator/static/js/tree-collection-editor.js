@@ -897,9 +897,6 @@ function loadSelectedCollection() {
                 normalizeDecision( dec );
             });
 
-            var mainPageArea = $('#main .tab-content')[0];
-            ko.cleanNode(mainPageArea);
-            ko.applyBindings(viewModel, mainPageArea);
             var metadataPopup = $('#collection-metadata-popup')[0];
             ko.cleanNode(metadataPopup);
             ko.applyBindings(viewModel, metadataPopup);
