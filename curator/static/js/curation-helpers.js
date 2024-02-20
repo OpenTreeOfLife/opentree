@@ -2447,13 +2447,11 @@ function saveTreeCollection( collection ) {
                 ;
             }
             */
-            if ((collectionUI === 'FULL_PAGE') &&
-                (createOrUpdate === 'UPDATE')) {
-                    // update this page (re-bind observables, etc.) to restore proper editing behavior
-                    loadSelectedCollection( currentlyEditingCollectionID );
-                    hideModalScreen();
-                    cancelChangesToCollection(collection);
-                }
+            if ((collectionUI === 'FULL_PAGE') && (createOrUpdate === 'UPDATE')) {
+                // update this page (re-bind observables, etc.) to restore proper editing behavior
+                loadSelectedCollection( currentlyEditingCollectionID );
+                hideModalScreen();
+                cancelChangesToCollection(collection);
             } else {
                 // jump to the edit page of our new collection (or newly-minted copy)
                 jumpToCollectionEditor( currentlyEditingCollectionID );
