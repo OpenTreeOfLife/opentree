@@ -2446,24 +2446,24 @@ function saveTreeCollection( collection ) {
                 // TODO: Update local collection history
                 ;
             }
-            // re-bind observables, etc. to restore proper editing behavior
             */
-            if (collectionUI === 'FULL_PAGE') {
-                // Let's try a full reload and see what happens
-                loadSelectedCollection( currentlyEditingCollectionID );
-                hideModalScreen();
-                cancelChangesToCollection(collection);
+            if ((collectionUI === 'FULL_PAGE') &&
+                (createOrUpdate === 'UPDATE')) {
+                    // update this page (re-bind observables, etc.) to restore proper editing behavior
+                    loadSelectedCollection( currentlyEditingCollectionID );
+                    hideModalScreen();
+                    cancelChangesToCollection(collection);
+                }
             } else {
-                // jump from popup to the full-page editor for this collection
-                jumpToCollectionEditor(collection);
+                // jump to the edit page of our new collection (or newly-minted copy)
+                jumpToCollectionEditor( currentlyEditingCollectionID );
             }
         }
     });
 }
-function jumpToCollectionEditor( collection ) {
-    // move this page to the chosen version
-    var viewURL = getCollectionDirectURL( collection );
-    var editURL = viewURL.split('/view/').join('/edit/');
+function jumpToCollectionEditor( collectionID ) {
+    // move this page to the chosen collection ID
+    var editURL = '/curator/collection/edit/'+ collectionID;
     window.location.href = editURL;
 }
 async function deleteTreeCollection( collection ) {
