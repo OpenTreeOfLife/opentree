@@ -502,12 +502,13 @@ body {
                     </tr>
                   </thead>
 
-                  <tbody data-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
-                    <tr data-bind="attr: { class: (userIsEditingCollection($parent) && $data['status'] == 'REMOVED') ?
+                  <tbody id="tree-collection-decisions" data-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
+                    <tr class="single-tree-row"
+                        data-bind="attr: { class: (userIsEditingCollection($parent) && $data['status'] == 'REMOVED') ?
                                                     'single-tree-row error' :
                                                     (userIsEditingCollection($parent) && $data['status'] == 'MODIFIED' ?
                                                       'single-tree-row warning' :
-                                                      'single-tree-row-'+ $data['status'] )
+                                                      'single-tree-row '+ $data['status'] )
                                           },
                                    css: viewModel.ticklers.TREES">
                         <td style="white-space: nowrap;" data-bind="visible: getTreeColumnVisibility('RANK')">

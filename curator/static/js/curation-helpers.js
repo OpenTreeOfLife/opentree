@@ -594,6 +594,7 @@ async function showCollectionViewer( collection, options ) {
             .find('#tree-collection-contributors > li').eq(0).clone();
         $stashedCollectionDecisionElement = $('#tree-collection-viewer')
             .find('#tree-collection-decisions > tr.single-tree-row').eq(0).clone();
+            // OR .find('#tree-collection-decisions > tr.single-tree-row, #tree-list-holder > tr.single-tree-row').eq(0).clone();
     } else {
         // Replace with pristine markup to avoid weird results in later popups
         if (options.MAINTAIN_SCROLL) {
