@@ -626,7 +626,7 @@ async function showCollectionViewer( collection, options ) {
         var $boundElements = $('#tree-collection-viewer').find('.modal-body, .modal-header');
         // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
     } else {  // it's 'FULL_PAGE'
-        var $boundElements = $('#tree-collection-viewer');
+        var $boundElements = $('#tree-collection-viewer, #History');
     }
     $.each($boundElements, function(i, el) {
         ko.cleanNode(el);
