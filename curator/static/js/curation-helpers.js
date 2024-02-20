@@ -2450,7 +2450,7 @@ function saveTreeCollection( collection ) {
             */
             if (collectionUI === 'FULL_PAGE') {
                 // Let's try a full reload and see what happens
-                loadSelectedCollection();
+                loadSelectedCollection( currentlyEditingCollectionID );
                 hideModalScreen();
                 cancelChangesToCollection(collection);
             } else {
