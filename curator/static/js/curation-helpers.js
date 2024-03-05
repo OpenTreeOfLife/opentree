@@ -657,7 +657,7 @@ async function showCollectionViewer( collection, options ) {
             $newTreeOptionsPanels.find('input').val('');
             $newTreeByURLButton.attr('disabled', 'disabled')
                 .addClass('btn-info-disabled');
-            updateNewCollTreeUI();
+            updateTreeLookupUI();
             // (re)bind study and tree lookups
             loadStudyListForLookup();
             // disable the Add Tree button until they finish or cancel
@@ -778,57 +778,76 @@ function getFullGitHubURLForCollection(collection) {
     return '';
 }
 
-function updateNewCollTreeUI() {
+function updateTreeLookupUI() {
+    // find the correct UI components for the current context
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
     // update by-lookup widgets
     var $addByLookupPanel = $('#new-collection-tree-by-lookup');
     var $submitByLookupButton = $addByLookupPanel.find('button').eq(0);
     var $studyIDField = $addByLookupPanel.find('input[name=study-lookup-id]');
     var $treeSelector = $addByLookupPanel.find('select[name=tree-lookup]');
-    var $submitByAnyInputButton = $('#add-tree-by-any-input');
-    if (collectionUI === 'FULL_PAGE') {
-        // disable our all-purpose add-tree button, then check below
-        $submitByAnyInputButton.attr('disabled', 'disabled')
-                               .addClass('btn-info-disabled');
-    }
+    switch(context) {
+        case 'COLLECTION_EDITOR_ADD_TREE':
+            var $submitByAnyInputButton = $('#add-tree-by-any-input');
+            if (collectionUI === 'FULL_PAGE') {
+                // disable our all-purpose add-tree button, then check below
+                $submitByAnyInputButton.attr('disabled', 'disabled')
+                                       .addClass('btn-info-disabled');
+            }
 
-    if (($.trim($studyIDField.val()) == '') || ($.trim($treeSelector.val()) == '')) {
-        // no ids found!
-        if (collectionUI === 'POPUP') {
-            $submitByLookupButton.attr('disabled', 'disabled')
-                                 .addClass('btn-info-disabled');
-        }
-    } else {
-        // both ids found!
-        if (collectionUI === 'POPUP') {
-            $submitByLookupButton.attr('disabled', null)
-                                 .removeClass('btn-info-disabled');
-        } else {
-            $submitByAnyInputButton.attr('disabled', null)
-                                   .removeClass('btn-info-disabled');
-        }
-    }
+            if (($.trim($studyIDField.val()) == '') || ($.trim($treeSelector.val()) == '')) {
+                // no ids found!
+                if (collectionUI === 'POPUP') {
+                    $submitByLookupButton.attr('disabled', 'disabled')
+                                         .addClass('btn-info-disabled');
+                }
+            } else {
+                // both ids found!
+                if (collectionUI === 'POPUP') {
+                    $submitByLookupButton.attr('disabled', null)
+                                         .removeClass('btn-info-disabled');
+                } else {
+                    $submitByAnyInputButton.attr('disabled', null)
+                                           .removeClass('btn-info-disabled');
+                }
+            }
 
-    // update by-URL widgets
-    var $addByURLPanel = $('#new-collection-tree-by-url');
-    var $urlField = $addByURLPanel.find('input[name=tree-url]');
-    var $submitByURLButton = $addByURLPanel.find('button').eq(0);
-    if ($.trim($urlField.val()) == '') {
-        if (collectionUI === 'POPUP') {
-            $submitByURLButton.attr('disabled', 'disabled')
-                              .addClass('btn-info-disabled');
-        }
-    } else {
-        if (collectionUI === 'POPUP') {
-            $submitByURLButton.attr('disabled', null)
-                              .removeClass('btn-info-disabled');
-        } else {
-            $submitByAnyInputButton.attr('disabled', null)
-                                   .removeClass('btn-info-disabled');
-        }
+            // update by-URL widgets
+            var $addByURLPanel = $('#new-collection-tree-by-url');
+            var $urlField = $addByURLPanel.find('input[name=tree-url]');
+            var $submitByURLButton = $addByURLPanel.find('button').eq(0);
+            if ($.trim($urlField.val()) == '') {
+                if (collectionUI === 'POPUP') {
+                    $submitByURLButton.attr('disabled', 'disabled')
+                                      .addClass('btn-info-disabled');
+                }
+            } else {
+                if (collectionUI === 'POPUP') {
+                    $submitByURLButton.attr('disabled', null)
+                                      .removeClass('btn-info-disabled');
+                } else {
+                    $submitByAnyInputButton.attr('disabled', null)
+                                           .removeClass('btn-info-disabled');
+                }
+            }
+            break;
+        case 'PHYLOGRAM_CONFLICT_CHOOSE_TREE2':
+            break;
+        case 'ANALYSES_CONFLICT_CHOOSE_TREE2':
+            break;
+        default:  // missing/unknown context!
+            return;
     }
 }
 
-/* Sensible autocomplete behavior requires the use of timeouts
+/* Look up study and tree IDs easily.
+ *
+ * This logic was originally used only in the collection editor, but
+ * we need to generalize it for use in other contexts like conflict reporting.
+ *
+ * NB - Sensible autocomplete behavior requires the use of timeouts
  * and sanity checks for unchanged content, etc.
  */
 clearTimeout(studyLookupTimeoutID);  // in case there's a lingering search from last page!
@@ -842,6 +861,12 @@ function setStudyLookupFuse(e) {
     }
     // reset the timeout for another n milliseconds
     studyLookupTimeoutID = setTimeout(searchForMatchingStudy, lookupDelay);
+
+    // find the correct UI components for the current context
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+    var $lookupResults = $container.find('[id=study-lookup-results]');     // display matching stuff
 
     /* If the last key pressed was the ENTER key, stash the current (trimmed)
      * string and auto-jump if it's a valid taxon name.
@@ -858,7 +883,7 @@ function setStudyLookupFuse(e) {
             case 39:
             case 40:
                 // down or right arrows should try to select first result
-                $('#study-lookup-results a:eq(0)').focus();
+                $lookupResults.find('a:eq(0)').focus();
                 break;
             default:
                 hopefulStudyLookupName = null;
@@ -868,33 +893,98 @@ function setStudyLookupFuse(e) {
     }
 }
 
+function getPhylesystemLookupContext() {
+    /* Check for open (and topmost) popup, then active tab
+     *
+     * NB - It's entirely possible to open the source-tree viewer, then
+     * the collection editor on top of that. Choose wisely!
+     */
+    if ($('#tree-collection-viewer').is(":visible") ||
+       $('div#Home [id=tree-collection-viewer]').length === 1) {
+        // we're editing a collection, either in a popup modal OR the full-page editor
+        return 'COLLECTION_EDITOR_ADD_TREE';
+    }
+
+    var $tabBar = $('ul.nav-tabs:eq(0)');
+    var activeTabName = $.trim($tabBar.find('li.active a').text());
+    if (activeTabName.indexOf('Analyses') === 0) {
+        return 'ANALYSES_CONFLICT_CHOOSE_TREE2';
+    }
+
+    if ((activeTabName.indexOf('Home') === 0) ||
+       $('#tree-viewer').is(":visible") ||
+       treeViewerIsInUse) {
+        return 'PHYLOGRAM_CONFLICT_CHOOSE_TREE2';
+    }
+
+    console.error("getPhylesystemLookupContext(): UNKNOWN context!");
+    return null;
+}
+
+function getPhylesystemLookupPanel( context ) {
+    // find the nearest containing element for all phylesystem-lookup widgets
+    context = context || getPhylesystemLookupContext();
+    var $container;    // parent element for study+tree lookup UI
+    switch(context) {
+        case 'COLLECTION_EDITOR_ADD_TREE':
+            $container = $('#new-collection-tree-by-lookup');
+            break;
+        case 'PHYLOGRAM_CONFLICT_CHOOSE_TREE2':
+            $container = $('#tree-phylogram-options');
+            break;
+        case 'ANALYSES_CONFLICT_CHOOSE_TREE2':
+            $container = $('#analyses-tree-chooser');
+            break;
+        default:  // missing/unknown context!
+            console.error("getPhylesystemLookupPanel(): UNKNOWN context '"+ context +"'!");
+            return null;
+    }
+    return $container;
+}
+
 var showingResultsForStudyLookupText = '';
 function searchForMatchingStudy() {
     // clear any pending lookup timeout and ID
     clearTimeout(studyLookupTimeoutID);
     studyLookupTimeoutID = null;
 
-    var $input = $('input[name=study-lookup]');
-    if ($input.length === 0) {
-        $('#study-lookup-results').html('');
+    // find the correct UI components for the current context
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+    switch(context) {
+        case 'COLLECTION_EDITOR_ADD_TREE':
+            break;
+        case 'PHYLOGRAM_CONFLICT_CHOOSE_TREE2':
+            break;
+        case 'ANALYSES_CONFLICT_CHOOSE_TREE2':
+            break;
+        default:  // missing/unknown context!
+            return;
+    }
+    var $studyNameInput = $container.find('input[name=study-lookup]');    // search text field
+    var $lookupResults = $container.find('[id=study-lookup-results]');     // display matching stuff
+
+    if ($studyNameInput.length === 0) {
+        $container.find('#study-lookup-results').html('');
         console.log("Input field not found!");
         return false;
     }
-    var searchText = $.trim( $input.val() );
+    var searchText = $.trim( $studyNameInput.val() );
     var searchTokens = tokenizeSearchTextKeepingQuotes(searchText);
 
     if ((searchTokens.length === 0) ||
         (searchTokens.length === 1 && searchTokens[0].length < 2)) {
-        $('#study-lookup-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
+        $container.find('').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
         return false;
     }
 
     // stash the search-text used to generate these results
     showingResultsForStudyLookupText = searchText;
-    $('#study-lookup-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
-    $('#study-lookup-results').show();
-    $('#study-lookup-results').dropdown('toggle');
-    $('#study-lookup-results').html('');
+    $lookupResults.html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
+    $lookupResults.show();
+    $lookupResults.dropdown('toggle');
+    $lookupResults.html('');
 
     var maxResults = 5;
     var visibleResults = 0;
@@ -955,7 +1045,7 @@ function searchForMatchingStudy() {
         $.each(matchingStudies, function(i, studyInfo) {
             if (visibleResults > maxResults) {
                 // Add one final prompt
-                $('#study-lookup-results').append(
+                $lookupResults.append(
                     '<li class="disabled"><a href=""><span class="muted">Add more search text to see hidden matches.</span></a></li>'
                 );
                 return false;
@@ -963,33 +1053,34 @@ function searchForMatchingStudy() {
             var matchURL = getViewURLFromStudyID(studyInfo['ot:studyId']);
             var matchText = fullToCompactReference(studyInfo['ot:studyPublicationReference']);
             var mouseOver = studyInfo['ot:studyPublicationReference'];
-            $('#study-lookup-results').append(
+            $lookupResults.append(
                 '<li><a href="'+ matchURL +'" title="'+ mouseOver +'">'+ matchText +'</a></li>'
             );
             visibleResults++;
         });
 
-        $('#study-lookup-results a')
+        $lookupResults.find('a')
             .click(function(e) {
                 var $link = $(this);
                 if ($link.attr('href') === '') return false;
                 var pathParts = $link.attr('href').split('/');
                 var studyID = pathParts[ pathParts.length - 1 ];
                 // update hidden field
-                $('input[name=study-lookup-id]').val( studyID );
+                $container.find('input[name=study-lookup-id]').val( studyID );
                 // hide menu and reset search field
-                $('#study-lookup-results').html('');
-                $('#study-lookup-results').hide();
+                clearTimeout(studyLookupTimeoutID);
+                $lookupResults.html('');
+                $lookupResults.hide();
                 // replace input field with static indicator (and trigger to search again?)
-                $('.study-lookup-active').hide();
-                $('#study-lookup-indicator')
+                $container.find('.study-lookup-active').hide();
+                $container.find('a.study-lookup-indicator')
                     .attr({'href': $link.attr('href'), 'title': $link.attr('title')})
                     .html( $link.html() );
-                $('.study-lookup-passive').show();
+                $container.find('.study-lookup-passive').show();
                 // Load + enable tree lookup
-                $('select[name=tree-lookup]').val('');
-                $('select[name=tree-lookup]').attr('disabled','disabled');
-                updateNewCollTreeUI();
+                $container.find('select[name=tree-lookup]').val('');
+                $container.find('select[name=tree-lookup]').attr('disabled','disabled');
+                updateTreeLookupUI();
                 $.ajax({
                     global: false,  // suppress web2py's aggressive error handling
                     type: 'POST',
@@ -1038,7 +1129,7 @@ function searchForMatchingStudy() {
                                     var foundStudy = responseObj['matched_studies'][0];
                                     var foundTrees = foundStudy['matched_trees'];
                                     // TODO: Remove all but the prompting OPTION element
-                                    var $treeSelector = $('select[name=tree-lookup]');
+                                    var $treeSelector = $container.find('select[name=tree-lookup]');
                                     $treeSelector.find('option').remove();
                                     if (foundTrees.length === 0) {
                                         // no such study
@@ -1067,7 +1158,9 @@ function searchForMatchingStudy() {
                                         $treeSelector.append( $newOption );
                                     });
                                     $treeSelector.attr('disabled', null);
-                                    updateNewCollTreeUI();
+                                    if (context == '') {
+                                        updateTreeLookupUI();
+                                    }
                                     return;
 
                                 default:
@@ -1090,31 +1183,34 @@ function searchForMatchingStudy() {
                 });
 
             });
-        $('#study-lookup-results').dropdown('toggle');
+        $lookupResults.dropdown('toggle');
     }
     if (visibleResults === 0) {
-        $('#study-lookup-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
-        $('#study-lookup-results').dropdown('toggle');
+        $lookupResults.html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
+        $lookupResults.dropdown('toggle');
     };
 
     return false;
 }
 function resetStudyLookup() {
     // Clear/disable tree lookup
-    var $treeSelector = $('select[name=tree-lookup]');
+    var context = getPhylesystemLookupContext();
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+    var $treeSelector = $container.find('select[name=tree-lookup]');
     $treeSelector.find('option').remove();
-    var $promptOption = $('<option disabled="disabled" value="">Find the study above first</option>');
+    var $promptOption = $('<option disabled="disabled" value="">Choose a study first</option>');
     $treeSelector.append( $promptOption );
-    $('select[name=tree-lookup]').val('');
-    $('select[name=tree-lookup]').attr('disabled','disabled');
+    $container.find('select[name=tree-lookup]').val('');
+    $container.find('select[name=tree-lookup]').attr('disabled','disabled');
 
     // Toggle the study-lookup widget (vs. indicator)
-    $('.study-lookup-passive').hide();
-    $('.study-lookup-active').show();
+    $container.find('.study-lookup-passive').hide();
+    $container.find('.study-lookup-active').show();
     // N.B. The icon element will shift if its display is set to block
-    $('i.study-lookup-active').css('display', 'inline-block');
+    $container.find('i.study-lookup-active').css('display', 'inline-block');
 
-    updateNewCollTreeUI();
+    updateTreeLookupUI();
 }
 
 function createNewTreeCollection() {
@@ -2001,7 +2097,7 @@ function bindStudyAndTreeLookups() {
     $newTreeStartButton.attr('disabled', null)
                        .removeClass('btn-info-disabled');
 }
-function loadStudyListForLookup() {
+function loadStudyListForLookup( context ) {
     ///console.warn('STARTING loadStudyListForLookup');
     // if list is available, bind UI and return
     if (studyListForLookup) {
@@ -2009,10 +2105,17 @@ function loadStudyListForLookup() {
         return true;
     }
 
-    // disable "Add tree" button until the list is loaded
-    var $newTreeStartButton = $('#new-collection-tree-start');
-    $newTreeStartButton.attr('disabled', 'disabled')
-                       .addClass('btn-info-disabled');
+    // find the correct UI components for the current context
+    if (!context) {
+        context = getPhylesystemLookupContext();
+    }
+    // what's the parent element for study+tree lookup UI?
+    var $container = getPhylesystemLookupPanel( context );
+
+    // disable lookup form until the list is loaded
+    var $formInitButtons = $container.parent().find('.form-init');
+    $formInitButtons.attr('disabled', 'disabled')
+                    .addClass('btn-info-disabled');
 
     $.ajax({
         type: 'POST',
@@ -2020,8 +2123,7 @@ function loadStudyListForLookup() {
         url: findAllStudies_url,
         data: { verbose: true },
         success: function( data, textStatus, jqXHR ) {
-            // this should be properly parsed JSON
-
+            // this should be properly parsed JSON;
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
                 showErrorMessage('Sorry, there was an error loading the list of studies.');
@@ -2031,10 +2133,11 @@ function loadStudyListForLookup() {
                 showErrorMessage('Sorry, there is a problem with the study-list data.');
                 return;
             }
-
+            // save global lookup list!
             studyListForLookup = data['matched_studies'];
             bindStudyAndTreeLookups();
-            if (collectionUI === 'FULL_PAGE') {
+            if (context === 'COLLECTION_EDITOR_ADD_TREE' &&
+                collectionUI === 'FULL_PAGE') {
                 // refresh tree list in collections editor
                 nudgeTickler('TREES', {modelHasChanged: false});
             }

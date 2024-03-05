@@ -1,8 +1,4 @@
 {{extend 'layout.html'}}
-<p>Pre vars dump</p>
-<p>{{=treemachine_domain}}</p>
-<p>{{=taxomachine_domain}}</p>
-<p>Post vars dump</p>
 
 <p>Pre DB p element</p>
 <div id="argusDBContainer" />
@@ -80,8 +76,8 @@ $(document).ready(function (){
   var argus = createArgus({
     "domSource": "ottol",
     "container": document.getElementById("argusCanvasContainer"),
-    "treemachineDomain": "{{=treemachine_domain}}",
-    "taxomachineDomain": "{{=taxomachine_domain}}",
+    "treemachineDomain": "{{=default_apis}}",
+    "taxomachineDomain": "{{=default_apis}}",
     "useTreemachine": true,
     "useSyntheticTree": true,
     "maxDepth": 3

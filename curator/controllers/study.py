@@ -12,7 +12,7 @@
 #########################################################################
 
 from applications.opentree.modules.opentreewebapputil import(
-    get_opentree_services_method_urls, 
+    get_opentree_api_endpoints, 
     fetch_current_TNRS_context_names,
     fetch_trees_queued_for_synthesis,
     get_maintenance_info)
@@ -25,7 +25,7 @@ def index():
     Show list searchable/filtered list of all studies
     (default filter = My Studies, if logged in?)
     """
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
 
     if auth.is_logged_in():
         # user is logged in, filter to their own studies by default?
@@ -44,7 +44,7 @@ def view():
     ? OR can this include work-in-progress from a personal branch?
     """
     response.view = 'study/edit.html'
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
     view_dict['maintenance_info'] = get_maintenance_info(request)
     #view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['studyID'] = request.args[0]
@@ -61,7 +61,7 @@ def create():
     if maintenance_info.get('maintenance_in_progress', False):
         redirect(URL('curator', 'default', 'index', vars={"maintenance_notice":"true"}))
         pass
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
     view_dict['message'] = "study/create"
     return view_dict
 
@@ -76,7 +76,7 @@ def edit():
             args=request.args))
     # Fetch a fresh list of search contexts for TNRS? see working example in
     # the header search of the main opentree webapp
-    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_api_endpoints(request)
     view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['treesQueuedForSynthesis'] = fetch_trees_queued_for_synthesis(request)
     view_dict['studyID'] = request.args[0]
@@ -93,7 +93,7 @@ def _get_latest_synthesis_details_for_study_id( study_id ):
         import json
         import requests
 
-        method_dict = get_opentree_services_method_urls(request)
+        method_dict = get_opentree_api_endpoints(request)
 
         # fetch a list of all studies that contribute to synthesis
         fetch_url = method_dict['getSynthesisSourceList_url']

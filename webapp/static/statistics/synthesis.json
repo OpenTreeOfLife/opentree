@@ -140,5 +140,23 @@
         "tree_count": 1330,
         "total_OTU_count": 112890,
         "tip_count": 2392570
+    },
+    "2023-09-25T00Z": {
+        "===": "tree_count from https://files.opentreeoflife.org/synthesis/opentree14.8output/index.html",
+        "===": "total_OTU_count and tip_count found in https://files.opentreeoflife.org/synthesis/opentree14.8/output/labelled_supertree/index.html",
+        "version": "v14.8",
+        "OTT_version": "ott3.6draft1",
+        "tree_count": 1330,
+        "total_OTU_count": 112661,
+        "tip_count": 2392578
+    },
+    "2023-09-25T11Z": {
+        "===": "tree_count from https://files.opentreeoflife.org/synthesis/opentree14.8output/index.html",
+        "===": "total_OTU_count and tip_count found in https://files.opentreeoflife.org/synthesis/opentree14.8/output/labelled_supertree/index.html",
+        "version": "v14.9",
+        "OTT_version": "ott3.6draft1",
+        "tree_count": 1331,
+        "total_OTU_count": 112669,
+        "tip_count": 2392578
     }
 }

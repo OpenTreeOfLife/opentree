@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import urllib2
 import socket
-from opentreewebapputil import (get_opentree_services_method_urls, 
+from opentreewebapputil import (get_opentree_api_endpoints, 
                                 fetch_current_TNRS_context_names)
 
-default_view_dict = get_opentree_services_method_urls(request)
+default_view_dict = get_opentree_api_endpoints(request)
 default_view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
 
 ### required - do no delete
@@ -100,7 +100,8 @@ def index():
     return treeview_dict
 
 def error():
-    return dict()
+    # NB - We need some configuration values here!
+    return default_view_dict.copy()
 
 def download_subtree():
     id_type = request.args(0)  # 'ottol-id' or 'node-id'
@@ -118,7 +119,7 @@ def download_subtree():
             'accept' : 'application/json',
         }
 
-        method_dict = get_opentree_services_method_urls(request)
+        method_dict = get_opentree_api_endpoints(request)
 
         # use the appropriate web service for this ID type
         fetch_url = method_dict['getDraftSubtree_url']
@@ -161,7 +162,7 @@ def fetch_current_synthetic_tree_ids():
         import json
         import requests
 
-        method_dict = get_opentree_services_method_urls(request)
+        method_dict = get_opentree_api_endpoints(request)
         fetch_url = method_dict['getDraftTreeID_url']
         if fetch_url.startswith('//'):
             # Prepend scheme to a scheme-relative URL
