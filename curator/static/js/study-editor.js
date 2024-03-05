@@ -9019,7 +9019,7 @@ function lookUpDOI() {
             //data: {'q': combinedSearchText},
             complete: function( jqXHR, textStatus ) {
                 hideModalScreen();
-                if (textStatus !== 'parsererror') {
+                if (textStatus === 'parsererror') {
                     // NB - CrossRef API is quirky. Returns 'Resource not found' with status 200 (vs. 404) and funky textStatus!
                     var errMsg = "Sorry, we couldn't find a publication with this publication DOI. Please double-check your DOIs and try again."
                     showErrorMessage(errMsg);
