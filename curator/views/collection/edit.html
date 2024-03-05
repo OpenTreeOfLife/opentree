@@ -157,7 +157,7 @@ body {
         {{ if viewOrEdit == 'VIEW': }}
             <div class="control-group">
                 <a class="btn btn-info"
-                   href="{{= API_load_collection_GET_url.replace('{COLLECTION_ID}', collectionID) }}"
+                   href="{{= API_load_collection_GET_url.replace('{COLLECTION_ID}', collectionID) + '.json' }}"
                    target="_blank">Download collection as JSON <i class="icon-arrow-down icon-white"></i></a>
                 <span> or you can use the
                     <strong><a href="https://github.com/OpenTreeOfLife/germinator/wiki/Open-Tree-of-Life-Web-APIs"
