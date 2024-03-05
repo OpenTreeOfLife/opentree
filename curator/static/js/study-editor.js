@@ -9019,6 +9019,12 @@ function lookUpDOI() {
             //data: {'q': combinedSearchText},
             complete: function( jqXHR, textStatus ) {
                 hideModalScreen();
+                if (textStatus !== 'parsererror') {
+                    // NB - CrossRef API is quirky. Returns 'Resource not found' with status 200 (vs. 404) and funky textStatus!
+                    var errMsg = "Sorry, we couldn't find a publication with this publication DOI. Please double-check your DOIs and try again."
+                    showErrorMessage(errMsg);
+                    return;
+                }
                 if (textStatus !== 'success') {
                     var errMsg = 'Sorry, there was an error looking up this study\'s DOI. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
                     showErrorMessage(errMsg);
@@ -9033,7 +9039,11 @@ function lookUpDOI() {
                     return;
                 }
                 var foundItems = resultsJSON.message.items;
-                console.log("FOUND "+ foundItems.length +" matching items");
+                if (!foundItems) {
+                    // it's a singleton (probably matched on a DOI)
+                    console.log("wrapping a single result in a new list");
+                    foundItems = [ resultsJSON.message ];
+                }
                 if (foundItems.length === 0) {
                     asyncAlert('No matches found, please check your publication reference text.')
                 } else {
