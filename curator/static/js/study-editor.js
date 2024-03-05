@@ -8988,7 +8988,16 @@ function lookUpDOI() {
     var referenceText = $.trim( $('#ot_studyPublicationReference').val() );
     // toss in the current URL as well, in case this is the latest input
     var urlText = $.trim( $('#ot_studyPublication').val() );
-    var combinedSearchText = referenceText +" "+ urlText;
+    var combinedSearchText = urlText +" "+ referenceText;
+    // find any bare DOIs among mixed text (and DOIs-in-URL-form) and prepend them to the text
+    var possibleDOIs = combinedSearchText.match(minimalDOIPattern);  // pattern defined elsewhere
+    if( possibleDOIs ) {
+        // we found one or more DOIs; add them to the text!
+        combinedSearchText = (possibleDOIs.join(' ') +" "+ combinedSearchText);
+    }
+    console.log( "Searching for DOI/ref using this combined search text:" );
+    console.log( combinedSearchText );
+
     var lookupURL;
     if ($.trim(combinedSearchText) === '') {
         // try a generic search in a new window
