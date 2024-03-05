@@ -758,7 +758,7 @@ def to_nexson():
 def search_crossref_proxy():
     encoded_ref_string = request.env.web2py_original_uri.split('search_crossref_proxy?')[1]
     # prepend the CrossRef search base URL and return the response
-    search_crossref_url = 'https://api.crossref.org/works?rows=10&query=%s' % encoded_ref_string
+    search_crossref_url = 'https://api.crossref.org/works/%s' % encoded_ref_string
     # NB - the query-string is already properly encoded! Do NOT double-encode
     # this, or we'll get wildly wrong results.
     try:
