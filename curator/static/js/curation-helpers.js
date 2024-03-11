@@ -594,6 +594,7 @@ async function showCollectionViewer( collection, options ) {
             .find('#tree-collection-contributors > li').eq(0).clone();
         $stashedCollectionDecisionElement = $('#tree-collection-viewer')
             .find('#tree-collection-decisions > tr.single-tree-row').eq(0).clone();
+            // OR .find('#tree-collection-decisions > tr.single-tree-row, #tree-list-holder > tr.single-tree-row').eq(0).clone();
     } else {
         // Replace with pristine markup to avoid weird results in later popups
         if (options.MAINTAIN_SCROLL) {
@@ -624,11 +625,13 @@ async function showCollectionViewer( collection, options ) {
         // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
         var $boundElements = $('#tree-collection-viewer').find('.modal-body, .modal-header');
         // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
-        $.each($boundElements, function(i, el) {
-            ko.cleanNode(el);
-            ko.applyBindings(collection, el);
-        });
+    } else {  // it's 'FULL_PAGE'
+        var $boundElements = $('#tree-collection-viewer, #History');
     }
+    $.each($boundElements, function(i, el) {
+        ko.cleanNode(el);
+        ko.applyBindings(collection, el);
+    });
 
     var updateCollectionDisplay = function(options) {
         options = options || {};
@@ -2396,7 +2399,7 @@ function saveTreeCollection( collection ) {
         contentType: "application/json; charset=utf-8",
         url: saveURL,
         processData: false,
-        data: JSON.stringify(collection.data),
+        data: ko.toJSON(collection.data), // converts KO observables to simple values!
         //data: collection,  // OR collection.data?
         complete: function( jqXHR, textStatus ) {
             // report errors or malformed data, if any
@@ -2443,24 +2446,22 @@ function saveTreeCollection( collection ) {
                 // TODO: Update local collection history
                 ;
             }
-            // re-bind observables, etc. to restore proper editing behavior
             */
-            if (collectionUI === 'FULL_PAGE') {
-                // Let's try a full reload and see what happens
-                loadSelectedCollection();
+            if ((collectionUI === 'FULL_PAGE') && (createOrUpdate === 'UPDATE')) {
+                // update this page (re-bind observables, etc.) to restore proper editing behavior
+                loadSelectedCollection( currentlyEditingCollectionID );
                 hideModalScreen();
                 cancelChangesToCollection(collection);
             } else {
-                // jump from popup to the full-page editor for this collection
-                jumpToCollectionEditor(collection);
+                // jump to the edit page of our new collection (or newly-minted copy)
+                jumpToCollectionEditor( currentlyEditingCollectionID );
             }
         }
     });
 }
-function jumpToCollectionEditor( collection ) {
-    // move this page to the chosen version
-    var viewURL = getCollectionDirectURL( collection );
-    var editURL = viewURL.split('/view/').join('/edit/');
+function jumpToCollectionEditor( collectionID ) {
+    // move this page to the chosen collection ID
+    var editURL = '/curator/collection/edit/'+ collectionID;
     window.location.href = editURL;
 }
 async function deleteTreeCollection( collection ) {

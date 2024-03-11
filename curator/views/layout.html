@@ -781,7 +781,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                                                       'single-tree-row error' :
                                                       (userIsEditingCollection($parent) && $data['status'] == 'MODIFIED' ?
                                                         'single-tree-row warning' :
-                                                        'single-tree-row-'+ $data['status'] )
+                                                        'single-tree-row '+ $data['status'] )
                                             }">
                           <td>
                           <!-- ko if: userIsEditingCollection($parent) -->

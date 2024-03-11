@@ -370,7 +370,7 @@ $(document).ready(function() {
 
     collectionHasUnsavedChanges = false;
     disableSaveButton();
-    loadSelectedCollection();
+    loadSelectedCollection( collectionID );
 
     // Initialize the jQuery File Upload widgets
     $('#fileupload').fileupload({
@@ -536,7 +536,7 @@ var knockoutMappingOptions = {
 };
  */
 
-function loadSelectedCollection() {
+function loadSelectedCollection( selectedCollectionID ) {
     /* Use REST API to pull collection data from datastore
      * :EXAMPLE: GET http://api.opentreeoflife.org/v3/collection/{jimallman/test}
      *
@@ -549,7 +549,7 @@ function loadSelectedCollection() {
      *  - any local storage (in Lawnchair) that trumps the one in remote storage
      */
 
-    var fetchURL = API_load_collection_GET_url.replace('{COLLECTION_ID}', collectionID);
+    var fetchURL = API_load_collection_GET_url.replace('{COLLECTION_ID}', selectedCollectionID);
 
     // TEST URL with local JSON file
     ///fetchURL = '/curator/static/1003.json';
@@ -897,9 +897,6 @@ function loadSelectedCollection() {
                 normalizeDecision( dec );
             });
 
-            var mainPageArea = $('#main .tab-content')[0];
-            ko.cleanNode(mainPageArea);
-            ko.applyBindings(viewModel, mainPageArea);
             var metadataPopup = $('#collection-metadata-popup')[0];
             ko.cleanNode(metadataPopup);
             ko.applyBindings(viewModel, metadataPopup);
