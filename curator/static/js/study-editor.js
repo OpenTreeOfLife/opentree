@@ -6957,24 +6957,23 @@ function approveAllVisibleMappings() {
             itsMappingInfo() :
             itsMappingInfo;
         if ($.isArray(approvedMapping)) {
-            if (approvedMapping.length === 1) {
-                // test the first (only) value for possible approval
-                var onlyMapping = approvedMapping[0];
-                if (onlyMapping.originalMatch.is_synonym) {
-                    return;  // synonyms require manual review
+            /* N.B. There can be *multiple* exact matches! Check each and
+             * grab the first candidate that fit all criteria:
+             *  - name matches exactly
+             *  - not a synonym
+             */
+            $.each(approvedMapping, function(i, testMapping) {
+                if (testMapping.originalMatch.is_synonym) {
+                    // Synonyms require manual review after on-demand acceptance!
+                    return true;  // continue checking other matches
                 }
-                /* N.B. We never present the sole mapping suggestion as a
-                 * taxon-name homonym, so just consider the match score to
-                 * determine whether it's an "exact match".
-                 */
-                if (onlyMapping.originalMatch.score < 1.0) {
-                    return;  // non-exact matches require manual review
+                if (testMapping.originalMatch.score < 1.0) {
+                    return true;  // non-exact matches require manual review
                 }
                 // still here? then this mapping looks good enough for auto-approval
                 delete proposedOTUMappings()[ OTUid ];
-                mapOTUToTaxon( OTUid, approvedMapping[0], {POSTPONE_UI_CHANGES: true} );
-            } else {
-                return; // multiple possibilities require manual review
+                mapOTUToTaxon( OTUid, testMapping, {POSTPONE_UI_CHANGES: true} );
+                return false;  // stop checking candidates!
             }
         } else {
             // apply the inner value of an observable (accessor) function
@@ -7312,21 +7311,19 @@ function requestTaxonMapping( otuToMap ) {
                     }
                 });
 
+                /* N.B. There can be *multiple* exact matches! Check each and
+                 * grab the first candidate that fit all criteria:
+                 *  - name matches exactly
+                 *  - synonyms are OK here
+                 */
                 var autoAcceptableMapping = null;
-                if (candidateMappingList.length === 1) {
-                    var onlyMapping = candidateMappingList[0];
-                    /* NB - auto-accept includes synonyms if exact match!
-                    if (onlyMapping.originalMatch.is_synonym) {
-                        return;
+                $.each(candidateMappingList, function(i, testMapping) {
+                    if (testMapping.originalMatch.score < 1.0) {
+                        return true;  // non-exact matches require manual review
                     }
-                    */
-                    /* N.B. We never present the sole mapping suggestion as a
-                     * taxon-name homonym, so just consider the match score to
-                     * determine whether it's an "exact match".
-                     */
-                    if (onlyMapping.originalMatch.score === 1.0) {
-                        autoAcceptableMapping = onlyMapping;
-                    }
+                    // still here? then this mapping looks good enough for auto-approval
+                    autoAcceptableMapping = testMapping;
+                    return false;  // stop checking candidates!
                 }
                 if (autoAcceptingExactMatches && autoAcceptableMapping) {
                     // accept the obvious choice (and possibly update UI) immediately
