@@ -6974,7 +6974,7 @@ function approveAllVisibleMappings() {
                 delete proposedOTUMappings()[ OTUid ];
                 mapOTUToTaxon( OTUid, testMapping, {POSTPONE_UI_CHANGES: true} );
                 return false;  // stop checking candidates!
-            }
+            });
         } else {
             // apply the inner value of an observable (accessor) function
             delete proposedOTUMappings()[ OTUid ];
@@ -7324,7 +7324,7 @@ function requestTaxonMapping( otuToMap ) {
                     // still here? then this mapping looks good enough for auto-approval
                     autoAcceptableMapping = testMapping;
                     return false;  // stop checking candidates!
-                }
+                });
                 if (autoAcceptingExactMatches && autoAcceptableMapping) {
                     // accept the obvious choice (and possibly update UI) immediately
                     mapOTUToTaxon( otuID, autoAcceptableMapping, {POSTPONE_UI_CHANGES: true} );
