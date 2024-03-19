@@ -8986,14 +8986,26 @@ function autoApplyExactMatch() {
 function lookUpDOI() {
     // try to find a match, based on existing metadata
     var referenceText = $.trim( $('#ot_studyPublicationReference').val() );
+    // toss in the current URL as well, in case this is the latest input
+    var urlText = $.trim( $('#ot_studyPublication').val() );
+    var combinedSearchText = urlText +" "+ referenceText;
+    // find any bare DOIs among mixed text (and DOIs-in-URL-form) and prepend them to the text
+    var possibleDOIs = combinedSearchText.match(minimalDOIPattern);  // pattern defined elsewhere
+    if( possibleDOIs ) {
+        // we found one or more DOIs; add them to the text!
+        combinedSearchText = (possibleDOIs.join(' ') +" "+ combinedSearchText);
+    }
+    console.log( "Searching for DOI/ref using this combined search text:" );
+    console.log( combinedSearchText );
+
     var lookupURL;
-    if (referenceText === '') {
+    if ($.trim(combinedSearchText) === '') {
         // try a generic search in a new window
         lookupURL = 'http://search.crossref.org/';
         window.open(lookupURL,'lookup');
     } else {
         // see if we get lucky..
-        lookupURL = '/curator/search_crossref_proxy?' + encodeURIComponent(referenceText).replace(/\(/g,'%28').replace(/\)/g,'%29');
+        lookupURL = '/curator/search_crossref_proxy?' + encodeURIComponent(combinedSearchText).replace(/\(/g,'%28').replace(/\)/g,'%29');
 
         // show potential matches in popup? or new frame?
         showModalScreen("Looking up DOI...", {SHOW_BUSY_BAR:true});
@@ -9004,9 +9016,15 @@ function lookUpDOI() {
             // crossdomain: true,
             // contentType: "application/json; charset=utf-8",
             url: lookupURL,
-            //data: {'q': referenceText},
+            //data: {'q': combinedSearchText},
             complete: function( jqXHR, textStatus ) {
                 hideModalScreen();
+                if (textStatus === 'parsererror') {
+                    // NB - CrossRef API is quirky. Returns 'Resource not found' with status 200 (vs. 404) and funky textStatus!
+                    var errMsg = "Sorry, we couldn't find a publication with this publication DOI. Please double-check your DOIs and try again."
+                    showErrorMessage(errMsg);
+                    return;
+                }
                 if (textStatus !== 'success') {
                     var errMsg = 'Sorry, there was an error looking up this study\'s DOI. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
                     showErrorMessage(errMsg);
@@ -9021,7 +9039,11 @@ function lookUpDOI() {
                     return;
                 }
                 var foundItems = resultsJSON.message.items;
-                console.log("FOUND "+ foundItems.length +" matching items");
+                if (!foundItems) {
+                    // it's a singleton (probably matched on a DOI)
+                    console.log("wrapping a single result in a new list");
+                    foundItems = [ resultsJSON.message ];
+                }
                 if (foundItems.length === 0) {
                     asyncAlert('No matches found, please check your publication reference text.')
                 } else {
