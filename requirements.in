@@ -10,3 +10,4 @@ cookiecutter
 ConfigParser
 markdown
 authomatic
+gunicorn
