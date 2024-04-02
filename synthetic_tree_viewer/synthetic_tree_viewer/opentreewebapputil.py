@@ -5,6 +5,17 @@ import configparser
 
 _CONF_OBJ_DICT = {}
 
+def get_github_client_secret():
+    client_secret_path = "../private/GITHUB_CLIENT_SECRET"
+    if os.path.isfile(client_secret_path):
+        GITHUB_CLIENT_SECRET = open(client_secret_path).read().strip()
+        return GITHUB_CLIENT_SECRET
+    else:
+        abs_path = os.path.abspath(client_secret_path)
+        err_msg = "Client secret file ({}) not found!".format(abs_path)
+        print(err_msg)
+        raise Exception(err_msg)
+
 def get_conf(request):
     # get app-specific settings (e.g. API URLs)
     global _CONF_OBJ_DICT
@@ -37,12 +48,9 @@ def get_conf(request):
             err_msg = "Webapp config file ({}) is broken or incomplete (missing [apis] section)".format(config_file_found)
             print(err_msg)
             raise Exception(err_msg)
+        # add our GitHub client secret from a separate file (kept out of source repo)
+        conf.set("apis", "github_client_secret", get_github_client_secret())
     return _CONF_OBJ_DICT.get(app_name)
-
-def get_conf_as_dict(request):
-    # convert config file to dict (for use in Jinja templates)
-    config = get_conf(request)
-    return {s:dict(config.items(s)) for s in config.sections()}
 
 def get_domain_banner_text(request):
     # Add an optional CSS banner to indicate a test domain, or none if
@@ -211,3 +219,19 @@ def get_data_deposit_message(raw_deposit_doi):
 
     return ('<a target="_blank" href="%s">Data deposit DOI/URL</a>' % raw_deposit_doi)
 
+# https://authomatic.github.io/authomatic/reference/adapters.html
+# https://authomatic.github.io/authomatic/reference/providers.html#authomatic.providers.oauth2.GitHub
+from authomatic.providers import oauth2
+AUTH_CONFIG = {
+    'github': {
+        'id': 1,  # REQUIRED for login_result.user.to_dict(), but usually login_result.user.data is plenty of information
+        'class_': oauth2.GitHub,
+        'consumer_key': 'Iv1.226d54b87d23855d',   # WAS github_client_id
+        'consumer_secret': get_github_client_secret(),
+        'access_headers': {'User-Agent': 'Awesome-Octocat-App'},
+        'scope': ['user', 'user:email' ],
+        #'redirect_uri': 'https://devtree.opentreeoflife.org/opentree/user/login',   # MATCH the app configuration exactly
+        ## NB - This is apparently replaced by the *current* URL, so its route must match exactly..
+        ## It's POSSIBLE that we can define multiple redirect-uri's in Github app config, then specify one of them here
+    }
+ }

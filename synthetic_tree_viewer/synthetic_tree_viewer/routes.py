@@ -13,6 +13,8 @@ def includeme(config):
     config.add_route('about_licenses', '/about/licenses')
 
     config.add_route('contact', '/contact')
+    # add explicit route for OAuth redirect_uri
+    config.add_route('oauth_login', '/opentree/user/login')
 
     # DISABLING PhyloPic features for now...
     ## provide support for phylopic searches and image display via HTTPS

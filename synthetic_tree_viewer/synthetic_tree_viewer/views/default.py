@@ -2,15 +2,21 @@ from pyramid.view import view_config
 from synthetic_tree_viewer.opentreewebapputil import (
     get_user_display_name,
     get_conf,
-    get_conf_as_dict,
     get_domain_banner_text,
     get_domain_banner_hovertext,
     get_currently_deployed_opentree_branch,
     get_opentree_services_method_urls,
     latest_CrossRef_URL,
     fetch_current_TNRS_context_names,
+    AUTH_CONFIG
     )
 from pyramid.httpexceptions import HTTPNotFound, HTTPSeeOther
+
+from authomatic import Authomatic
+from authomatic.adapters import WebObAdapter  # incl. Pyramid
+
+# auth using GitHub API, see https://authomatic.github.io/authomatic/reference/providers.html#authomatic.providers.oauth2.GitHub
+authomatic = Authomatic(AUTH_CONFIG, 'random OpenTree gobbledygook used for CSRF etc.')
 
 def fetch_current_synthetic_tree_ids(request):
     # return the latest synthetic-tree ID (and its 'life' node ID)
@@ -72,6 +78,21 @@ def contact(request):
         })
     return view_dict
 
+@view_config(route_name='oauth_login', renderer='synthetic_tree_viewer:templates/contact.jinja2')
+def login(request):
+    #import pdb; pdb.set_trace()
+    login_result = authomatic.login(WebObAdapter(request, request.response), 'github')
+    # NB - first time through, there's no login_result; but on redirect, there it is!
+    if (login_result):
+        # update user info (name, email, etc)
+        login_result.user.update()
+
+    view_dict = get_opentree_services_method_urls(request)
+    view_dict.update({
+        'taxonSearchContextNames': fetch_current_TNRS_context_names(request),
+        })
+    return view_dict
+
 @view_config(route_name='tree_view', renderer='synthetic_tree_viewer:templates/tree_view.jinja2')
 def tree_view(request):
     try:
@@ -97,7 +118,6 @@ def tree_view(request):
     view_dict.update({
         # NB - Duplicate keys will be resolved in favor of the values below!
         'conf': get_conf(request),  # needed for the footer diagnostics
-        ##'conf_as_dict': get_conf_as_dict(request),
         'project_name': 'synthetic tree viewer',
         #'session': request.session,
         'response': request.response,

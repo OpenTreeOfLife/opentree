@@ -2,7 +2,6 @@ from pyramid.view import view_config
 from synthetic_tree_viewer.opentreewebapputil import (
     get_user_display_name,
     get_conf,
-    get_conf_as_dict,
     get_domain_banner_text,
     get_domain_banner_hovertext,
     get_currently_deployed_opentree_branch,
