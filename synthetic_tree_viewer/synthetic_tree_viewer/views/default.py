@@ -8,7 +8,8 @@ from synthetic_tree_viewer.opentreewebapputil import (
     get_opentree_services_method_urls,
     latest_CrossRef_URL,
     fetch_current_TNRS_context_names,
-    AUTH_CONFIG
+    AUTH_CONFIG,
+    login_required,
     )
 from pyramid.httpexceptions import HTTPNotFound, HTTPSeeOther
 
@@ -71,6 +72,7 @@ def home(request):
     return HTTPSeeOther(location='/opentree/argus')
 
 @view_config(route_name='contact', renderer='synthetic_tree_viewer:templates/contact.jinja2')
+@login_required
 def contact(request):
     view_dict = get_opentree_services_method_urls(request)
     view_dict.update({
@@ -80,8 +82,8 @@ def contact(request):
 
 @view_config(route_name='oauth_login', renderer='synthetic_tree_viewer:templates/contact.jinja2')
 def login(request):
-    #import pdb; pdb.set_trace()
     login_result = authomatic.login(WebObAdapter(request, request.response), 'github')
+    ## import pdb; pdb.set_trace()
     # NB - first time through, there's no login_result; but on redirect, there it is!
     if (login_result):
         # update user info (name, email, etc)

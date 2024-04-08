@@ -2,6 +2,7 @@
 import os
 import re
 import configparser
+import functools
 
 _CONF_OBJ_DICT = {}
 
@@ -235,3 +236,28 @@ AUTH_CONFIG = {
         ## It's POSSIBLE that we can define multiple redirect-uri's in Github app config, then specify one of them here
     }
  }
+
+def login_required(decorated_function):
+    """
+    A decorator for protected views. This should check for OAuth credentials
+    and (if found) when they expire. If expiry is imminent, refresh them now!
+    If credentials aren't found, login via OAuth, then bounce back to the current URL.
+    """
+    @functools.wraps(decorated_function)
+    def wrapper(request, *args, **kwargs):
+        # IF user is logged in, call this view normally; otherwise login (or refresh credentials)
+        user_is_logged_in = False
+        user_credentials_are_dying = False
+        import pdb; pdb.set_trace()
+
+        if user_is_logged_in:
+            if user_credentials_are_dying:
+                # TODO: refresh credentials now (synchronous)
+                pass
+            return decorated_function(request, *args, **kwargs)
+        else:
+            # TODO: redirect to login view (then bounce back to the current URL)
+            pass
+
+    return wrapper
+
