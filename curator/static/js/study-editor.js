@@ -6951,30 +6951,28 @@ function getAllVisibleProposedMappings() {
     return visibleProposedMappings; // return a series of IDs
 }
 function approveAllVisibleMappings() {
+    // On-demand auto-mapping operation (button vs. checkbox)
     $.each(getAllVisibleProposedMappings(), function(i, OTUid) {
         var itsMappingInfo = proposedOTUMappings()[ OTUid ];
         var approvedMapping = $.isFunction(itsMappingInfo) ?
             itsMappingInfo() :
             itsMappingInfo;
         if ($.isArray(approvedMapping)) {
-            /* N.B. There can be *multiple* exact matches! Check each and
-             * grab the first candidate that fit all criteria:
-             *  - name matches exactly
-             *  - not a synonym
+            /* N.B. There can be *multiple* exact matches! Gather and count
+             * them, auto-mapping IF there's just one; else prompt for a choice.
+             * NB - Synonyms are treated like any other match.
              */
-            $.each(approvedMapping, function(i, testMapping) {
-                if (testMapping.originalMatch.is_synonym) {
-                    // Synonyms require manual review after on-demand acceptance!
-                    return true;  // continue checking other matches
+            var exactMatches = $.grep(approvedMapping, function (testMapping) {
+                if (testMapping.originalMatch.score == 1.0) {
+                    return true;
                 }
-                if (testMapping.originalMatch.score < 1.0) {
-                    return true;  // non-exact matches require manual review
-                }
+            });
+            if (exactMatches.length === 1) {
+                var onlyMatch = exactMatches[0];
                 // still here? then this mapping looks good enough for auto-approval
                 delete proposedOTUMappings()[ OTUid ];
-                mapOTUToTaxon( OTUid, testMapping, {POSTPONE_UI_CHANGES: true} );
-                return false;  // stop checking candidates!
-            });
+                mapOTUToTaxon( OTUid, onlyMatch, {POSTPONE_UI_CHANGES: true} );
+            }
         } else {
             // apply the inner value of an observable (accessor) function
             delete proposedOTUMappings()[ OTUid ];
@@ -7311,20 +7309,21 @@ function requestTaxonMapping( otuToMap ) {
                     }
                 });
 
-                /* N.B. There can be *multiple* exact matches! Check each and
-                 * grab the first candidate that fit all criteria:
-                 *  - name matches exactly
-                 *  - synonyms are OK here
+                /* N.B. There can be *multiple* exact matches! Gather and count
+                 * them, auto-mapping IF there's just one; else prompt for a choice.
+                 * NB - Synonyms are treated like any other match.
                  */
                 var autoAcceptableMapping = null;
-                $.each(candidateMappingList, function(i, testMapping) {
-                    if (testMapping.originalMatch.score < 1.0) {
-                        return true;  // non-exact matches require manual review
+                var exactMatches = $.grep(candidateMappingList, function (testMapping) {
+                    if (testMapping.originalMatch.score == 1.0) {
+                        return true;
                     }
+                });
+                if (exactMatches.length === 1) {
+                    var onlyMatch = exactMatches[0];
                     // still here? then this mapping looks good enough for auto-approval
                     autoAcceptableMapping = testMapping;
-                    return false;  // stop checking candidates!
-                });
+                }
                 if (autoAcceptingExactMatches && autoAcceptableMapping) {
                     // accept the obvious choice (and possibly update UI) immediately
                     mapOTUToTaxon( otuID, autoAcceptableMapping, {POSTPONE_UI_CHANGES: true} );
