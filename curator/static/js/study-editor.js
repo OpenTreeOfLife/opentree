@@ -7322,7 +7322,7 @@ function requestTaxonMapping( otuToMap ) {
                 if (exactMatches.length === 1) {
                     var onlyMatch = exactMatches[0];
                     // still here? then this mapping looks good enough for auto-approval
-                    autoAcceptableMapping = testMapping;
+                    autoAcceptableMapping = onlyMatch;
                 }
                 if (autoAcceptingExactMatches && autoAcceptableMapping) {
                     // accept the obvious choice (and possibly update UI) immediately
