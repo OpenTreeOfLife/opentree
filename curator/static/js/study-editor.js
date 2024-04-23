@@ -6951,30 +6951,27 @@ function getAllVisibleProposedMappings() {
     return visibleProposedMappings; // return a series of IDs
 }
 function approveAllVisibleMappings() {
+    // On-demand auto-mapping operation (button vs. checkbox)
     $.each(getAllVisibleProposedMappings(), function(i, OTUid) {
         var itsMappingInfo = proposedOTUMappings()[ OTUid ];
         var approvedMapping = $.isFunction(itsMappingInfo) ?
             itsMappingInfo() :
             itsMappingInfo;
         if ($.isArray(approvedMapping)) {
-            if (approvedMapping.length === 1) {
-                // test the first (only) value for possible approval
-                var onlyMapping = approvedMapping[0];
-                if (onlyMapping.originalMatch.is_synonym) {
-                    return;  // synonyms require manual review
+            /* N.B. There can be *multiple* exact matches! Gather and count
+             * them, auto-mapping IF there's just one; else prompt for a choice.
+             * NB - Synonyms are treated like any other match.
+             */
+            var exactMatches = $.grep(approvedMapping, function (testMapping) {
+                if (testMapping.originalMatch.score == 1.0) {
+                    return true;
                 }
-                /* N.B. We never present the sole mapping suggestion as a
-                 * taxon-name homonym, so just consider the match score to
-                 * determine whether it's an "exact match".
-                 */
-                if (onlyMapping.originalMatch.score < 1.0) {
-                    return;  // non-exact matches require manual review
-                }
+            });
+            if (exactMatches.length === 1) {
+                var onlyMatch = exactMatches[0];
                 // still here? then this mapping looks good enough for auto-approval
                 delete proposedOTUMappings()[ OTUid ];
-                mapOTUToTaxon( OTUid, approvedMapping[0], {POSTPONE_UI_CHANGES: true} );
-            } else {
-                return; // multiple possibilities require manual review
+                mapOTUToTaxon( OTUid, onlyMatch, {POSTPONE_UI_CHANGES: true} );
             }
         } else {
             // apply the inner value of an observable (accessor) function
@@ -7312,21 +7309,20 @@ function requestTaxonMapping( otuToMap ) {
                     }
                 });
 
+                /* N.B. There can be *multiple* exact matches! Gather and count
+                 * them, auto-mapping IF there's just one; else prompt for a choice.
+                 * NB - Synonyms are treated like any other match.
+                 */
                 var autoAcceptableMapping = null;
-                if (candidateMappingList.length === 1) {
-                    var onlyMapping = candidateMappingList[0];
-                    /* NB - auto-accept includes synonyms if exact match!
-                    if (onlyMapping.originalMatch.is_synonym) {
-                        return;
+                var exactMatches = $.grep(candidateMappingList, function (testMapping) {
+                    if (testMapping.originalMatch.score == 1.0) {
+                        return true;
                     }
-                    */
-                    /* N.B. We never present the sole mapping suggestion as a
-                     * taxon-name homonym, so just consider the match score to
-                     * determine whether it's an "exact match".
-                     */
-                    if (onlyMapping.originalMatch.score === 1.0) {
-                        autoAcceptableMapping = onlyMapping;
-                    }
+                });
+                if (exactMatches.length === 1) {
+                    var onlyMatch = exactMatches[0];
+                    // still here? then this mapping looks good enough for auto-approval
+                    autoAcceptableMapping = onlyMatch;
                 }
                 if (autoAcceptingExactMatches && autoAcceptableMapping) {
                     // accept the obvious choice (and possibly update UI) immediately
