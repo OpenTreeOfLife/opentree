@@ -13,6 +13,10 @@ from synthetic_tree_viewer.opentreewebapputil import (
     )
 from pyramid.httpexceptions import HTTPNotFound, HTTPSeeOther
 
+import logging
+log = logging.getLogger(__name__)
+##log.debug('Returning: %s (content-type: %s)', content, content_type)
+
 from authomatic import Authomatic
 from authomatic.adapters import WebObAdapter  # incl. Pyramid
 
@@ -81,18 +85,42 @@ def contact(request):
     return view_dict
 
 @view_config(route_name='oauth_login', renderer='synthetic_tree_viewer:templates/contact.jinja2')
-def login(request):
+def login(request, _next="/"):
     login_result = authomatic.login(WebObAdapter(request, request.response), 'github')
-    ## import pdb; pdb.set_trace()
+
+    # what's in the current session?
+    ##log.debug("STARTING login, here's the current session: %s", request.session)
+    log.debug("?_next=%s", _next)
+    request.session['_next'] = _next
+
     # NB - first time through, there's no login_result; but on redirect, there it is!
-    if (login_result):
-        # update user info (name, email, etc)
+    if (login_result and login_result.user):
+        # update full user info (name, email, etc) and stash in the current session
+        log.debug("TRUE login_result '%s' AND TRUE user '%s'", login_result, login_result.user)
         login_result.user.update()
+        log.debug("User after immediate update: %s", login_result.user.data)
+        ##import pdb; pdb.set_trace()
+        gh_user = login_result.user.data
+        request.session['login'] = gh_user['login']
+        request.session['name']  = gh_user['name']
+        request.session['email'] = gh_user['email']
+    elif (login_result and not login_result.user):
+        # we don't (yet) have a proper user object; what should happen here!?
+        # bail and wait for proper login?
+        log.debug("TRUE login_result '%s', BUT FALSE user '%s'  :-/", login_result, login_result.user)
+        pass
+    else:
+        ## no login_result yet; bail and wait for this
+        log.debug("FALSE login_result '%s'... probably jumping to OAuth now", login_result)
+        pass
 
     view_dict = get_opentree_services_method_urls(request)
     view_dict.update({
         'taxonSearchContextNames': fetch_current_TNRS_context_names(request),
         })
+
+    ##log.debug("LEAVING login, here's the current session: %s", request.session)
+
     return view_dict
 
 @view_config(route_name='tree_view', renderer='synthetic_tree_viewer:templates/tree_view.jinja2')
