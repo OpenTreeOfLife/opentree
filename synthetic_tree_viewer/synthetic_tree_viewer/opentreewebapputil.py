@@ -237,6 +237,9 @@ AUTH_CONFIG = {
     }
  }
 
+import logging
+log = logging.getLogger(__name__)
+
 def login_required(decorated_function):
     """
     A decorator for protected views. This should check for OAuth credentials
