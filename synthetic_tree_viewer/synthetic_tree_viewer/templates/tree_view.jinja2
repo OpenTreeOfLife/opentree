@@ -1,4 +1,6 @@
+{% import 'macros/comments.jinja2' as comments %}
 {% extends "layout.jinja2" %}
+
 
 <div id="argusDBContainer" /><!-- TODO: Remove this? -->
 
@@ -91,17 +93,11 @@
              <div class="provenance-title">&nbsp;</div>
              <div>
                {# initialize comments with a naive url-based query
-                # (this will probably be overwritten by tree-view data)
-                if feedbackParentWindowURL:
-                    filter = 'url'
-                    url = feedbackParentWindowURL
-                else:
-                    filter = 'skip_comments'
-                    url = request.url
-                pass
-               #}
-               {# plugin_localcomments(filter=filter,url=url) #}
-               <strong style="color: red;">TODO: local comments appear here!</strong>
+                # (this will probably be overwritten by tree-view data) #}
+               {{ comments.local_comments(
+                    filter=(feedbackParentWindowURL and 'url' or 'skip_comments'),
+                    url=(feedbackParentWindowURL or request.url)
+                  ) }}
              </div>
             </div>
            </div>

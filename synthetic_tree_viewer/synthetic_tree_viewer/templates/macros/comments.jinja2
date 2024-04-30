@@ -1,0 +1,16 @@
+{# Pyramid implementation of web2py local_comments plugin
+
+   A callable Jinja2 macro seems like the closest analogy to web2py's plugins. 
+#}
+
+{% macro local_comments(filter, url) -%}
+
+ {# DIAGNOSTIC CHATTER
+ #}
+  <div style="color: red; font-weight: bold;">
+    <p>LOCAL COMMENTS APPEAR HERE!</p>
+    <p> &nbsp; filter = {{filter}}</p>
+    <p> &nbsp; url = {{url}}</p>
+  </div>
+
+{%- endmacro -%}
