@@ -10,7 +10,9 @@ cookiecutter==2.1.1
 configparser==5.3.0
 Markdown==3.5.1
 Authomatic==1.2.1
-gunicorn==21.2.0
+uvicorn==0.29.0
+prettydate==0.2
+pyramid-retry==2.1.1
 ## The following requirements were added by pip freeze:
 arrow==0.15.8
 attrs==22.1.0
@@ -24,6 +26,8 @@ click==8.1.3
 coverage==6.4.4
 cryptography==38.0.1
 Deprecated==1.2.13
+gunicorn==21.2.0
+h11==0.14.0
 hupper==1.10.3
 idna==3.3
 importlib-metadata==7.0.0
@@ -33,7 +37,9 @@ jinja2-time==0.2.0
 Mako==1.2.2
 MarkupSafe==2.1.1
 packaging==21.3
+Paste==3.10.1
 PasteDeploy==2.1.1
+PasteScript==3.6.0
 plaster==1.0
 plaster-pastedeploy==0.7
 pluggy==1.0.0
@@ -51,10 +57,11 @@ PyYAML==6.0
 repoze.lru==0.7
 six==1.16.0
 soupsieve==2.3.2.post1
--e git+ssh://git@github.com/OpenTreeOfLife/webapp-tree-viewer.git@1f1ec227f197c2dcc08354a612a2a31e6e4727b4#egg=synthetic_tree_viewer&subdirectory=synthetic_tree_viewer
+-e git+ssh://git@github.com/OpenTreeOfLife/webapp-tree-viewer.git@680893fbdbdb80a8b97f8408bf7e6114dc316f81#egg=synthetic_tree_viewer&subdirectory=synthetic_tree_viewer
 text-unidecode==1.3
 tomli==2.0.1
 translationstring==1.4
+typing_extensions==4.10.0
 urllib3==1.26.12
 venusian==3.0.0
 waitress==2.1.2

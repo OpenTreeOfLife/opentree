@@ -12,6 +12,7 @@ def main(global_config, **settings):
     with Configurator(settings=settings) as config:
         config.set_session_factory(my_session_factory)
         config.include('pyramid_jinja2')
+        config.include('pyramid_retry')
         config.include('.routes')
         config.scan()
     return config.make_wsgi_app()

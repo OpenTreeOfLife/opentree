@@ -11,3 +11,5 @@ ConfigParser
 markdown
 authomatic
 uvicorn
+prettydate
+pyramid_retry
