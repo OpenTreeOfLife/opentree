@@ -16,6 +16,10 @@ def includeme(config):
     # add explicit route for OAuth redirect_uri
     config.add_route('oauth_login', '/opentree/user/login')
 
+    # load local comments via AJAX
+    config.add_route('local_comments', '/opentree/plugin_localcomments')
+    # TODO: make a nicer/cleaner URL for this?
+
     # DISABLING PhyloPic features for now...
     ## provide support for phylopic searches and image display via HTTPS
     #config.add_route('phylopic_proxy', '/phylopic_proxy/{proxied_path:.*}')

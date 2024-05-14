@@ -12,6 +12,7 @@ from synthetic_tree_viewer.opentreewebapputil import (
     login_required,
     )
 from pyramid.httpexceptions import HTTPNotFound, HTTPSeeOther
+from pyramid_retry import RetryableException
 
 import logging
 log = logging.getLogger(__name__)
@@ -21,7 +22,11 @@ from authomatic import Authomatic
 from authomatic.adapters import WebObAdapter  # incl. Pyramid
 
 # auth using GitHub API, see https://authomatic.github.io/authomatic/reference/providers.html#authomatic.providers.oauth2.GitHub
-authomatic = Authomatic(AUTH_CONFIG, 'random OpenTree gobbledygook used for CSRF etc.')
+authomatic = Authomatic(
+    AUTH_CONFIG, 
+    'random OpenTree gobbledygook used for CSRF etc.',
+    debug=True
+    )
 
 def fetch_current_synthetic_tree_ids(request):
     # return the latest synthetic-tree ID (and its 'life' node ID)
@@ -84,14 +89,30 @@ def contact(request):
         })
     return view_dict
 
-@view_config(route_name='oauth_login', renderer='synthetic_tree_viewer:templates/contact.jinja2')
-def login(request, _next="/"):
-    login_result = authomatic.login(WebObAdapter(request, request.response), 'github')
+@view_config(route_name='oauth_login')  # TODO: does this need a template/renderer?
+def login(request):
+    # we'll redirect to any specified destination (or the Home page)
+    log.debug("STARTING login...")
+    _next = request.params.get('_next')
+    if _next:
+        log.debug("STASHING DESTINATION in login...")
+        log.debug("?_next=%s", _next)
+        request.session['_next'] = _next  # stash this in case we're not ready!
+        # TODO: trim the query-string and redirect to this "bare" URL!
+        bare_url = request.route_url('oauth_login')
+        log.debug(">>> destination stashed, moving to bare URL: %s", bare_url)
+        return HTTPSeeOther(location=bare_url)
 
-    # what's in the current session?
-    ##log.debug("STARTING login, here's the current session: %s", request.session)
-    log.debug("?_next=%s", _next)
-    request.session['_next'] = _next
+    log.debug("NO DESTINATION in login (but maybe in session)...")
+    # still here? then it's time to check login result and move forward
+    login_result = authomatic.login(WebObAdapter(request, request.response), 'github')
+    if login_result:
+        log.debug("!!!!! login_result.error = %s", login_result.error)
+    else:
+        log.debug("!!!!! NO login_result")
+
+    destination_url = request.session.get('_next', None) and request.session.get('_next') or '/'
+    log.debug("destination_url=%s", destination_url)
 
     # NB - first time through, there's no login_result; but on redirect, there it is!
     if (login_result and login_result.user):
@@ -99,29 +120,48 @@ def login(request, _next="/"):
         log.debug("TRUE login_result '%s' AND TRUE user '%s'", login_result, login_result.user)
         login_result.user.update()
         log.debug("User after immediate update: %s", login_result.user.data)
-        ##import pdb; pdb.set_trace()
         gh_user = login_result.user.data
-        request.session['login'] = gh_user['login']
-        request.session['name']  = gh_user['name']
-        request.session['email'] = gh_user['email']
+        request.session['github_login'] = gh_user['login']          # "jimallman"
+        request.session['github_display_name']  = gh_user['name']   # "Jim Allman"
+        request.session['github_email'] = gh_user['email']          # "jim@ibang.com"
+
+        # more useful information from user-info
+        log.debug("  ----------")
+        credentials = login_result.user.credentials
+        log.debug("  credentials: %s", credentials)
+        valid = credentials.valid # True / False
+        log.debug("  credentials.valid: %s", valid)
+        # NOTE that we're currently using non-expiring credentials!
+        seconds_remaining = credentials.expire_in
+        log.debug("  seconds_remaining: %s", seconds_remaining)
+        expire_on_date = credentials.expiration_date # datetime.datetime()
+        log.debug("  expire_on_date: %s", expire_on_date)
+        expire_on_time = credentials.expiration_time # 1362080855
+        log.debug("  expire_on_time: %s", expire_on_time)
+        should_refresh = credentials.expire_soon(60 * 60 * 24) # True if expire in less than one day
+        log.debug("  should_refresh? %s", should_refresh)
+        log.debug("  ----------")
+
+        # clear destination once we're done logging in
+        request.session['_next'] = None   
+        return HTTPSeeOther(location=destination_url)
+
     elif (login_result and not login_result.user):
         # we don't (yet) have a proper user object; what should happen here!?
         # bail and wait for proper login?
         log.debug("TRUE login_result '%s', BUT FALSE user '%s'  :-/", login_result, login_result.user)
+        #request.make_body_seekable()
+        #raise RetryableException
         pass
     else:
         ## no login_result yet; bail and wait for this
         log.debug("FALSE login_result '%s'... probably jumping to OAuth now", login_result)
+        #request.make_body_seekable()
+        #raise RetryableException
         pass
 
-    view_dict = get_opentree_services_method_urls(request)
-    view_dict.update({
-        'taxonSearchContextNames': fetch_current_TNRS_context_names(request),
-        })
-
-    ##log.debug("LEAVING login, here's the current session: %s", request.session)
-
-    return view_dict
+    request.response.text ="...still waiting..."
+    return request.response
 
 @view_config(route_name='tree_view', renderer='synthetic_tree_viewer:templates/tree_view.jinja2')
 def tree_view(request):
