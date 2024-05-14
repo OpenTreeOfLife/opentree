@@ -5,8 +5,6 @@
 
 {% macro local_comments(filter, url) -%}
 
- {# DIAGNOSTIC CHATTER
- #}
   <div style="color: red; font-weight: bold; border: 1px dashed red;">
     <p>LOCAL COMMENTS APPEAR HERE!</p>
     <p> &nbsp; filter = {{filter}}</p>
@@ -20,4 +18,23 @@
       </ul>
     </div>
   </div>
+
+{%- endmacro -%}
+
+
+{% macro wrap_comment_in_markup(comment) -%}
+
+    <li class="{{ comment.is_issue_node and 'issue' or 'comment' }}">
+      <div>
+       {% if 'title' in comment: %}
+        <div>{{ comment.title }}</div>
+        <a class="topic-title" href="{{ comment.html_url }} target="_blank">on GitHub</a>
+       {% endif %}
+       {% if comment.is_issue_node %}
+        ISSUE!
+       {% endif %}
+        <br /><strong>TODO: grab more markup from views/plugins_localcomments.py node()</strong>
+      </div>
+    </li>
+
 {%- endmacro -%}

@@ -1,10 +1,10 @@
 {% import 'macros/comments.jinja2' as comments %}
-{# extends "layout.jinja2" #}
-{# TODO: do we need to extend anything here? #}
 
+{# available vars: visitor_name, visitor_email, threads #}
+
+<div class="plugin_localcomments" style="border: 2px dashed blue;">
 {# client-side script to manage comment display and form behavior #}
-<div style="border: 1px dashed blue;">
-  <script lang="javascript">
+  <script lang="javascript"><!--
     var action = null;
     var formhtml = null;
     function delete_all_forms() { 
@@ -232,13 +232,59 @@
       delete_all_forms();  // important! creates .reply buttons before init() below
       plugin_localcomments_init();
     });
-  </script>
+  //--></script>
+  <div class="reply">
+      {# anonymous users should see be encouraged to login or add a name-or-email to their comments #}
+      <form action="/plugin-localcomments" enctype="multipart/form-data" method="post">
+{% if False: %}
+          <a class="login-logout reply" href="/user/login">Login</a> 
+            or <input id="visitor_name" name="visitor_name" placeholder="Enter your name" type="text" value="" /> 
+          <input id="visitor_email" name="visitor_email" placeholder="Your email (visible on GitHub)" type="text" value="" />
+          <br />
+{% endif %}
+          <select name="feedback_type" style="width: 100%; margin-right: -4px;">
+              <option selected="selected" value="">What kind of feedback is this?</option>
+              <option value="General feedback">General feedback</option>
+              <option value="Correction to relationships in the synthetic tree">Correction to relationships in the synthetic tree</option>
+              <option value="Suggest a phylogeny to incorporate">Suggest a phylogeny to incorporate</option>
+              <option value="Correction to names (taxonomy)">Correction to names (taxonomy)</option>
+              <option value="Extinct/extant issue (taxonomy)">Extinct/extant issue (taxonomy)</option>
+              <option value="Bug report (website behavior)">Bug report (website behavior)</option>
+              <option value="New feature request">New feature request</option>
+          </select>
+          <label class="expertise-option" style="float: right;">
+              <input name="claimed_expertise" type="checkbox" value="on" /> I claim expertise in this area
+          </label>
+          <input id="issue_title" name="issue_title" placeholder="Give this topic a title" type="text" value="" />
+          <textarea cols="40" name="body" placeholder="Add more to this topic, using Markdown (click &#x27;Markdown help&#x27; below to learn more)." rows="10"></textarea>
+          <input id="reference_url" name="reference_url" placeholder="..." type="text" value="" />
+          <input name="synthtree_id" type="hidden" value="" />
+          <input name="synthtree_node_id" type="hidden" value="" />
+          <input name="sourcetree_id" type="hidden" value="" />
+          <input name="ottol_id" type="hidden" value="" />
+          <input name="target_node_label" type="hidden" value="" />
+          <input name="url" type="hidden" value="/opentree/argus/opentree14.9@ott93302" />
+          <div class="msg-footer">
+              <a class="msg-close" href="#" style="margin-right: 6px">Close</a>
+              <span style="margin-right: 6px"> | </span>
+              <a href="https://help.github.com/articles/markdown-basics" style="margin-right: 10px" target="_blank"
+                  >Markdown help</a><input class="btn btn-info btn-small" style="" type="submit" value="Post" />
+          </div>
+      </form>
+  </div>
+  <ul style="border: 2px dashed orange;">
+   {% for thread in threads: %}
+    {{ comments.wrap_comment_in_markup(
+        comment=thread,
+       ) }}
+   {% endfor %}
+  </ul>
 </div>
 
 {# initialize comments with a naive url-based query
-# (this will probably be overwritten by tree-view data) #}
+# (this will probably be overwritten by tree-view data)
 {{ comments.local_comments(
     filter=(feedbackParentWindowURL and 'url' or 'skip_comments'),
     url=(feedbackParentWindowURL or request.url)
   ) }}
-
+#}

@@ -359,7 +359,12 @@ def index(request):
         #thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
         threads.append(comment)
 
-    return {}
+    return {'visitor_name': visitor_name,
+            'visitor_email': visitor_email,
+            'threads': threads,
+           }
+""" MOVED this markup to the Pyramid template 'local_comments.jinja2'!
+
     return DIV(#script,
                DIV(FORM(# anonymous users should see be encouraged to login or add a name-or-email to their comments
                         '' if auth.user_id else A(T('Login'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout reply'),
@@ -397,6 +402,7 @@ def index(request):
                             _class='msg-footer'),
                         _method='post',_action=URL(r=request,args=[])),_class='reply'),
                SUL(*[node(comment) for comment in threads]),_class='plugin_localcomments')
+"""
 
 #
 # Perform basic CRUD for local comments, using GitHub Issues API
