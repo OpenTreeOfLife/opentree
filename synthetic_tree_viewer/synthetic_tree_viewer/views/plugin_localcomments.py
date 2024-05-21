@@ -227,6 +227,8 @@ def index(request):
             print("Unexpected error:", sys.exc_info()[0])
             raise
 
+    import pdb; pdb.set_trace()
+
     if thread_parent_id == 'delete':
         # delete the specified comment or close an issue...
         try:

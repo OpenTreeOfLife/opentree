@@ -234,10 +234,10 @@
     });
   //--></script>
   <div class="reply">
-      {# anonymous users should see be encouraged to login or add a name-or-email to their comments #}
       <form action="/plugin-localcomments" enctype="multipart/form-data" method="post">
-{% if False: %}
-          <a class="login-logout reply" href="/user/login">Login</a> 
+{% if True: %}
+      {# anonymous users should see be encouraged to login or add a name-or-email to their comments #}
+          <a class="login-logout reply" href="/opentree/user/login">Login</a> 
             or <input id="visitor_name" name="visitor_name" placeholder="Enter your name" type="text" value="" /> 
           <input id="visitor_email" name="visitor_email" placeholder="Your email (visible on GitHub)" type="text" value="" />
           <br />

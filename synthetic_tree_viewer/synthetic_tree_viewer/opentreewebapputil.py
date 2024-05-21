@@ -147,11 +147,19 @@ def get_opentree_services_method_urls(request):
 
     return method_urls
 
+def user_is_logged_in(request):
+    return request.session.get('auth_user', None) and True or False
+
+def get_auth_user(request):
+    return request.session.get('auth_user', None)
+
 def get_user_display_name(request):
     # Determine the best possible name to show for the current logged-in user.
-    # This is for display purposes and credit in study Nexson. It's a bit
-    # convoluted due to GitHub's various and optional name fields.
-    return request.session.get('github_display_name', 'ANONYMOUS')
+    # This is for display purposes and credit in study Nexson.
+    try:
+        return request.session['auth_user'].get('display_name')
+    except:
+        return 'ANONYMOUS'
 
 def fetch_current_TNRS_context_names(request):
     try:
@@ -240,20 +248,16 @@ def login_required(decorated_function):
     def wrapper(request, *args, **kwargs):
         # IF user is logged in, call this view normally; otherwise login (or refresh credentials)
         log.debug(">>> STARTING login_required wrapper...")
-        user_is_logged_in = request.session.get('github_login', None) and True or False
-        log.debug(">>> is user logged in? %s", user_is_logged_in)
+        logged_in = user_is_logged_in(request)
+        log.debug(">>> is user logged in? %s", logged_in)
         # NOTE that we're currently using non-expiring credentials!
-        user_credentials_are_dying = False   
-        if user_is_logged_in:
-            if user_credentials_are_dying:
-                # TODO: refresh credentials now (synchronous)
-                pass
+        if logged_in:
             return decorated_function(request, *args, **kwargs)
         else:
             # TODO: redirect to login view (then bounce back to the current URL)
-            log.debug(">>> now we'll bounce to the login view...")
+            log.debug(">>> NOT logged in! Now we'll bounce to the login view...")
             relative_url = request.route_path('oauth_login', _query={'_next': request.url})
-            log.debug(">>> here's the root-relative URL: {}".format(relative_url))
+            log.debug(">>> (Here's the root-relative URL: {})".format(relative_url))
             return HTTPSeeOther(location=relative_url)
 
     return wrapper

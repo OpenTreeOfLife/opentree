@@ -120,27 +120,27 @@ def login(request):
         log.debug("TRUE login_result '%s' AND TRUE user '%s'", login_result, login_result.user)
         login_result.user.update()
         log.debug("User after immediate update: %s", login_result.user.data)
-        gh_user = login_result.user.data
-        request.session['github_login'] = gh_user['login']          # "jimallman"
-        request.session['github_display_name']  = gh_user['name']   # "Jim Allman"
-        request.session['github_email'] = gh_user['email']          # "jim@ibang.com"
-
-        # more useful information from user-info
-        log.debug("  ----------")
-        credentials = login_result.user.credentials
-        log.debug("  credentials: %s", credentials)
-        valid = credentials.valid # True / False
-        log.debug("  credentials.valid: %s", valid)
+        gh_user_data = login_result.user.data
+        request.session['auth_user'] = {
+            'login': gh_user_data['login'],
+            'email': gh_user_data['email'],
+            # NB - we rename some of its properties for legibility
+            'display_name': gh_user_data['name'],             # "Jim Allman"
+            'github_profile_url': gh_user_data['html_url'],   # "https://github.com/jimallman"
+            'homepage_url': gh_user_data['blog'],             # "https://www.ibang.com/"
+            'oauth_token': login_result.user.credentials.token,  # ???
+        }
         # NOTE that we're currently using non-expiring credentials!
-        seconds_remaining = credentials.expire_in
-        log.debug("  seconds_remaining: %s", seconds_remaining)
-        expire_on_date = credentials.expiration_date # datetime.datetime()
-        log.debug("  expire_on_date: %s", expire_on_date)
-        expire_on_time = credentials.expiration_time # 1362080855
-        log.debug("  expire_on_time: %s", expire_on_time)
-        should_refresh = credentials.expire_soon(60 * 60 * 24) # True if expire in less than one day
-        log.debug("  should_refresh? %s", should_refresh)
-        log.debug("  ----------")
+
+        """ RESTORE this "flat" strings-only approach if session dict is not reliable!
+        request.session['github_login'] = gh_user_data['login']          # "jimallman"
+        request.session['github_display_name']  = gh_user_data['name']   # "Jim Allman"
+        request.session['github_email'] = gh_user_data['email']          # "jim@ibang.com"
+        request.session['github_profile_url'] = gh_user_data['html_url'] # "https://github.com/jimallman"
+        request.session['github_homepage_url'] = gh_user_data['blog']    # "https://www.ibang.com/"
+        """
+        request.session.changed()  # save the current session, to make sure we update mutable values
+        #import pdb; pdb.set_trace()
 
         # clear destination once we're done logging in
         request.session['_next'] = None   
