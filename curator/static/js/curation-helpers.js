@@ -1393,7 +1393,7 @@ function updateCollectionTrees ( collection ) {
                                     decision['name'] = proposedName;
                                     decision['ot:focalCladeOTTTaxonName'] = proposedClade;
                                     decision['ot:studyPublication'] = proposedPubURL;
-                                    decision['ot:studyPublicationReferenc'] = proposedFullRef;
+                                    decision['ot:studyPublicationReference'] = proposedFullRef;
                                     decision['compactRefText'] = compactStudyRef;
                                     decision['ot:studyYear'] = proposedYear;
                                     // Highlight this in the list, mark as MODIFIED
