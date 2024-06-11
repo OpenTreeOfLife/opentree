@@ -19,11 +19,16 @@ from datetime import datetime
 import json
 import synthetic_tree_viewer.opentreewebapputil
 
-from synthetic_tree_viewer.opentreewebapputil import fetch_github_app_auth_token
+from synthetic_tree_viewer.opentreewebapputil import fetch_github_app_auth_token, user_is_logged_in
 from pprint import pprint
 
 from pyramid.events import subscriber
 from pyramid_retry import IBeforeRetry
+
+# these headers are set once request is available
+GH_GET_HEADERS = None
+GH_POST_HEADERS = None
+
 @subscriber(IBeforeRetry)
 def retry_event(event):
     log.debug("@@@@@ retry_event! event.exception: {}".format(type(event.exception)))
@@ -38,16 +43,6 @@ def error():
 def SUL(*a,**b): return UL(*[u for u in a if u],**b)
 
 
-def moderation():
-    comments = db().select(db.plugin_localcomments_comment.ALL, orderby=~db.plugin_localcomments_comment.created_on)  # =~ is DESCENDING ORDER
-    form = SQLFORM.factory(Field('tag_name'))
-    return dict(comments=comments, form=form)
-
-def sqlform():
-    # comments = db().select(db.plugin_localcomments_comment.ALL, orderby=~db.plugin_localcomments_comment.created_on)  # =~ is DESCENDING ORDER
-    form = SQLFORM(db.plugin_localcomments_comment)
-    return dict(form=form)
-    
 def show_type_icon(type):
     iconClass = "icon-comment"
     if type == 'Error in phylogeny':
@@ -63,7 +58,8 @@ def show_type_icon(type):
 @view_config(route_name='local_comments',
              renderer='synthetic_tree_viewer:templates/local_comments.jinja2')
 def index(request):
-    # this is a tricky function that does simple display, handles POSTed comments, moderation, etc.
+    # this is a tricky function that does simple display, handles POSTed comments, etc.
+    update_github_headers(request)
 
     # TODO: break this up into more sensible functions, and refactor
     # display/markup generation to shared code?
@@ -154,7 +150,10 @@ def index(request):
         issue_node = 'number' in comment
 
         # Is the current user logged in? If so, what is their GitHub ID (login)?
-        current_user_id = request.session.get('github_login', None)
+        if user_is_logged_in(request):
+            current_user_id = get_auth_user()['login']
+        else:
+            current_user_id = None
 
         # Cook up some reasonably strong regular expressions to detect bare
         # URLs and wrap them in hyperlinks. Adapted from 
@@ -227,7 +226,10 @@ def index(request):
             print("Unexpected error:", sys.exc_info()[0])
             raise
 
-    import pdb; pdb.set_trace()
+    log.debug(">>> request.matchdict:")
+    log.debug(request.matchdict)
+
+    #import pdb; pdb.set_trace()
 
     if thread_parent_id == 'delete':
         # delete the specified comment or close an issue...
@@ -342,6 +344,7 @@ def index(request):
     elif filter == 'ottol_id':
         comments = get_local_comments(request, {"Open Tree Taxonomy id": ottol_id})
     else:   # fall back to url
+        log.debug(">>> using default comment filter (url?): {}".format(filter));
         if 'parentWindowURL=' in url:
             #pprint("=== EXTRACTING parentWindowURL...")
             try:
@@ -364,6 +367,8 @@ def index(request):
     return {'visitor_name': visitor_name,
             'visitor_email': visitor_email,
             'threads': threads,
+            'user_is_logged_in': user_is_logged_in(request),
+            'threads': threads
            }
 """ MOVED this markup to the Pyramid template 'local_comments.jinja2'!
 
@@ -412,7 +417,7 @@ def index(request):
 GH_BASE_URL = 'https://api.github.com'
 
 # if the current user is logged in, use their auth token instead
-USER_AUTH_TOKEN = 'TODO'    # WAS auth.user and auth.user.github_auth_token or None
+USER_AUTH_TOKEN = None    # TODO: WAS auth.user and auth.user.github_auth_token or None
 
 # Specify the media-type from GitHub, to freeze v3 API responses and get
 # the comment body as markdown (vs. plaintext or HTML)
@@ -420,17 +425,25 @@ PREFERRED_MEDIA_TYPE = 'application/vnd.github.v3.raw+json, application/vnd.gith
 # to get markdown AND html body, use 'application/vnd.github.v3.full+json'
 
 GH_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
-if USER_AUTH_TOKEN:
-    auth_header_value = 'token %s' % USER_AUTH_TOKEN
-else:
-    GITHUB_APP_INSTALLATION_TOKEN = fetch_github_app_auth_token(request)
-    auth_header_value = 'token %s' % GITHUB_APP_INSTALLATION_TOKEN
 
-GH_GET_HEADERS = {'Authorization': auth_header_value,
-                  'Accept': PREFERRED_MEDIA_TYPE}
-GH_POST_HEADERS = {'Authorization': auth_header_value,
-                   'Content-Type': 'application/json',
-                   'Accept': PREFERRED_MEDIA_TYPE}
+def get_auth_header_value(request):
+    if USER_AUTH_TOKEN:
+        auth_header_value = 'token %s' % USER_AUTH_TOKEN
+    else:
+        GITHUB_APP_INSTALLATION_TOKEN = fetch_github_app_auth_token(request)
+        auth_header_value = 'token %s' % GITHUB_APP_INSTALLATION_TOKEN
+    return auth_header_value
+
+def update_github_headers(request):
+    global GH_GET_HEADERS
+    global GH_POST_HEADERS
+    if GH_GET_HEADERS:
+        pass  # already updated in this request
+    GH_GET_HEADERS = {'Authorization': get_auth_header_value(request),
+                      'Accept': PREFERRED_MEDIA_TYPE}
+    GH_POST_HEADERS = {'Authorization': get_auth_header_value(request),
+                       'Content-Type': 'application/json',
+                       'Accept': PREFERRED_MEDIA_TYPE}
 
 def add_or_update_issue(msg_data, issue_id=None):
     # WATCH for accidental creation of bogus labels!

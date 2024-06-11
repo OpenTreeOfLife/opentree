@@ -6,17 +6,22 @@
 {% macro local_comments(filter, url) -%}
 
 {# diagnostic chatter
+#}
   <div style="color: red; font-weight: bold; border: 1px dashed red;">
     <p>LOCAL COMMENTS APPEAR HERE!</p>
     <p> &nbsp; filter = {{filter}}</p>
     <p> &nbsp; url = {{url}}</p>
   </div>
-#}
 
   <div id="{{ 'TODO_c59826038298' }}">
     <div class="plugin_localcomments">
       <div class="reply"><a class="btn btn-small reply" href="#">Add a new topic</a></div>
       <ul>
+        <!-- comment markup (and possible replies) go here
+        {# wrap_comment_in_markup(
+            comment=TODO???
+           ) #}
+        -->
       </ul>
     </div>
   </div>
@@ -37,6 +42,33 @@
        {% endif %}
         <br /><strong>TODO: grab more markup from views/plugins_localcomments.py node()</strong>
       </div>
+    </li>
+
+    <li class="{{ comment.is_issue_node and 'issue' or 'comment' }}">
+        <div class="msg-wrapper" id="r588">
+           {% if 'title' in comment: %}
+            <div class="topic-title">Emberiza calandra missing other IDs (e.g. NCBI)
+                <a href="https://github.com/OpenTreeOfLife/feedback/issues/588"
+                   target="_blank">on GitHub</a>
+            </div>
+           {% endif %}
+            <div class="body issue-body">
+                <!-- safe markup goes here -->
+            </div>
+            <div class="byline">
+                <a href="https://github.com/hyanwong" target="_blank">Yan Wong</a>
+                - 2 weeks ago
+                <span class="controls">
+                    <a class="toggle" href="#">Show/add comments</a>
+                </span>
+            </div>
+        </div>
+        <ul style="display: none;">
+            <!-- any replies go here (recurse?) -->
+        </ul>
+        <div class="reply" style="display: none;">
+            <a class="btn btn-small reply" href="#">Add a comment</a>
+        </div>
     </li>
 
 {%- endmacro -%}
