@@ -59,18 +59,21 @@ def show_type_icon(type):
              renderer='synthetic_tree_viewer:templates/local_comments.jinja2')
 def index(request):
     # this is a tricky function that does simple display, handles POSTed comments, etc.
+    log.debug(">>> STARTING local comments!")
+
     update_github_headers(request)
+    #log.debug('GH_GET_HEADERS')
+    #log.debug(GH_GET_HEADERS)
 
     # TODO: break this up into more sensible functions, and refactor
     # display/markup generation to shared code?
-    log.debug(">>> STARTING local comments!")
 
     synthtree_id = request.matchdict.get('synthtree_id', None)
     synthtree_node_id = request.matchdict.get('synthtree_node_id', None)
     sourcetree_id = request.matchdict.get('sourcetree_id', None)
     ottol_id = request.matchdict.get('ottol_id', None)
     target_node_label = request.matchdict.get('target_node_label', None)
-    url = request.matchdict.get('url', None) or request.referer
+    url = request.matchdict.get('url', None) or request.referer or ''
 
     filter = request.matchdict.get('filter', None)
 
@@ -228,8 +231,6 @@ def index(request):
 
     log.debug(">>> request.matchdict:")
     log.debug(request.matchdict)
-
-    #import pdb; pdb.set_trace()
 
     if thread_parent_id == 'delete':
         # delete the specified comment or close an issue...
@@ -427,6 +428,7 @@ PREFERRED_MEDIA_TYPE = 'application/vnd.github.v3.raw+json, application/vnd.gith
 GH_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 def get_auth_header_value(request):
+    global USER_AUTH_TOKEN
     if USER_AUTH_TOKEN:
         auth_header_value = 'token %s' % USER_AUTH_TOKEN
     else:
@@ -581,13 +583,14 @@ def get_local_comments(request, location={}):
     ##TODO: search only within body?
     ## url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+in:body+state:open&sort=created&order=asc'
     url = url.format(GH_BASE_URL, search_text)
+
     try:
         # 21 Apr, 2020: bug fix: keep this .get in a try block, because a HTTPSConnectionPool can be
         #   raised here (e.g. when GitHub is down)
         resp = requests.get(url, headers=GH_GET_HEADERS, timeout=10)
         # N.B. Timeout is in seconds, and watches for *any* new data within that time (vs. whole response)
-        ##print(url)
-        ##print(resp)
+        print(url)
+        print(resp)
         resp.raise_for_status()
     except:
         print('call to {u} failed. Returning empty comments list'.format(u=url))

@@ -141,7 +141,6 @@ def login(request):
         request.session['github_homepage_url'] = gh_user_data['blog']    # "https://www.ibang.com/"
         """
         request.session.changed()  # save the current session, to make sure we update mutable values
-        #import pdb; pdb.set_trace()
 
         # clear destination once we're done logging in
         request.session['_next'] = None   
