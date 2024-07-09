@@ -100,7 +100,7 @@ def index(request):
     claims_expertise = request.POST.get('claimed_expertise', None) # used for new comments
     threads = [ ]
     def node(comment):
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         ##print("building node for comment id={0}...".format(comment.get('number', comment['id'])))
         # preload its comments (a separate API call)
         child_comments = [ ]
@@ -271,7 +271,7 @@ def index(request):
 
         # build useful links for some footer fields
         if user_is_logged_in(request):
-            author_link = '[{0}]({1})'.format(request.session['github_display_name'], request.session['github_profile_url'])
+            author_link = '[{0}]({1})'.format(auth_user['display_name'], auth_user['github_profile_url'])
         elif visitor_name and visitor_email: 
             author_link = '[{0}](mailto:{1})'.format(visitor_name, visitor_email)
         elif visitor_name: 
