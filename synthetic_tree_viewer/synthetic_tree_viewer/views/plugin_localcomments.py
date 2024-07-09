@@ -19,7 +19,11 @@ from datetime import datetime
 import json
 import synthetic_tree_viewer.opentreewebapputil
 
-from synthetic_tree_viewer.opentreewebapputil import fetch_github_app_auth_token, user_is_logged_in
+from synthetic_tree_viewer.opentreewebapputil import (fetch_github_app_auth_token, 
+                                                      user_is_logged_in,
+                                                      log_request_payloads,
+                                                      get_auth_user,
+                                                     )
 from pprint import pprint
 
 from pyramid.events import subscriber
@@ -62,38 +66,41 @@ def index(request):
     log.debug(">>> STARTING local comments!")
 
     update_github_headers(request)
-    #log.debug('GH_GET_HEADERS')
-    #log.debug(GH_GET_HEADERS)
+    log.debug('GH_GET_HEADERS')
+    log.debug(GH_GET_HEADERS)
 
     # TODO: break this up into more sensible functions, and refactor
     # display/markup generation to shared code?
 
-    synthtree_id = request.matchdict.get('synthtree_id', None)
-    synthtree_node_id = request.matchdict.get('synthtree_node_id', None)
-    sourcetree_id = request.matchdict.get('sourcetree_id', None)
-    ottol_id = request.matchdict.get('ottol_id', None)
-    target_node_label = request.matchdict.get('target_node_label', None)
-    url = request.matchdict.get('url', None) or request.referer or ''
+    synthtree_id = request.POST.get('synthtree_id', None)
+    synthtree_node_id = request.POST.get('synthtree_node_id', None)
+    sourcetree_id = request.POST.get('sourcetree_id', None)
+    ottol_id = request.POST.get('ottol_id', None)
+    target_node_label = request.POST.get('target_node_label', None)
+    url = request.POST.get('url', None) or request.referer or ''
 
-    filter = request.matchdict.get('filter', None)
+    filter = request.POST.get('filter', None)
+
+    auth_user = get_auth_user(request)
 
     # if anonymous user submitted identifying information, remember it
-    visitor_name = request.matchdict.get('visitor_name', None) 
+    visitor_name = request.POST.get('visitor_name', None) 
     if visitor_name:
-        session['visitor_name'] = visitor_name
-    visitor_email = request.matchdict.get('visitor_email', None)
+        request.session['visitor_name'] = visitor_name
+    visitor_email = request.POST.get('visitor_email', None)
     if visitor_email:
-        session['visitor_email'] = visitor_email
+        request.session['visitor_email'] = visitor_email
 
-    issue_or_comment = request.matchdict.get('issue_or_comment', None)
-    thread_parent_id = request.matchdict.get('thread_parent_id', None) # can be None
-    comment_id = request.matchdict.get('comment_id', None) # used for some operations (eg, delete)
-    feedback_type = request.matchdict.get('feedback_type', None) # used for new comments
-    reference_url = request.matchdict.get('reference_url', None) # used for phylo corrections only
-    issue_title = request.matchdict.get('title', None) # used for new issues (threads)
-    claims_expertise = request.matchdict.get('claimed_expertise', None) # used for new comments
+    issue_or_comment = request.POST.get('issue_or_comment', None)
+    thread_parent_id = request.POST.get('thread_parent_id', None) # can be None
+    comment_id = request.POST.get('comment_id', None) # used for some operations (eg, delete)
+    feedback_type = request.POST.get('feedback_type', None) # used for new comments
+    reference_url = request.POST.get('reference_url', None) # used for phylo corrections only
+    issue_title = request.POST.get('title', None) # used for new issues (threads)
+    claims_expertise = request.POST.get('claimed_expertise', None) # used for new comments
     threads = [ ]
     def node(comment):
+        import pdb; pdb.set_trace()
         ##print("building node for comment id={0}...".format(comment.get('number', comment['id'])))
         # preload its comments (a separate API call)
         child_comments = [ ]
@@ -154,7 +161,7 @@ def index(request):
 
         # Is the current user logged in? If so, what is their GitHub ID (login)?
         if user_is_logged_in(request):
-            current_user_id = get_auth_user()['login']
+            current_user_id = auth_user['login']
         else:
             current_user_id = None
 
@@ -229,8 +236,7 @@ def index(request):
             print("Unexpected error:", sys.exc_info()[0])
             raise
 
-    log.debug(">>> request.matchdict:")
-    log.debug(request.matchdict)
+    log_request_payloads(request)
 
     if thread_parent_id == 'delete':
         # delete the specified comment or close an issue...
@@ -250,22 +256,22 @@ def index(request):
             return error()
     elif thread_parent_id:
         # add a new comment using the submitted vars
-        if not request.matchdict.body:
-            print('MISSING BODY:')
-            print(request.matchdict.body)
+        if not request.POST.get('body'):
+            print('MISSING BODY in POSTed data:')
+            print(request.POST)
             return error()
 
-        if not (visitor_name or auth.user):
+        if not (visitor_name or auth_user):
             print('MISSING USER-ID:')
             print('  visitor_name:')
             print(visitor_name)
-            print('  auth.user:')
-            print(auth.user)
+            print('  auth_user:')
+            print(auth_user)
             return error()
 
         # build useful links for some footer fields
-        if auth.user:
-            author_link = '[{0}]({1})'.format(auth.user.name, auth.user.github_url)
+        if user_is_logged_in(request):
+            author_link = '[{0}]({1})'.format(request.session['github_display_name'], request.session['github_profile_url'])
         elif visitor_name and visitor_email: 
             author_link = '[{0}](mailto:{1})'.format(visitor_name, visitor_email)
         elif visitor_name: 
@@ -280,7 +286,7 @@ def index(request):
 
         if (thread_parent_id == '0'):
             # create a new issue (thread starter)
-            msg_body = request.matchdict.body
+            msg_body = request.POST.body
             if len(re.compile('\s+').sub('',msg_body))<1:
                 return ''
 
@@ -316,7 +322,7 @@ def index(request):
         else:
             # attach this comment to an existing issue
             ##print("ADD A COMMENT")
-            msg_body = request.matchdict.body
+            msg_body = request.POST.body
             if len(re.compile('\s+').sub('',msg_body))<1:
                 return ''
             # add abbreviated metadata for a comment
@@ -367,7 +373,6 @@ def index(request):
 
     return {'visitor_name': visitor_name,
             'visitor_email': visitor_email,
-            'threads': threads,
             'user_is_logged_in': user_is_logged_in(request),
             'threads': threads
            }
@@ -418,7 +423,7 @@ def index(request):
 GH_BASE_URL = 'https://api.github.com'
 
 # if the current user is logged in, use their auth token instead
-USER_AUTH_TOKEN = None    # TODO: WAS auth.user and auth.user.github_auth_token or None
+USER_AUTH_TOKEN = None    # will be initialized once we have the request
 
 # Specify the media-type from GitHub, to freeze v3 API responses and get
 # the comment body as markdown (vs. plaintext or HTML)
@@ -535,7 +540,7 @@ def delete_comment(comment_id):
     return resp_json
 
 def build_localcomments_key(request):
-    return 'localcomments:'+ request.url +'?'+ repr(request.matchdict)
+    return 'localcomments:'+ request.url +'?'+ repr(request.POST)
 
 def clear_matching_cache_keys(key_pattern):
     # ASSUMES we're working with RAM cache
@@ -607,19 +612,19 @@ def get_local_comments(request, location={}):
     return results['items']
 
 def clear_local_comments(request):
-    # Examine the JSON payload (now in request.matchdict) to see if we can clear
+    # Examine the JSON payload (now in request.POST) to see if we can clear
     # only the affected localcomments. If not, play it safe and clear all 
     # comments in the cache.
-    if 'markdown_body' in request.matchdict:
+    if 'markdown_body' in request.POST:
         # If we receive issue Markdown, parse it to recover metadata fields.
         # N.B. this is not currently used, but handy to keep in mind!
-        metadata = parse_comment_metadata(request.matchdict.markdown_body)
+        metadata = parse_comment_metadata(request.POST.markdown_body)
         local_url = metadata.get('URL', None)
         local_ott_id = metadata.get('Open Tree Taxonomy id', None)
         local_synth_node_id = metadata.get('Synthetic tree node id', None)
     else:
-        # normally we'll examine the request.matchdict as-is
-        metadata = request.matchdict;
+        # normally we'll examine the request.POST as-is
+        metadata = request.POST;
         local_url = metadata.get('url', None)
         local_ott_id = metadata.get('ottol_id', None)
         local_synth_node_id = metadata.get('synthtree_node_id', None)

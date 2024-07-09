@@ -3,6 +3,7 @@ import os
 import re
 import configparser
 import functools
+import json
 
 from pyramid.httpexceptions import (
     HTTPNotFound,
@@ -312,3 +313,20 @@ def fetch_github_app_auth_token(request):
     except:
         raise Exception("Installation token not found in JSON response!")
     return new_token
+
+def log_request_payloads(request):
+    # Report all forms of request payload
+    log.debug(">>> request.matchdict:")
+    log.debug(request.matchdict)
+    log.debug(">>> request.GET:")
+    log.debug(request.GET)
+    log.debug(">>> request.POST:")
+    log.debug(request.POST)
+    log.debug(">>> request.json:")
+    try:
+        log.debug(request.json)
+    except json.decoder.JSONDecodeError:
+        log.debug('NO JSON FOUND!')
+    except:
+        log.debug('JSON IS FUNKY!')
+
