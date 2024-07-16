@@ -1,6 +1,6 @@
 {% import 'macros/comments.jinja2' as comments %}
 
-{# available vars: visitor_name, visitor_email, threads #}
+{# available vars: visitor_name, visitor_email, threads, ... #}
 
 <div class="plugin_localcomments" style="border: 2px dashed blue;">
 {# client-side script to manage comment display and form behavior #}
@@ -238,8 +238,8 @@
 {% if True: %}
       {# anonymous users should see be encouraged to login or add a name-or-email to their comments #}
           <a class="login-logout reply" href="/opentree/user/login">Login</a> 
-            or <input id="visitor_name" name="visitor_name" placeholder="Enter your name" type="text" value="" /> 
-          <input id="visitor_email" name="visitor_email" placeholder="Your email (visible on GitHub)" type="text" value="" />
+            or <input id="visitor_name" name="visitor_name" placeholder="Enter your name" type="text" value="{{ visitor_name }}" /> 
+          <input id="visitor_email" name="visitor_email" placeholder="Your email (visible on GitHub)" type="text" value="{{ visitor_email }}" />
           <br />
 {% endif %}
           <select name="feedback_type" style="width: 100%; margin-right: -4px;">
@@ -258,12 +258,12 @@
           <input id="issue_title" name="issue_title" placeholder="Give this topic a title" type="text" value="" />
           <textarea cols="40" name="body" placeholder="Add more to this topic, using Markdown (click &#x27;Markdown help&#x27; below to learn more)." rows="10"></textarea>
           <input id="reference_url" name="reference_url" placeholder="..." type="text" value="" />
-          <input name="synthtree_id" type="hidden" value="" />
-          <input name="synthtree_node_id" type="hidden" value="" />
-          <input name="sourcetree_id" type="hidden" value="" />
-          <input name="ottol_id" type="hidden" value="" />
-          <input name="target_node_label" type="hidden" value="" />
-          <input name="url" type="hidden" value="/opentree/argus/opentree14.9@ott93302" />
+          <input name="synthtree_id" type="hidden" value="{{ synthtree_id }}" />
+          <input name="synthtree_node_id" type="hidden" value="{{ synthtree_node_id }}" />
+          <input name="sourcetree_id" type="hidden" value="{{ sourcetree_id }}" />
+          <input name="ottol_id" type="hidden" value="{{ ottol_id }}" />
+          <input name="target_node_label" type="hidden" value="{{ target_node_label }}" />
+          <input name="url" type="hidden" value="{{ url }}" />
           <div class="msg-footer">
               <a class="msg-close" href="#" style="margin-right: 6px">Close</a>
               <span style="margin-right: 6px"> | </span>

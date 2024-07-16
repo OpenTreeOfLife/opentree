@@ -8,6 +8,7 @@ import re
 #from gluon.tools import prettydate
 import prettydate
 #from gluon.contrib.markdown.markdown2 import markdown
+from markdown import markdown
 
 from pyramid.view import view_config
 import requests
@@ -57,7 +58,8 @@ def show_type_icon(type):
         iconClass = "icon-wrench"
     elif type == 'Reply or general':
         iconClass = "icon-comment"
-    return XML(I(_class=iconClass))
+    icon_markup = '<i class="{}"></i>'.format(iconClass)
+    return icon_markup
 
 @view_config(route_name='local_comments',
              renderer='synthetic_tree_viewer:templates/local_comments.jinja2')
@@ -100,7 +102,6 @@ def index(request):
     claims_expertise = request.POST.get('claimed_expertise', None) # used for new comments
     threads = [ ]
     def node(comment):
-        #import pdb; pdb.set_trace()
         ##print("building node for comment id={0}...".format(comment.get('number', comment['id'])))
         # preload its comments (a separate API call)
         child_comments = [ ]
@@ -204,9 +205,7 @@ def index(request):
                 get_visible_comment_body(comment['body'] or ''),
                 extras={'link-patterns':None},
                 link_patterns=[(link_regex, link_replace)]).encode('utf-8')
-            safe_comment_markup = XML(
-                ot_cleaner.clean(rendered_comment_markdown),
-                sanitize=False)  # gluon's sanitize will break on Unicode!
+            safe_comment_markup = ot_cleaner.clean(rendered_comment_markdown)
             markup = LI(
                     DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
@@ -244,15 +243,15 @@ def index(request):
             if issue_or_comment == 'issue':
                 print("CLOSING ISSUE {0}".format(comment_id))
                 close_issue(comment_id)
-                clear_local_comments()
+                clear_local_comments(request)
                 return 'closed'
             else:
                 print("DELETING COMMENT {0}".format(comment_id))
                 delete_comment(comment_id)
-                clear_local_comments()
+                clear_local_comments(request)
                 return 'deleted'
         except:
-            clear_local_comments()  # hopefully a cleaner result
+            clear_local_comments(request) # hopefully a cleaner result
             return error()
     elif thread_parent_id:
         # add a new comment using the submitted vars
@@ -286,7 +285,7 @@ def index(request):
 
         if (thread_parent_id == '0'):
             # create a new issue (thread starter)
-            msg_body = request.POST.body
+            msg_body = request.POST.get('body', '')
             if len(re.compile('\s+').sub('',msg_body))<1:
                 return ''
 
@@ -321,8 +320,8 @@ def index(request):
             new_msg = add_or_update_issue(msg_data)
         else:
             # attach this comment to an existing issue
-            ##print("ADD A COMMENT")
-            msg_body = request.POST.body
+            print("ADD A COMMENT")
+            msg_body = request.POST.get('body', '')
             if len(re.compile('\s+').sub('',msg_body))<1:
                 return ''
             # add abbreviated metadata for a comment
@@ -335,7 +334,7 @@ def index(request):
                 "body": "{0}\n{1}".format(msg_body, footer)
             }
             new_msg = add_or_update_comment(msg_data, parent_issue_id=thread_parent_id)
-        clear_local_comments()
+        clear_local_comments(request)
         return node(new_msg)                
 
     # retrieve related comments, based on the chosen filter
@@ -572,18 +571,23 @@ def get_local_comments(request, location={}):
     # Use the Search API to get all comments for this location. 
     # See https://developer.github.com/v3/search/#search-issues
     # build and encode search text (location "filter")
+    print('>> location data provided:')
+    print(location)
     print('>> its cache key would be:')
     print(build_localcomments_key(request))
     search_text = '' 
     for k,v in location.items():
         search_text = '{0}"{1} | {2} " '.format( search_text, k, v )
+    print("RAW search_text:")
+    print(search_text)
     try:
         from urllib import quote_plus
     except ImportError:
         from urllib.parse import quote_plus
     search_text = quote_plus(search_text.encode('utf-8'), safe='~')
-    #print search_text
-    #print('>> calling GitHub API for local issues...')
+    print("ENCODED search_text:")
+    print(search_text)
+    print('>> calling GitHub API for local issues...')
     url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+state:open&sort=created&order=desc'
     ##TODO: search only within body?
     ## url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+in:body+state:open&sort=created&order=asc'
