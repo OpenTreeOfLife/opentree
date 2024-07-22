@@ -34,8 +34,9 @@
     <li class="{{ comment.is_issue_node and 'issue' or 'comment' }}">
       <div>
        {% if 'title' in comment: %}
-        <div>{{ comment.title }}</div>
-        <a class="topic-title" href="{{ comment.html_url }} target="_blank">on GitHub</a>
+        <div class="topic-title">{{ comment.title }}
+            <a href="{{ comment.html_url }}" target="_blank">on GitHub</a>
+        </div>
        {% endif %}
        {% if comment.is_issue_node %}
         ISSUE!

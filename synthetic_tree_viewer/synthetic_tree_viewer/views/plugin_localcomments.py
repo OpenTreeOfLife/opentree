@@ -205,7 +205,7 @@ def index(request):
                 get_visible_comment_body(comment['body'] or ''),
                 extras={'link-patterns':None},
                 link_patterns=[(link_regex, link_replace)]).encode('utf-8')
-            safe_comment_markup = ot_cleaner.clean(rendered_comment_markdown)
+            safe_comment_markup = ot_cleaner.clean(str(rendered_comment_markdown))
             markup = LI(
                     DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
