@@ -6,12 +6,12 @@
 {% macro local_comments(filter, url) -%}
 
 {# diagnostic chatter
-#}
   <div style="color: red; font-weight: bold; border: 1px dashed red;">
     <p>LOCAL COMMENTS APPEAR HERE!</p>
     <p> &nbsp; filter = {{filter}}</p>
     <p> &nbsp; url = {{url}}</p>
   </div>
+#}
 
   <div id="{{ 'TODO_c59826038298' }}">
     <div class="plugin_localcomments">
@@ -38,7 +38,7 @@
             <a href="{{ comment.html_url }}" target="_blank">on GitHub</a>
         </div>
        {% endif %}
-       {% if comment.is_issue_node %}
+       {% if is_issue_node: %}
         ISSUE!
        {% endif %}
         <br /><strong>TODO: grab more markup from views/plugins_localcomments.py node()</strong>
@@ -46,30 +46,48 @@
     </li>
 
     <li class="{{ comment.is_issue_node and 'issue' or 'comment' }}">
-        <div class="msg-wrapper" id="r588">
+        <div class="msg-wrapper" 
+             id="{{ comment.get('number', comment['id']) }}">
            {% if 'title' in comment: %}
             <div class="topic-title">Emberiza calandra missing other IDs (e.g. NCBI)
                 <a href="https://github.com/OpenTreeOfLife/feedback/issues/588"
                    target="_blank">on GitHub</a>
             </div>
            {% endif %}
-            <div class="body issue-body">
+            <div class="{{ issue_node and 'body issue-body' or 'body comment-body' }}">
                 <!-- safe markup goes here -->
             </div>
             <div class="byline">
-                <a href="https://github.com/hyanwong" target="_blank">Yan Wong</a>
-                - 2 weeks ago
+                <a href="{{ 'TODO-github-url' }}" target="_blank">{{ 'TODO-name' }}</a>
+                - {{ 'TODO-friendly-post-age' }}
                 <span class="controls">
-                    <a class="toggle" href="#">Show/add comments</a>
+                  {% if issue_node: %}
+                    <a class="toggle" href="#">
+                      {% if child_comments: %}
+                        Hide comments
+                      {% else: %}
+                        Show/add comments
+                      {% endif %}
+                    </a>
+                    {% if comment['user']['login'] == current_user_id: %}
+                        <span> | </span>
+                    {% endif %}
+                  {% endif %}
+                  {% if comment['user']['login'] == current_user_id: %}
+                    <a class="delete" href="#">Delete</a>
+                  {% endif %}
                 </span>
             </div>
         </div>
-        <ul style="display: none;">
+      {% if issue_node: %}
+        <ul style="display: {{ child_comments and 'block' or 'none' }};">
             <!-- any replies go here (recurse?) -->
         </ul>
-        <div class="reply" style="display: none;">
+        <div class="reply" 
+             style="{{ '' if child_comments else 'display: none;' }}">
             <a class="btn btn-small reply" href="#">Add a comment</a>
         </div>
+      {% endif %}
     </li>
 
 {%- endmacro -%}

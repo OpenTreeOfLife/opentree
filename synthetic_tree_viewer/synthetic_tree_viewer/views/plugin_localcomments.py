@@ -370,11 +370,16 @@ def index(request):
         #thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
         threads.append(comment)
 
-    return {'visitor_name': visitor_name,
-            'visitor_email': visitor_email,
-            'user_is_logged_in': user_is_logged_in(request),
-            'threads': threads
-           }
+    import pdb; pdb.set_trace()
+
+    view_dict = {'visitor_name': visitor_name,
+                 'visitor_email': visitor_email,
+                 'user_is_logged_in': user_is_logged_in(request),
+                 'threads': threads,
+                 'issue_node': ('number' in comment) and True or False,
+                }
+    return view_dict
+
 """ MOVED this markup to the Pyramid template 'local_comments.jinja2'!
 
     return DIV(#script,
