@@ -13,7 +13,7 @@
   </div>
 #}
 
-  <div id="{{ 'TODO_c59826038298' }}">
+  <div id="{{ 'TODO_c59826038298' }}" style="border: 2px green solid;">
     <div class="plugin_localcomments">
       <div class="reply"><a class="btn btn-small reply" href="#">Add a new topic</a></div>
       <ul>
@@ -31,37 +31,26 @@
 
 {% macro wrap_comment_in_markup(comment) -%}
 
-    <li class="{{ comment.is_issue_node and 'issue' or 'comment' }}">
-      <div>
-       {% if 'title' in comment: %}
-        <div class="topic-title">{{ comment.title }}
-            <a href="{{ comment.html_url }}" target="_blank">on GitHub</a>
-        </div>
-       {% endif %}
-       {% if is_issue_node: %}
-        ISSUE!
-       {% endif %}
-        <br /><strong>TODO: grab more markup from views/plugins_localcomments.py node()</strong>
-      </div>
-    </li>
+    {% set is_issue_node = 'comments' in comment %}
+    {% set child_comments = comment.get('child_comments', [ ]) %}
 
-    <li class="{{ comment.is_issue_node and 'issue' or 'comment' }}">
+    <li class="{{ is_issue_node and 'issue' or 'comment' }}">
         <div class="msg-wrapper" 
              id="{{ comment.get('number', comment['id']) }}">
            {% if 'title' in comment: %}
-            <div class="topic-title">Emberiza calandra missing other IDs (e.g. NCBI)
-                <a href="https://github.com/OpenTreeOfLife/feedback/issues/588"
-                   target="_blank">on GitHub</a>
+            <div class="topic-title">{{ comment.title }}
+                <a href="{{ comment.html_url }}" target="_blank">on GitHub</a>
             </div>
            {% endif %}
-            <div class="{{ issue_node and 'body issue-body' or 'body comment-body' }}">
+            <div class="{{ is_issue_node and 'body issue-body' or 'body comment-body' }}">
                 <!-- safe markup goes here -->
+                {{ safe_comment_markup }}
             </div>
             <div class="byline">
                 <a href="{{ 'TODO-github-url' }}" target="_blank">{{ 'TODO-name' }}</a>
                 - {{ 'TODO-friendly-post-age' }}
                 <span class="controls">
-                  {% if issue_node: %}
+                  {% if is_issue_node: %}
                     <a class="toggle" href="#">
                       {% if child_comments: %}
                         Hide comments
@@ -79,9 +68,12 @@
                 </span>
             </div>
         </div>
-      {% if issue_node: %}
+      {% if is_issue_node: %}
         <ul style="display: {{ child_comments and 'block' or 'none' }};">
-            <!-- any replies go here (recurse?) -->
+          <!-- any replies go here (recurse?) -->
+          {% for reply in comment.child_comments %}
+              {{ wrap_comment_in_markup(comment=reply) }}
+          {% endfor %}
         </ul>
         <div class="reply" 
              style="{{ '' if child_comments else 'display: none;' }}">

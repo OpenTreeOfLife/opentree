@@ -105,6 +105,9 @@ def index(request):
         ##print("building node for comment id={0}...".format(comment.get('number', comment['id'])))
         # preload its comments (a separate API call)
         child_comments = [ ]
+
+        import pdb; pdb.set_trace()
+
         if comment.get('comments') and comment.get('comments') > 0:
             get_children_url = comment['comments_url']
             resp = requests.get( get_children_url, headers=GH_GET_HEADERS, timeout=10)
@@ -195,6 +198,7 @@ def index(request):
                                 ]
         ot_markdown_tags = list(set( bleach.sanitizer.ALLOWED_TAGS + common_feedback_tags))
         ot_cleaner = Cleaner(tags=ot_markdown_tags)
+        #safe_comment_markup = ot_cleaner.clean(str(rendered_comment_markdown))
 
         try:   # TODO: if not comment.deleted:
             # N.B. some missing information (e.g. supporting URL) will appear here as a string like "None"
@@ -368,15 +372,32 @@ def index(request):
 
     for comment in comments:
         #thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
+        comment['child_comments'] = [ ]  # by default, an empty list
+        # load any replies BEFORE we move to the rendering template!
+        if comment.get('comments') and comment.get('comments') > 0:
+            get_children_url = comment['comments_url']
+            resp = requests.get( get_children_url, headers=GH_GET_HEADERS, timeout=10)
+            # N.B. Timeout is in seconds, and watches for *any* new data within that time (vs. whole response)
+            try:
+                resp.raise_for_status()
+                try:
+                    comment['child_comments'] = resp.json()
+                except:
+                    comment['child_comments'] = resp.json
+            except:
+                # WE need logging in the web app!
+                try:
+                    import sys
+                    sys.stderr.write('Error: got a {c} from {u}\n'.format(c=resp.status_code,
+                                                                        u=get_children_url))
+                except:
+                    pass # well that sucks, we failed to even write to stderr
         threads.append(comment)
-
-    import pdb; pdb.set_trace()
 
     view_dict = {'visitor_name': visitor_name,
                  'visitor_email': visitor_email,
                  'user_is_logged_in': user_is_logged_in(request),
                  'threads': threads,
-                 'issue_node': ('number' in comment) and True or False,
                 }
     return view_dict
 
