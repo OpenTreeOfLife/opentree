@@ -43,12 +43,12 @@
             </div>
            {% endif %}
             <div class="{{ is_issue_node and 'body issue-body' or 'body comment-body' }}">
-                <!-- safe markup goes here -->
-                {{ safe_comment_markup }}
+                <!-- safe markup goes here??? -->
+                {{ comment.get('safe_html_body', "MISSING COMMENT BODY!") | safe }}
             </div>
             <div class="byline">
-                <a href="{{ 'TODO-github-url' }}" target="_blank">{{ 'TODO-name' }}</a>
-                - {{ 'TODO-friendly-post-age' }}
+                <a href="{{ comment.get('author_link') }}" target="_blank">{{ comment['author_display_name'] }}</a>
+                - {{ comment['pretty_date'] }}
                 <span class="controls">
                   {% if is_issue_node: %}
                     <a class="toggle" href="#">

@@ -330,3 +330,44 @@ def log_request_payloads(request):
     except:
         log.debug('JSON IS FUNKY!')
 
+# python3 compatible pretty dates,
+# adapted from https://stackoverflow.com/a/5164027
+import datetime
+def pretty_date(d):
+    diff = datetime.datetime.utcnow() - d
+    s = diff.seconds
+    days_in_a_year = 365  # close enough!
+    days_in_a_month = 30  # close enough!
+    days_in_a_week  =  7  # close enough!
+    if diff.days > (days_in_a_year * 2):
+        how_many_years = int(diff.days / days_in_a_year)
+        return "{} years ago".format(how_many_years)
+    elif diff.days > days_in_a_year:
+        return '1 year ago'
+    elif diff.days > (days_in_a_month * 2):
+        how_many_months = int(diff.days / days_in_a_month)
+        return "{} months ago".format(how_many_months)
+    elif diff.days > days_in_a_month:
+        return '1 month ago'
+    elif diff.days > (days_in_a_week * 2):
+        how_many_weeks = int(diff.days / days_in_a_week)
+        return "{} weeks ago".format(how_many_weeks)
+    elif diff.days > days_in_a_week:
+        return '1 week ago'
+    elif diff.days == 1:
+        return '1 day ago'
+    elif diff.days > 1:
+        return '{} days ago'.format(diff.days)
+    elif s <= 1:
+        return 'just now'
+    elif s < 60:
+        return '{} seconds ago'.format(s)
+    elif s < 120:
+        return '1 minute ago'
+    elif s < 3600:
+        return '{} minutes ago'.format(s/60)
+    elif s < 7200:
+        return '1 hour ago'
+    else:
+        return '{} hours ago'.format(s/3600)
+

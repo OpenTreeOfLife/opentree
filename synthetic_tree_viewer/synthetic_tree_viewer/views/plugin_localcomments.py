@@ -4,9 +4,6 @@ log = logging.getLogger(__name__)
 
 import re
 
-# TODO: restore this functionality!
-#from gluon.tools import prettydate
-import prettydate
 #from gluon.contrib.markdown.markdown2 import markdown
 from markdown import markdown
 
@@ -24,6 +21,7 @@ from synthetic_tree_viewer.opentreewebapputil import (fetch_github_app_auth_toke
                                                       user_is_logged_in,
                                                       log_request_payloads,
                                                       get_auth_user,
+                                                      pretty_date,
                                                      )
 from pprint import pprint
 
@@ -105,9 +103,6 @@ def index(request):
         ##print("building node for comment id={0}...".format(comment.get('number', comment['id'])))
         # preload its comments (a separate API call)
         child_comments = [ ]
-
-        import pdb; pdb.set_trace()
-
         if comment.get('comments') and comment.get('comments') > 0:
             get_children_url = comment['comments_url']
             resp = requests.get( get_children_url, headers=GH_GET_HEADERS, timeout=10)
@@ -128,38 +123,7 @@ def index(request):
                     pass # well that sucks, we failed to even write to stderr
 
         metadata = parse_comment_metadata(comment['body'])
-        ##print(metadata)
-
-        # Examine the comment metadata (if any) to get the best display name
-        # and URL for its author. Guests should appear here as the name and
-        # email address they entered when creating a comment, rather than the
-        # GitHub app (bot).
-        #
-        # Default values are what we can fetch from the issues API
-        author_display_name = comment['user']['login']
-        author_link = comment['user']['html_url']
-        # Now let's try for something more friendly...
-        if metadata:
-            meta_author_info = metadata.get('Author', None)
-            if meta_author_info:
-                # Try to parse this fron a Markdown hyperlink. Typical values include:
-                #   u'opentreeapi'
-                #   u'11'
-                #   u'[Jim Allman](https://github.com/jimallman)'
-                #   u'[John Smith](mailto:example.guest@gmail.com)'
-                regex = re.compile(r'\[(.*)\]\((.*)\)')
-                markdown_fields = regex.findall(meta_author_info)
-                if len(markdown_fields) > 0:
-                    # look for parts of a markdown link
-                    author_display_name, author_link = markdown_fields[0]
-                else:
-                    # it's not a markdown link, just a bare name or numeric userid
-                    if meta_author_info.isdigit():
-                        # ignore ugly userid (login is better)
-                        pass
-                    else:
-                        author_display_name = meta_author_info
-
+        author_display_name, author_link = extract_best_author_details(comment, metadata=metadata)
         # Is this node for an issue (thread starter) or a comment (reply)?
         issue_node = 'number' in comment
 
@@ -169,47 +133,12 @@ def index(request):
         else:
             current_user_id = None
 
-        # Cook up some reasonably strong regular expressions to detect bare
-        # URLs and wrap them in hyperlinks. Adapted from 
-        # http://stackoverflow.com/questions/1071191/detect-urls-in-a-string-and-wrap-with-a-href-tag
-        link_regex = re.compile(  r'''
-                             (?x)( # verbose identify URLs within text
-                      (http|https) # make sure we find a resource type
-                               :// # ...needs to be followed by colon-slash-slash
-                    (\w+[:.]?){2,} # at least two domain groups, e.g. (gnosis.)(cx)
-                              (/?| # could be just the domain name (maybe w/ slash)
-                        [^ \n\r"]+ # or stuff then space, newline, tab, quote
-                            [\w/]) # resource name ends in alphanumeric or slash
-             (?=([\s\.,>)'"\]]|$)) # assert: followed by white or clause ending OR end of line
-                                 ) # end of match group
-                                   ''')
-        # link_replace = r'<a href="\1" />\1</a>'
-        # let's try this do-nothing version
-        link_replace = r'\1'
-        # NOTE the funky constructor required to use this below
-
-        # Define a consistent cleaner to sanitize user input. We need a few
-        # elements that are common in our markdown but missing from the Bleach
-        # whitelist.
-        # N.B. HTML comments are stripped by default. Non-allowed tags will appear
-        # "naked" in output, so we can identify any bad actors.
-        common_feedback_tags = [u'p', u'br',
-                                u'h1', u'h2', u'h3', u'h4', u'h5', u'h6',
-                                ]
-        ot_markdown_tags = list(set( bleach.sanitizer.ALLOWED_TAGS + common_feedback_tags))
-        ot_cleaner = Cleaner(tags=ot_markdown_tags)
-        #safe_comment_markup = ot_cleaner.clean(str(rendered_comment_markdown))
-
         try:   # TODO: if not comment.deleted:
             # N.B. some missing information (e.g. supporting URL) will appear here as a string like "None"
             supporting_reference_url = metadata.get('Supporting reference', None)
             has_supporting_reference_url = supporting_reference_url and (supporting_reference_url != u'None')
             # Prepare a sanitized rendering of this user-submitted markup
-            rendered_comment_markdown = markdown(
-                get_visible_comment_body(comment['body'] or ''),
-                extras={'link-patterns':None},
-                link_patterns=[(link_regex, link_replace)]).encode('utf-8')
-            safe_comment_markup = ot_cleaner.clean(str(rendered_comment_markdown))
+            rendered_comment_markdown = extract_safe_html_comment(comment)
             markup = LI(
                     DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
@@ -220,7 +149,7 @@ def index(request):
                         A(T(author_display_name), _href=author_link, _target='_blank'),
                         # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
                         SPAN(' ',metadata.get('Feedback type'),' ',_class='badge') if metadata.get('Feedback type') else '',
-                        T(' - %s',prettydate.pretty_date.prettyDate(utc_to_local(datetime.strptime(comment['created_at'], GH_DATETIME_FORMAT)),T)),
+                        T(' - %s',pretty_date(utc_to_local(datetime.strptime(comment['created_at'], GH_DATETIME_FORMAT)),T)),
                         SPAN(
                             issue_node and A(T(child_comments and 'Hide comments' or 'Show/add comments'),_class='toggle',_href='#') or '',
                             issue_node and comment['user']['login'] == current_user_id and SPAN(' | ') or '',
@@ -380,6 +309,7 @@ def index(request):
             # N.B. Timeout is in seconds, and watches for *any* new data within that time (vs. whole response)
             try:
                 resp.raise_for_status()
+                # and now we append the child comments for rendering
                 try:
                     comment['child_comments'] = resp.json()
                 except:
@@ -393,6 +323,23 @@ def index(request):
                 except:
                     pass # well that sucks, we failed to even write to stderr
         threads.append(comment)
+
+        # Do any final grooming of all comments (incl. replies)!
+        def decorate_comment_for_display(comment):
+            metadata = parse_comment_metadata(comment['body'])
+            author_display_name, author_link = extract_best_author_details(comment, metadata=metadata)
+            comment['author_display_name'] = author_display_name
+            comment['author_link'] = author_link
+            # render a friendly date, eg "6 days ago"
+            rawDate = datetime.strptime(comment['created_at'], GH_DATETIME_FORMAT)
+            localDate = utc_to_local(rawDate)
+            comment['pretty_date'] = pretty_date(localDate)
+            comment['safe_html_body'] = extract_safe_html_comment(comment)
+
+        for issue in threads:
+            decorate_comment_for_display(issue)
+            for reply in issue['child_comments']:
+                decorate_comment_for_display(reply)
 
     view_dict = {'visitor_name': visitor_name,
                  'visitor_email': visitor_email,
@@ -756,6 +703,80 @@ def parse_comment_metadata(comment_body):
                 continue
             metadata[key] = value
     return metadata
+
+def extract_best_author_details(comment, metadata=None):
+    # Examine the comment metadata (if any) to get the best display name
+    # and URL for its author. Guests should appear here as the name and
+    # email address they entered when creating a comment, rather than the
+    # GitHub app (bot).
+    #
+    # Default values are what we can fetch from the issues API
+    #  check this?  if comment['user']['type'] == 'Bot'
+    author_display_name = comment['user']['login']
+    author_link = comment['user']['html_url']
+    # Now let's try for something more friendly...
+    if not metadata:
+        metadata = parse_comment_metadata(comment['body'])
+    if metadata:
+        meta_author_info = metadata.get('Author', None)
+        if meta_author_info:
+            # Try to parse this fron a Markdown hyperlink. Typical values include:
+            #   u'opentreeapi'
+            #   u'11'
+            #   u'[Jim Allman](https://github.com/jimallman)'
+            #   u'[John Smith](mailto:example.guest@gmail.com)'
+            regex = re.compile(r'\[(.*)\]\((.*)\)')
+            markdown_fields = regex.findall(meta_author_info)
+            if len(markdown_fields) > 0:
+                # look for parts of a markdown link
+                author_display_name, author_link = markdown_fields[0]
+            else:
+                # it's not a markdown link, just a bare name or numeric userid
+                if meta_author_info.isdigit():
+                    # ignore ugly userid (login is better)
+                    pass
+                else:
+                    author_display_name = meta_author_info
+    return author_display_name, author_link
+
+def extract_safe_html_comment(comment):
+    # Cook up some reasonably strong regular expressions to detect bare
+    # URLs and wrap them in hyperlinks. Adapted from
+    # http://stackoverflow.com/questions/1071191/detect-urls-in-a-string-and-wrap-with-a-href-tag
+    link_regex = re.compile(  r'''
+                         (?x)( # verbose identify URLs within text
+                  (http|https) # make sure we find a resource type
+                           :// # ...needs to be followed by colon-slash-slash
+                (\w+[:.]?){2,} # at least two domain groups, e.g. (gnosis.)(cx)
+                          (/?| # could be just the domain name (maybe w/ slash)
+                    [^ \n\r"]+ # or stuff then space, newline, tab, quote
+                        [\w/]) # resource name ends in alphanumeric or slash
+         (?=([\s\.,>)'"\]]|$)) # assert: followed by white or clause ending OR end of line
+                             ) # end of match group
+                               ''')
+    # link_replace = r'<a href="\1" />\1</a>'
+    # let's try this do-nothing version
+    link_replace = r'\1'
+    # NOTE the funky constructor required to use this below
+
+    # Define a consistent cleaner to sanitize user input. We need a few
+    # elements that are common in our markdown but missing from the Bleach
+    # whitelist.
+    # N.B. HTML comments are stripped by default. Non-allowed tags will appear
+    # "naked" in output, so we can identify any bad actors.
+    common_feedback_tags = [u'p', u'br',
+                            u'h1', u'h2', u'h3', u'h4', u'h5', u'h6',
+                            ]
+    ot_markdown_tags = list(set( bleach.sanitizer.ALLOWED_TAGS + common_feedback_tags))
+    ot_cleaner = Cleaner(tags=ot_markdown_tags)
+
+    # and now we use all that to clean up the HTML
+    rendered_comment_markdown = markdown(
+        get_visible_comment_body(comment['body'] or ''),
+        extras={'link-patterns':None},
+        link_patterns=[(link_regex, link_replace)])   #.encode('utf-8')
+    safe_comment_markup = ot_cleaner.clean(str(rendered_comment_markdown))
+    return safe_comment_markup
 
 def get_visible_comment_body(comment_body):
     # discard the footer (starting at line '=========...')
