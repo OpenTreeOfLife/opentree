@@ -326,9 +326,9 @@ def log_request_payloads(request):
     try:
         log.debug(request.json)
     except json.decoder.JSONDecodeError:
-        log.debug('NO JSON FOUND!')
+        log.debug('No JSON found.')
     except:
-        log.debug('JSON IS FUNKY!')
+        log.debug('JSON is funky!')
 
 # python3 compatible pretty dates,
 # adapted from https://stackoverflow.com/a/5164027

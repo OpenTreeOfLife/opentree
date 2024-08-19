@@ -170,6 +170,8 @@ def index(request):
 
     log_request_payloads(request)
 
+    #import pdb; pdb.set_trace()
+
     if thread_parent_id == 'delete':
         # delete the specified comment or close an issue...
         try:
@@ -341,10 +343,16 @@ def index(request):
             for reply in issue['child_comments']:
                 decorate_comment_for_display(reply)
 
-    view_dict = {'visitor_name': visitor_name,
-                 'visitor_email': visitor_email,
-                 'user_is_logged_in': user_is_logged_in(request),
+    view_dict = {'user_is_logged_in': user_is_logged_in(request),
+                 'visitor_name': request.session.get('visitor_name',''),
+                 'visitor_email': request.session.get('visitor_email',''),
                  'threads': threads,
+                 'synthtree_id': synthtree_id,
+                 'synthtree_node_id': synthtree_node_id,
+                 'sourcetree_id': sourcetree_id,
+                 'ottol_id': ottol_id,
+                 'target_node_label': target_node_label,
+                 'url': url,
                 }
     return view_dict
 
