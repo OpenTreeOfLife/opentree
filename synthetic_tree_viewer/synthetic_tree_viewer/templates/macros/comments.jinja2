@@ -36,7 +36,7 @@
 
     <li class="{{ is_issue_node and 'issue' or 'comment' }}">
         <div class="msg-wrapper" 
-             id="{{ comment.get('number', comment['id']) }}">
+             id="r{{ comment.get('number', comment['id']) }}">
            {% if 'title' in comment: %}
             <div class="topic-title">{{ comment.title }}
                 <a href="{{ comment.html_url }}" target="_blank">on GitHub</a>
