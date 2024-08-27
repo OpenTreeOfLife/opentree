@@ -26,6 +26,7 @@ from synthetic_tree_viewer.opentreewebapputil import (fetch_github_app_auth_toke
 from pprint import pprint
 
 from pyramid.events import subscriber
+from pyramid.renderers import render_to_response
 from pyramid_retry import IBeforeRetry
 
 # these headers are set once request is available
@@ -100,7 +101,6 @@ def index(request):
     claims_expertise = request.POST.get('claimed_expertise', None) # used for new comments
     threads = [ ]
     def node(comment):
-        ##print("building node for comment id={0}...".format(comment.get('number', comment['id'])))
         # preload its comments (a separate API call)
         child_comments = [ ]
         if comment.get('comments') and comment.get('comments') > 0:
@@ -171,6 +171,18 @@ def index(request):
     log_request_payloads(request)
 
     #import pdb; pdb.set_trace()
+
+    # Do final grooming of a single comment (incl. replies) before rendering
+    def decorate_comment_for_display(comment):
+        metadata = parse_comment_metadata(comment['body'])
+        author_display_name, author_link = extract_best_author_details(comment, metadata=metadata)
+        comment['author_display_name'] = author_display_name
+        comment['author_link'] = author_link
+        # render a friendly date, eg "6 days ago"
+        rawDate = datetime.strptime(comment['created_at'], GH_DATETIME_FORMAT)
+        localDate = utc_to_local(rawDate)
+        comment['pretty_date'] = pretty_date(localDate)
+        comment['safe_html_body'] = extract_safe_html_comment(comment)
 
     if thread_parent_id == 'delete':
         # delete the specified comment or close an issue...
@@ -255,7 +267,7 @@ def index(request):
             new_msg = add_or_update_issue(msg_data)
         else:
             # attach this comment to an existing issue
-            print("ADD A COMMENT")
+            ##print("ADD A COMMENT")
             msg_body = request.POST.get('body', '')
             if len(re.compile('\s+').sub('',msg_body))<1:
                 return ''
@@ -264,13 +276,21 @@ def index(request):
                 "Author" : author_link,
                 "Upvotes" : 0,
             })
-            print(footer)
             msg_data = {
                 "body": "{0}\n{1}".format(msg_body, footer)
             }
             new_msg = add_or_update_comment(msg_data, parent_issue_id=thread_parent_id)
         clear_local_comments(request)
-        return node(new_msg)                
+
+        # For a new comment, we just want to return its bare HTML to be
+        # inserted in the current client-side view.
+        decorate_comment_for_display(new_msg)
+        return render_to_response(
+            renderer_name='synthetic_tree_viewer:templates/single_comment.jinja2',
+            value={'comment': new_msg},
+            request=request,
+            package=None,
+            response=None)
 
     # retrieve related comments, based on the chosen filter
     if filter == 'skip_comments':
@@ -299,8 +319,6 @@ def index(request):
             #pprint("=== NEW url: %s" % url)
         comments = get_local_comments(request, {"URL": url})
 
-    #pprint(comments) 
-
     for comment in comments:
         #thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
         comment['child_comments'] = [ ]  # by default, an empty list
@@ -325,18 +343,6 @@ def index(request):
                 except:
                     pass # well that sucks, we failed to even write to stderr
         threads.append(comment)
-
-        # Do any final grooming of all comments (incl. replies)!
-        def decorate_comment_for_display(comment):
-            metadata = parse_comment_metadata(comment['body'])
-            author_display_name, author_link = extract_best_author_details(comment, metadata=metadata)
-            comment['author_display_name'] = author_display_name
-            comment['author_link'] = author_link
-            # render a friendly date, eg "6 days ago"
-            rawDate = datetime.strptime(comment['created_at'], GH_DATETIME_FORMAT)
-            localDate = utc_to_local(rawDate)
-            comment['pretty_date'] = pretty_date(localDate)
-            comment['safe_html_body'] = extract_safe_html_comment(comment)
 
         for issue in threads:
             decorate_comment_for_display(issue)
@@ -461,8 +467,6 @@ def add_or_update_comment(msg_data, comment_id=None, parent_issue_id=None ):
     if comment_id:
         # edit an existing comment
         url = '{0}/repos/OpenTreeOfLife/feedback/issues/comments/{1}'.format(GH_BASE_URL, comment_id)
-        #print('URL for editing an existing comment:')
-        #print(url)
         resp = requests.patch( url, 
             headers=GH_POST_HEADERS,
             data=json.dumps(msg_data)
@@ -470,13 +474,10 @@ def add_or_update_comment(msg_data, comment_id=None, parent_issue_id=None ):
     else:
         # create a new comment
         url = '{0}/repos/OpenTreeOfLife/feedback/issues/{1}/comments'.format(GH_BASE_URL, parent_issue_id)
-        #print('URL for adding a new comment:')
-        #print(url)
         resp = requests.post( url, 
             headers=GH_POST_HEADERS,
             data=json.dumps(msg_data)
         )
-    ##pprint(resp)
     resp.raise_for_status()
     try:
         new_msg = resp.json()
@@ -487,13 +488,10 @@ def add_or_update_comment(msg_data, comment_id=None, parent_issue_id=None ):
 def close_issue(issue_id):
     # close a thread (issue) on GitHub
     url = '{0}/repos/OpenTreeOfLife/feedback/issues/{1}'.format(GH_BASE_URL, issue_id)
-    #print('URL for closing an existing issue:')
-    #print(url)
     resp = requests.patch( url, 
         headers=GH_POST_HEADERS,
         data=json.dumps({"state":"closed"})
     )
-    ##pprint(resp)
     resp.raise_for_status()
     try:
         resp_json = resp.json()
@@ -504,12 +502,9 @@ def close_issue(issue_id):
 def delete_comment(comment_id):
     # delete a comment on GitHub
     url = '{0}/repos/OpenTreeOfLife/feedback/issues/comments/{1}'.format(GH_BASE_URL, comment_id)
-    #print('URL for deleting an existing comment:')
-    #print(url)
     resp = requests.delete( url, 
         headers=GH_GET_HEADERS
     )
-    ##pprint(resp)
     resp.raise_for_status()
     try:
         resp_json = resp.json()
