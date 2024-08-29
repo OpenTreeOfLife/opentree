@@ -28,6 +28,7 @@ from pprint import pprint
 from pyramid.events import subscriber
 from pyramid.renderers import render_to_response
 from pyramid_retry import IBeforeRetry
+from pyramid.httpexceptions import HTTPNotFound
 
 # these headers are set once request is available
 GH_GET_HEADERS = None
@@ -39,9 +40,9 @@ def retry_event(event):
     log.debug("@@@@@ retry_event! event.response: {}".format(event.response))
     #print(f'A retry is about to occur due to {event.exception}.')
 
-def error(): 
-    log.debug("@@@@@ raising a 404 error!")
-    raise HTTP(404)
+def error(msg="404 not found"):
+    log.debug("@@@@@ raising 404 error: {}".format(msg))
+    raise HTTPNotFound(body=msg)
 
 # builds an organized list (UL) with threaded comments
 def SUL(*a,**b): return UL(*[u for u in a if u],**b)
@@ -199,13 +200,13 @@ def index(request):
                 return 'deleted'
         except:
             clear_local_comments(request) # hopefully a cleaner result
-            return error()
+            return error("Unable to delete comment")
     elif thread_parent_id:
         # add a new comment using the submitted vars
         if not request.POST.get('body'):
             print('MISSING BODY in POSTed data:')
             print(request.POST)
-            return error()
+            return error("Missing body in POSTed data!")
 
         if not (visitor_name or auth_user):
             print('MISSING USER-ID:')
@@ -213,7 +214,7 @@ def index(request):
             print(visitor_name)
             print('  auth_user:')
             print(auth_user)
-            return error()
+            return error("Missing user name/information in comment")
 
         # build useful links for some footer fields
         if user_is_logged_in(request):
