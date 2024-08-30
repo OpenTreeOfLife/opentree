@@ -13,6 +13,7 @@ import os.path
 import urllib
 import bleach
 from bleach.sanitizer import Cleaner
+import pytz   # explicit time-zone support
 from datetime import datetime
 import json
 import synthetic_tree_viewer.opentreewebapputil
@@ -180,9 +181,10 @@ def index(request):
         comment['author_display_name'] = author_display_name
         comment['author_link'] = author_link
         # render a friendly date, eg "6 days ago"
-        rawDate = datetime.strptime(comment['created_at'], GH_DATETIME_FORMAT)
-        localDate = utc_to_local(rawDate)
-        comment['pretty_date'] = pretty_date(localDate)
+        # NB - GitHub API uses UTC (Zulu) timestamps, e.g. "2014-03-03T18:58:10Z"
+        naiveDate = datetime.strptime(comment['created_at'], GH_DATETIME_FORMAT)
+        utcDate = pytz.utc.localize(naiveDate)
+        comment['pretty_date'] = pretty_date(utcDate)
         comment['safe_html_body'] = extract_safe_html_comment(comment)
 
     if thread_parent_id == 'delete':

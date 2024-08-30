@@ -332,9 +332,13 @@ def log_request_payloads(request):
 
 # python3 compatible pretty dates,
 # adapted from https://stackoverflow.com/a/5164027
+#
+# NB - This assumes an un-adjusted UTC date (ie,
+# disregard locale and daylight savings)
 import datetime
 def pretty_date(d):
-    diff = datetime.datetime.utcnow() - d
+    now = datetime.datetime.now(datetime.timezone.utc)
+    diff = now - d
     s = diff.seconds
     days_in_a_year = 365  # close enough!
     days_in_a_month = 30  # close enough!
