@@ -373,5 +373,5 @@ def pretty_date(d):
     elif s < 7200:
         return '1 hour ago'
     else:
-        return '{} hours ago'.format(s/3600)
+        return '{} hours ago'.format(round(s/3600))
 
