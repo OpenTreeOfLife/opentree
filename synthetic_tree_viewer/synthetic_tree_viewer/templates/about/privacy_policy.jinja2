@@ -148,7 +148,8 @@ like your personal information to be removed, please send a message to
 </div>
 
 <h3 id="comment-header">Comments <i></i></h3>
-{# plugin_localcomments(filter='url',url=request.url) #}
+{# incorporate local comments for this URL (pre-rendered by the view via sub-request) #}
+{{ local_comments_markup | safe }}
 
 </div><!-- end of .container -->
 

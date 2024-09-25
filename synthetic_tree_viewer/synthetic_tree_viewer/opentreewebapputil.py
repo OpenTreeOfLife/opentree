@@ -4,7 +4,7 @@ import re
 import configparser
 import functools
 import json
-
+from pyramid.request import Request
 from pyramid.httpexceptions import (
     HTTPNotFound,
     HTTPSeeOther,
@@ -147,6 +147,18 @@ def get_opentree_services_method_urls(request):
         method_urls[ mname ] = murl
 
     return method_urls
+
+def add_local_comments_markup(request, view_dict={}):
+    # create a subrequest to pass local-comments HTML to the renderer
+    subreq = Request.blank('/opentree/plugin_localcomments')
+    #comments_markup = call_subrequest('/opentree/plugin_localcomments', subreq)
+    comments_response = request.invoke_subrequest(subreq)
+    view_dict.update({
+        'local_comments_markup': comments_response.body.decode('utf-8')
+        })
+    #import pdb; pdb.set_trace()
+    # is this even required? any dict argument is already changed!
+    return view_dict
 
 def user_is_logged_in(request):
     return request.session.get('auth_user', None) and True or False

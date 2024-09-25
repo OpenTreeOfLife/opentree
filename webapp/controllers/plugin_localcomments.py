@@ -200,6 +200,7 @@ function capture_form() {
                    } 
                    $form.find('textarea[name="body"]').val('');
                    //$form.find('input[name="thread_parent_id"]').val('0');
+                   console.error("INITIALIZING local comments - B");
                    plugin_localcomments_init(); 
                    delete_all_forms();
                }

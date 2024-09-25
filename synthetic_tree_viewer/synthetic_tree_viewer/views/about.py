@@ -7,6 +7,7 @@ from synthetic_tree_viewer.opentreewebapputil import (
     get_domain_banner_hovertext,
     get_currently_deployed_opentree_branch,
     get_opentree_services_method_urls,
+    add_local_comments_markup,
     latest_CrossRef_URL,
     fetch_current_TNRS_context_names,
     get_data_deposit_message,
@@ -43,6 +44,7 @@ ot_cleaner = Cleaner(tags=ot_markdown_tags, attributes=ot_markdown_attributes)
 def _minimal_about_viewdict(request):
     # First, copy our boilerplate config vars (getDraftTreeID_url, etc)
     view_dict = get_opentree_services_method_urls(request)
+    add_local_comments_markup(request, view_dict)
 
     # Then add/override with these explicit key-value pairs
     view_dict.update({
@@ -80,6 +82,7 @@ def about_default_redirect(request):
 def about_misc(request):
     # provide view context for a dumb template
     view_dict = _minimal_about_viewdict(request)
+
     return view_dict
 
 @view_config(route_name='about_references',

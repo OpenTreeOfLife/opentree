@@ -184,6 +184,7 @@
                        } 
                        $form.find('textarea[name="body"]').val('');
                        //$form.find('input[name="thread_parent_id"]').val('0');
+                       console.error("INITIALIZING local comments - A");
                        plugin_localcomments_init(); 
                        delete_all_forms();
                    }
@@ -281,11 +282,3 @@
    {% endfor %}
   </ul>
 </div>
-
-{# initialize comments with a naive url-based query
-# (this will probably be overwritten by tree-view data)
-{{ comments.local_comments(
-    filter=(feedbackParentWindowURL and 'url' or 'skip_comments'),
-    url=(feedbackParentWindowURL or request.url)
-  ) }}
-#}

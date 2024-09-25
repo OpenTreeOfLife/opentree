@@ -9,6 +9,7 @@ from synthetic_tree_viewer.opentreewebapputil import (
     get_opentree_services_method_urls,
     latest_CrossRef_URL,
     fetch_current_TNRS_context_names,
+    add_local_comments_markup,
     AUTH_CONFIG,
     login_required,
     )
@@ -88,6 +89,7 @@ def contact(request):
     view_dict.update({
         'taxonSearchContextNames': fetch_current_TNRS_context_names(request),
         })
+    add_local_comments_markup(request, view_dict)
     return view_dict
 
 @view_config(route_name='oauth_login')  # TODO: does this need a template/renderer?

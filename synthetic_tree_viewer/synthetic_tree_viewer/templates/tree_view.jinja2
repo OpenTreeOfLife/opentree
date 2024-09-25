@@ -16,13 +16,6 @@
        <p id="tree-description" class="hidden-phone pull-right">Exploring the current synthetic tree</p>
        <!-- if main title is long, this should disappear on narrow screens -->
 
-       <!--
-           <div id="links-to-local-comments" style="clear: both;">
-               <a href="#comment-header">Comments on this node</a>
-               |
-               <a href="#comment-header" onclick="$('.plugin_localcomments #r0 > a.reply, .plugin_localcomments a.login-logout').eq(0).click(); return true;">Add a comment</a>
-           </div>
-       -->
       </div>
      </div>
 
@@ -92,12 +85,21 @@
              <div class="provenance-intro">Loading&hellip;</div>
              <div class="provenance-title">&nbsp;</div>
              <div>
-               {# initialize comments with a naive url-based query
-                # (this will probably be overwritten by tree-view data) #}
-               {{ comments.local_comments(
+               {# Incorporate "empty" local comments for tree view
+                  (pre-rendered by the view via sub-request). This will
+                  be overwritten by tree-view data as we resolve a canonical
+                  URL for the current target node.
+
+                  NB - Alternately, this will filter on the URL of any external
+                  parent window, e.g. OneZoom.
+
+                  # old logic, but should be emulated in the current view
+                  comments.local_comments(
                     filter=(feedbackParentWindowURL and 'url' or 'skip_comments'),
                     url=(feedbackParentWindowURL or request.url)
-                  ) }}
+                  )
+                #}
+               {{ local_comments_markup | safe }}
              </div>
             </div>
            </div>
