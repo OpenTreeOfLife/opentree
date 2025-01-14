@@ -80,9 +80,21 @@ def index(request):
     sourcetree_id = request.POST.get('sourcetree_id', None)
     ottol_id = request.POST.get('ottol_id', None)
     target_node_label = request.POST.get('target_node_label', None)
-    url = request.POST.get('url', None) or request.referer or ''
+
+    #import pdb; pdb.set_trace()
+
+    url = (request.POST.get('url', None)   # ideal case, unambiguous
+        or request.original_url           # for a subrequest (very common)
+        or request.referer                # previous URL (TODO: document why)
+        or '')                            # empty as a last resort
+    # TODO: Review use of 'referer' here (previous URL?)
+    log.debug(">>> request.POST.get('url'): {}".format(request.POST.get('url')));
+    log.debug(">>> request.original_url: {}".format(request.original_url));
+    log.debug(">>> request.referer: {}".format(request.referer));
+    log.debug("!!! best matching url: {}".format(url));
 
     filter = request.POST.get('filter', None)
+    log.debug(">>> filter: {}".format(filter));
 
     auth_user = get_auth_user(request)
 

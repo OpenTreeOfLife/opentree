@@ -257,4 +257,6 @@ def tree_view(request):
     if incomingDomSource and view_dict['nodeID']:
         view_dict['forcedByURL'] = True
 
+    view_dict['filter'] = 'skip_comments'
+    add_local_comments_markup(request, view_dict)
     return view_dict

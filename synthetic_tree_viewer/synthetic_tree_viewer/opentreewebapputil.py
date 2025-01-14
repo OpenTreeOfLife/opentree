@@ -150,13 +150,29 @@ def get_opentree_services_method_urls(request):
 
 def add_local_comments_markup(request, view_dict={}):
     # create a subrequest to pass local-comments HTML to the renderer
-    subreq = Request.blank('/opentree/plugin_localcomments')
-    #comments_markup = call_subrequest('/opentree/plugin_localcomments', subreq)
+    # copy relevant parts of current request (to correctly locate comments)
+    comments_path = '/opentree/plugin_localcomments'
+    """
+    subreq = Request.blank(path=,
+                           #environ=request.environment,
+                           original_url=request.url,
+                           headers=request.headers,
+                           POST=request.POST,
+                          )
+    import pdb; pdb.set_trace()
+    """
+    # alternate method?
+    subreq = request.copy()
+    subreq.environ['PATH_INFO'] = comments_path
+    #subreq.path = '/opentree/plugin_localcomments'
+    subreq.original_url = request.url  # WAS .base_url!
+
     comments_response = request.invoke_subrequest(subreq)
     view_dict.update({
         'local_comments_markup': comments_response.body.decode('utf-8')
         })
     #import pdb; pdb.set_trace()
+    print("local comments char count? {}".format(len(view_dict['local_comments_markup'])))
     # is this even required? any dict argument is already changed!
     return view_dict
 
