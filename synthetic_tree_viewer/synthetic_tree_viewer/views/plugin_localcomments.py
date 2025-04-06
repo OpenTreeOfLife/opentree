@@ -66,11 +66,8 @@ def show_type_icon(type):
              renderer='synthetic_tree_viewer:templates/local_comments.jinja2')
 def index(request):
     # this is a tricky function that does simple display, handles POSTed comments, etc.
-    log.debug(">>> STARTING local comments!")
 
     update_github_headers(request)
-    log.debug('GH_GET_HEADERS')
-    log.debug(GH_GET_HEADERS)
 
     # TODO: break this up into more sensible functions, and refactor
     # display/markup generation to shared code?
@@ -81,20 +78,21 @@ def index(request):
     ottol_id = request.POST.get('ottol_id', None)
     target_node_label = request.POST.get('target_node_label', None)
 
-    #import pdb; pdb.set_trace()
-
-    url = (request.POST.get('url', None)   # ideal case, unambiguous
-        or request.original_url           # for a subrequest (very common)
-        or request.referer                # previous URL (TODO: document why)
+    url = (request.POST.get('url', None)  # ideal case, unambiguous
+        or request.environ.get('original_url', None)    # for a subrequest (very common)
         or '')                            # empty as a last resort
-    # TODO: Review use of 'referer' here (previous URL?)
-    log.debug(">>> request.POST.get('url'): {}".format(request.POST.get('url')));
-    log.debug(">>> request.original_url: {}".format(request.original_url));
-    log.debug(">>> request.referer: {}".format(request.referer));
-    log.debug("!!! best matching url: {}".format(url));
 
-    filter = request.POST.get('filter', None)
+    # NB - 'request.params' looks in both GET (query string) and POSTed vars
+    filter = (request.params.get('filter', None)
+        or request.environ.get('filter', None)
+        or '')
+
+    """
+    log.debug(">>> request.POST.get('url'): {}".format(request.POST.get('url', None)));
+    log.debug(">>> request.environ.get('original_url'): {}".format(request.environ.get('original_url', None)))
+    log.debug("!!! best matching url: {}".format(url));
     log.debug(">>> filter: {}".format(filter));
+    """
 
     auth_user = get_auth_user(request)
 
@@ -271,6 +269,7 @@ def index(request):
                 "Open Tree Taxonomy id": ottol_id,
                 "Supporting reference": reference_url or 'None'
             })
+
             msg_data = {
                 "title": issue_title,
                 "body": "{0}\n{1}".format(msg_body, footer),
@@ -320,7 +319,7 @@ def index(request):
     elif filter == 'ottol_id':
         comments = get_local_comments(request, {"Open Tree Taxonomy id": ottol_id})
     else:   # fall back to url
-        log.debug(">>> using default comment filter (url?): {}".format(filter));
+        log.debug(">>> no match for filter '{}'... using default comment filter (url?): ".format(filter));
         if 'parentWindowURL=' in url:
             #pprint("=== EXTRACTING parentWindowURL...")
             try:
