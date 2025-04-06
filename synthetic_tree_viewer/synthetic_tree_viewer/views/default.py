@@ -18,7 +18,6 @@ from pyramid_retry import RetryableException
 
 import logging
 log = logging.getLogger(__name__)
-##log.debug('Returning: %s (content-type: %s)', content, content_type)
 
 from authomatic import Authomatic
 from authomatic.adapters import WebObAdapter  # incl. Pyramid
@@ -95,15 +94,11 @@ def contact(request):
 @view_config(route_name='oauth_login')  # TODO: does this need a template/renderer?
 def login(request):
     # we'll redirect to any specified destination (or the Home page)
-    log.debug("STARTING login...")
     _next = request.params.get('_next')
     if _next:
-        log.debug("STASHING DESTINATION in login...")
-        log.debug("?_next=%s", _next)
         request.session['_next'] = _next  # stash this in case we're not ready!
         # TODO: trim the query-string and redirect to this "bare" URL!
         bare_url = request.route_url('oauth_login')
-        log.debug(">>> destination stashed, moving to bare URL: %s", bare_url)
         return HTTPSeeOther(location=bare_url)
 
     log.debug("NO DESTINATION in login (but maybe in session)...")
