@@ -199,6 +199,9 @@ function loadLocalComments( chosenFilter ) {
         }
         */
         fetchArgs.target_node_label = commentLabel;
+
+        // add URL for these comments too, just for convenient back-tracking from Github
+        fetchArgs.url = getCommentIndexURL();
     } else {
         // use the fallback 'url' index (apparently there's no tree-view here)
         ///console.log("loadLocalComments() - Loading comments based on 'url' (no argus.treeData!)");
