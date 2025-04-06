@@ -1,0 +1,8 @@
+{% import 'macros/comments.jinja2' as comments %}
+
+{# available vars: comment ... anything else? #}
+
+{# A single call to return HTML for one (typically new) comment #}
+{{ comments.wrap_comment_in_markup(
+    comment=comment,
+   ) }}
