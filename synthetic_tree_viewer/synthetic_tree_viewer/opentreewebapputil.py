@@ -9,6 +9,9 @@ from pyramid.httpexceptions import (
     HTTPNotFound,
     HTTPSeeOther,
     )
+import logging
+log = logging.getLogger(__name__)
+
 
 _CONF_OBJ_DICT = {}
 
@@ -152,20 +155,27 @@ def add_local_comments_markup(request, view_dict={}):
     # create a subrequest to pass local-comments HTML to the renderer
     # copy relevant parts of current request (to correctly locate comments)
     comments_path = '/opentree/plugin_localcomments'
+    specified_filter = view_dict.get('filter', None)
+
     """
-    subreq = Request.blank(path=,
-                           #environ=request.environment,
-                           original_url=request.url,
+    log.debug("  request method (HTTP verb): {}".format(request.method or 'NONE'))
+    log.debug("  specified_filter: {}".format(specified_filter or 'NONE'))
+    log.debug("  request.content_type: {}".format(request.content_type or 'NONE'))
+    log.debug("  RESPONSE.content_type: {}".format(request.response.content_type or 'NONE'))
+    """
+
+    subreq = Request.blank(comments_path,
+                           #environ=request.environ,  # OVERRIDES our desired URL!
                            headers=request.headers,
-                           POST=request.POST,
+                           POST=request.POST,         # TODO: use POST for subrequest?
                           )
-    import pdb; pdb.set_trace()
-    """
-    # alternate method?
-    subreq = request.copy()
-    subreq.environ['PATH_INFO'] = comments_path
-    #subreq.path = '/opentree/plugin_localcomments'
-    subreq.original_url = request.url  # WAS .base_url!
+
+    # Use its environment to store hints to help "locate" the new comments
+    if specified_filter:
+        # if specified, this should override any existing 'filter' value
+        #request.POST['filter'] = specified_filter  # FAILS if not already a POST/form
+        subreq.environ['filter'] = specified_filter
+    subreq.environ['original_url'] = request.url
 
     comments_response = request.invoke_subrequest(subreq)
     view_dict.update({
@@ -173,6 +183,7 @@ def add_local_comments_markup(request, view_dict={}):
         })
     #import pdb; pdb.set_trace()
     print("local comments char count? {}".format(len(view_dict['local_comments_markup'])))
+
     # is this even required? any dict argument is already changed!
     return view_dict
 
@@ -264,9 +275,6 @@ AUTH_CONFIG = {
     }
  }
 
-import logging
-log = logging.getLogger(__name__)
-
 def login_required(decorated_function):
     """
     A decorator for protected views. This should check for OAuth credentials
@@ -276,17 +284,13 @@ def login_required(decorated_function):
     @functools.wraps(decorated_function)
     def wrapper(request, *args, **kwargs):
         # IF user is logged in, call this view normally; otherwise login (or refresh credentials)
-        log.debug(">>> STARTING login_required wrapper...")
         logged_in = user_is_logged_in(request)
-        log.debug(">>> is user logged in? %s", logged_in)
         # NOTE that we're currently using non-expiring credentials!
         if logged_in:
             return decorated_function(request, *args, **kwargs)
         else:
             # TODO: redirect to login view (then bounce back to the current URL)
-            log.debug(">>> NOT logged in! Now we'll bounce to the login view...")
             relative_url = request.route_path('oauth_login', _query={'_next': request.url})
-            log.debug(">>> (Here's the root-relative URL: {})".format(relative_url))
             return HTTPSeeOther(location=relative_url)
 
     return wrapper
