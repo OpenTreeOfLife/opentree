@@ -581,6 +581,7 @@ var collectionPopupIsInUse = false;
 var $stashedCollectionViewerTemplate = null;
 var $stashedCollectionContributorElement = null;
 var $stashedCollectionDecisionElement = null;
+var $stashedCollectionHistoryPanel = null;
 
 async function showCollectionViewer( collection, options ) {
     // allow options for initial display, etc.
@@ -595,6 +596,7 @@ async function showCollectionViewer( collection, options ) {
         $stashedCollectionDecisionElement = $('#tree-collection-viewer')
             .find('#tree-collection-decisions > tr.single-tree-row').eq(0).clone();
             // OR .find('#tree-collection-decisions > tr.single-tree-row, #tree-list-holder > tr.single-tree-row').eq(0).clone();
+        $stashedCollectionHistoryPanel = $('#History').clone()
     } else {
         // Replace with pristine markup to avoid weird results in later popups
         if (options.MAINTAIN_SCROLL) {
@@ -605,6 +607,9 @@ async function showCollectionViewer( collection, options ) {
         );
         //$('#tree-collection-contributors').empty().append($stashedCollectionContributorElement);
         //$('#tree-collection-decisions').empty().append($stashedCollectionDecisionElement);
+        $('#History').contents().replaceWith(
+            $stashedCollectionHistoryPanel.clone().contents()
+        );
     }
 
     if (collection) {
