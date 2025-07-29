@@ -1,0 +1,489 @@
+<html class="">
+<head class="">
+  <link rel="stylesheet" href="https://opentreeoflife.github.io/css/main.css" />
+  <style type="text/css">
+    h1 {
+        color: #999;
+        /* indent multi-line heading (a very long taxon name) */
+        padding-left: 55px;
+        text-indent: -25px;
+        /* maintain pleasing placement of Open Tree logo */
+        height: auto;
+        padding-top: 0.35em;
+        line-height: 1.0em;
+        min-height: 32px;
+        background: url(https://opentreeoflife.github.io/images/mini-opentree-logo.png) no-repeat left 5px;
+    }
+    h1 strong {
+        color: #000;
+    }
+    h3 {
+        margin-bottom: 0.3em;
+    }
+    .legend {
+        font-style: italic;
+    }
+    .legend .flag {
+        font-style: normal;
+    }
+    .error {
+        color: #933;
+    }
+    h4,
+    p.taxon,
+    p.synonyms,
+    p.lineage,
+    ul.children {
+        margin-top: 0.25em;
+        margin-left: 2em;
+    }
+    ul.children {
+        padding-left: 0;
+    }
+    ul.children li {
+        list-style: none;
+        padding: 0.25em;
+        /* align text with other details; pad for bg color and indent second line */
+        margin-left: -0.5em;
+        padding-left: 2.5em;
+        text-indent: -2em;
+    }
+    li.odd {
+        background-color: #fff;
+    }
+    li.even {
+        background-color: #f5f5f5;
+    }
+    span.name {
+        font-weight: bold;
+    }
+    span.taxname {
+        font-weight: bold;
+    }
+    span.taxsynname {
+        font-weight: bold;
+    }
+    span.ancname {
+        font-weight: bold;
+    }
+    span.sources, 
+    span.flags {
+        padding-left: 1em;
+    }
+    span.flag {
+        font-family: monospace;
+        color: #999;
+    }
+  </style>
+</head>
+<body class="" onload="postload()">
+    <form id="searchform" action="browse">
+        <p align="right">
+            <input type="text" name="name" placeholder="name or id"/>
+        </p>
+    </form>
+  <span class="error" id="errorpanel"></span>
+  <span class="multimatch" id="multimatch"></span>
+
+  <span id="knownidcontainer">
+    <h1 class="">Open Tree taxonomy: <strong><span class="taxname"></span></strong></h1>
+    <p class="legend">The current taxonomy version is
+        <a target="_blank" class="abouttaxon">ott3.7 (click for more information)</a>.
+        See the OTT documentation for 
+        <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/taxon-flags.md#taxon-flags">an explanation of the taxon flags used</a> below, e.g., 
+        <span class="flag">extinct</span>
+    </p>
+    <h3>Taxon details</h3>
+    <p class="taxon"><span class="taxrank"></span>
+        <a class="browsebyid"><span class="taxname"></span></a>
+        <br/>
+        <span class="legend">OTT ID:</span> <span class="taxonid"></span>
+        <br/>
+        <span class="legend">Sources:</span>
+        <span class="sources" id="taxsrcpar"><span class="taxsrc"></span>
+        </span>
+        <br />
+        <span class="legend">Flags:</span>
+        <span class="flags">
+        </span> 
+        <br/>
+        <a target="_blank" class="synthtreebyid">View this taxon in the current synthetic tree</a>
+    </p>
+    <span id="synspan"><h3 id="synheader">Synonym(s)</h3><p class="synonyms" id="synpar"></p></span>
+    <h3>Lineage</h3>
+    <p class="lineage" id="linepar"></p>
+
+    <h3>Children included in the synthetic tree</h3>
+    <ul class="children" id="childpar"></ul>
+    <h3>Children suppressed in the synthetic tree</h3>
+    <ul class="children" id="exchildpar"></ul>
+  </span>
+
+<script type="text/javascript">
+
+var tree_server = "https://tree.opentreeoflife.org";
+var api_server = "https://api.opentreeoflife.org";
+var taxon_info_url = api_server + "/v3/taxonomy/taxon_info";
+var name_match_url = api_server + "/v3/tnrs/match_names";
+var about_taxon_url = tree_server + "/about/taxonomy-version/ott3.7";
+var page_route = "browse";
+
+var get_link_for_taxsrc = function (taxsrc) {
+    var tsurl;
+    var link_c = taxsrc;
+    if (taxsrc.startsWith("http:") || taxsrc.startsWith("https:")) {
+        tsurl = taxsrc;
+    } else {
+        var tsspl = taxsrc.split(":");
+        if (tsspl.length == 2) {
+            var tstag = tsspl[0];
+            var tsextid = tsspl[1];
+            if (tstag == "ncbi") {
+                tsurl = "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=" + tsextid;
+            } else if (tstag == 'gbif') {
+                tsurl = "http://www.gbif.org/species/" + tsextid + "/";
+            } else if (tstag == 'irmng') {
+                tsurl = "http://www.irmng.org/aphia.php?p=taxdetails&id=" + tsextid;
+            } else if (tstag == 'if') {
+                tsurl = "http://www.indexfungorum.org/names/NamesRecord.asp?RecordID=" + tsextid;
+            } else if (tstag == 'worms') {
+                tsurl = "http://www.marinespecies.org/aphia.php?p=taxdetails&id=" + tsextid;
+            } else if (tstag == 'silva') {
+                tsurl = "http://www.arb-silva.de/browser/ssu/silva/" + tsextid;
+            }
+        }
+    }
+    var tax_a;
+    if (tsurl) {
+        tax_a = document.createElement("a");
+        tax_a.textContent = taxsrc;
+        tax_a.setAttribute("href", tsurl);
+        
+    } else {
+        tax_a = document.createElement("span")
+        tax_a.textContent = taxsrc;
+        ;
+    }
+    return tax_a;
+}
+
+var append_tax_src_links = function(par, tax_sources) {
+    for (let tsi in tax_sources) {
+        var ts = tax_sources[tsi];
+        var nel = document.createElement("span");
+        nel.setAttribute("class", "taxsrc");
+        if (tsi != 0) {
+            nel.textContent = ", ";
+        }
+        nel.appendChild(get_link_for_taxsrc(ts));
+        par.appendChild(nel);
+    }
+};
+
+var append_flags = function(par, flags) {
+    if (flags) {
+        for (let fi in flags) {
+            var flag = flags[fi];
+            var nel = document.createElement("span");
+            nel.setAttribute("class", "flag");
+            if (fi != 0) {
+                nel.textContent = ", " + flag;
+            } else {
+                nel.textContent = flag;
+            }
+            par.appendChild(nel);
+        }
+    } else {
+
+    }
+};
+
+var fill_with_basic_taxon_info = function(par, taxon) {
+    var rank_span = document.createElement("span");
+    var r = taxon.rank;
+    if (r && ! (r.startsWith("no rank")) ) {
+        rank_span.textContent = r + " ";
+    }
+    par.appendChild(rank_span)
+    var nel = document.createElement("a");
+    nel.setAttribute("href", page_route + "?id=" + taxon.ott_id);
+    var inner_name = document.createElement("span");
+    inner_name.setAttribute("class", "name");
+    inner_name.textContent = taxon.name;
+    nel.appendChild(inner_name);
+    par.appendChild(nel);
+    var srcs_span = document.createElement("span");
+    srcs_span.setAttribute("class", "sources");
+    append_tax_src_links(srcs_span, taxon.tax_sources);
+    par.appendChild(srcs_span);
+    var flags_span = document.createElement("span");
+    flags_span.textContent = " ";
+    flags_span.setAttribute("class", "cflags");
+    append_flags(flags_span, taxon.flags);
+    par.appendChild(flags_span);
+
+};
+
+var fill_child_lists = function(par, children, tag) {
+    var ccn;
+    var inc;
+    if (tag == "exposed") {
+        continue_on = true;
+        ccn = "child exposed ";
+    } else {
+        continue_on = false;
+        ccn = "child suppressed ";
+    }
+    if (par) {
+        tn = document.getElementsByClassName(ccn + "even");
+        for (let el of tn) {
+            par.removeChild(el);
+        }
+        tn = document.getElementsByClassName(ccn + "odd");
+        for (let el of tn) {
+            par.removeChild(el);
+        }
+        var ceo = "even";
+        if (children) {
+            for (let si in children) {
+                var child = children[si];
+                if (child.is_suppressed == continue_on) {
+                    continue;
+                }
+                if (ceo == "even") {
+                    ceo = "odd";
+                } else {
+                    ceo = "even";
+                }
+                var nel = document.createElement("li");
+                nel.setAttribute("class", ccn + ceo);
+                var ems = document.createElement("span");
+                if (continue_on) {
+                    ems.setAttribute("class", "exposedmarker");
+                    nel.appendChild(ems);
+                }
+                fill_with_basic_taxon_info(nel, child)
+                par.appendChild(nel);
+            }
+        } else {
+            var nel = document.createElement("li");
+            nel.setAttribute("class", ccn + "odd");
+            nel.textContent = "(None)";
+            par.appendChild(nel);
+        }
+    }
+};
+
+var by_name_response_cb = function(resp_obj, name_param) {
+    var res = resp_obj.results[0];
+    if (res.matches.length > 0) {
+     if (res.matches.length > 1) {
+        multimatch_container.hidden = false;
+        tn = document.getElementsByClassName("mmul");
+        for (let el of tn) {
+            multimatch_container.removeChild(el);
+        }
+        multimatch_container.textContent = "multiple matches found. Click on your choice to resolve.";
+        var mmul = document.createElement("ul");
+        mmul.setAttribute("class", "mmul");
+        for (let mi in res.matches) {
+            var one_match = res.matches[mi];
+            var liel = document.createElement("li");
+            var link = document.createElement("a");
+            var mott_id = one_match.taxon.ott_id;
+            link.setAttribute("href", page_route + "?id=" + mott_id);
+            link.textContent = one_match.taxon.unique_name;
+            liel.appendChild(link);
+            mmul.appendChild(liel);
+        }
+        multimatch_container.appendChild(mmul);
+        
+     } else {
+        var the_match = res.matches[0];
+        error_id_container.textContent = "Match found loading taxon info...";
+        error_id_container.hidden = false;
+        populate_by_id(the_match.taxon.ott_id);
+     }
+    } else {
+        error_id_container.textContent = "No taxon found matching name \"" + name_param + "\"";
+        error_id_container.hidden = false;
+    }
+    
+};
+
+var by_id_response_cb = function(resp_obj) {
+    error_id_container.hidden = true;
+    multimatch_container.hidden = true;
+    known_id_container.hidden = false;
+    var tn = document.getElementsByClassName("taxname");
+    for (let el of tn) {
+        el.textContent = resp_obj.name;
+    }
+    var r = resp_obj.rank;
+    if (r && ! (r.startsWith("no rank")) ) {
+        tn = document.getElementsByClassName("taxrank");
+        for (let el of tn) {
+            el.textContent = resp_obj.rank;
+        }
+    }
+    tn = document.getElementsByClassName("taxonid");
+    var ott_id = resp_obj.ott_id
+    for (let el of tn) {
+        el.textContent = ott_id;
+    }
+    tn = document.getElementsByClassName("abouttaxon");
+    for (let el of tn) {
+        el.setAttribute("href", about_taxon_url);
+    }
+    var taxon_in_tree_url  = tree_server + "/opentree/argus/ottol@" + ott_id
+    tn = document.getElementsByClassName("synthtreebyid");
+    for (let el of tn) {
+        el.setAttribute("href", taxon_in_tree_url);
+    }
+    var srcpar = document.getElementById("taxsrcpar");
+    if (srcpar) {
+        tn = document.getElementsByClassName("taxsrc");
+        for (let el of tn) {
+            srcpar.removeChild(el);
+        }
+        append_tax_src_links(srcpar, resp_obj.tax_sources);
+    }
+    var flagspar = document.getElementById("flags");
+    if (flagspar) {
+        tn = document.getElementsByClassName("flag");
+        for (let el of tn) {
+            flagspar.removeChild(el);
+        }
+        append_flags(flagspar, resp_obj.flags);
+    }
+    var synpar = document.getElementById("synpar");
+    if (synpar) {
+        tn = document.getElementsByClassName("taxsynname");
+        for (let el of tn) {
+            synpar.removeChild(el);
+        }
+        for (let si in resp_obj.synonyms) {
+            var syn = resp_obj.synonyms[si];
+            var nel = document.createElement("a");
+            nel.setAttribute("href", page_route + "?name=" + syn);
+            var inner_name = document.createElement("span");
+            inner_name.setAttribute("class", "taxsynname");
+            inner_name.textContent = syn;
+            if (si != 0) {
+                var comma_el = document.createElement("span");
+                comma_el.textContent = ", ";
+                synpar.appendChild(comma_el);
+            }
+            nel.appendChild(inner_name);
+            synpar.appendChild(nel);
+        }
+    }
+    var linepar = document.getElementById("linepar");
+    if (linepar) {
+        tn = document.getElementsByClassName("ancname");
+        for (let el of tn) {
+            linepar.removeChild(el);
+        }
+        var rllist = resp_obj.lineage.reverse();
+        for (let si in rllist) {
+            var anc = rllist[si];
+            var nel = document.createElement("a");
+            nel.setAttribute("href", page_route + "?id=" + anc.ott_id);
+            var inner_name = document.createElement("span");
+            inner_name.setAttribute("class", "ancname");
+            inner_name.textContent = anc.name;
+            if (si != 0) {
+                var gt_el = document.createElement("span");
+                gt_el.textContent = " > ";
+                linepar.appendChild(gt_el);
+            }
+            nel.appendChild(inner_name);
+            linepar.appendChild(nel);
+        }
+    }
+    var childpar = document.getElementById("childpar");
+    fill_child_lists(childpar, resp_obj.children, "exposed")
+    var exchildpar = document.getElementById("exchildpar");
+    fill_child_lists(exchildpar, resp_obj.children, "suppressed")
+};
+
+var match_by_name = function(name_param) {
+    error_id_container.hidden = true;
+    multimatch_container.hidden = true;
+    
+    var xmlhttp = new XMLHttpRequest();
+    var response_obj;
+    var args = {"names": [name_param], 
+                'include_suppressed': true};
+
+    xmlhttp.onreadystatechange = function() {
+        if (this.readyState == 4) {
+            if (this.status == 200) {
+                response_obj = JSON.parse(this.responseText);
+                by_name_response_cb(response_obj, name_param);
+            } else {
+                alert("Call to API to match_name failed");
+            }
+        }
+    }
+    xmlhttp.open("POST", name_match_url);
+    xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xmlhttp.send(JSON.stringify(args));
+};
+
+var populate_by_id = function(ott_int) {
+    var xmlhttp = new XMLHttpRequest();
+    var response_obj;
+    var args = {"ott_id": ott_int, 
+                'include_children': true, 
+                'include_lineage': true};
+
+    xmlhttp.onreadystatechange = function() {
+        if (this.readyState == 4) {
+            if (this.status == 200) {
+                response_obj = JSON.parse(this.responseText);
+                by_id_response_cb(response_obj);
+            } else {
+                var errmsg = "Call to API to fetch taxon info for " + ott_int + "failed";
+                alert(errmsg);
+                error_id_container.textContent = errmsg;
+                error_id_container.hidden = false;
+            }
+        }
+    }
+    xmlhttp.open("POST", taxon_info_url);
+    xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xmlhttp.send(JSON.stringify(args));
+};
+
+var known_id_container = document.getElementById("knownidcontainer");
+var error_id_container = document.getElementById("errorpanel");
+var multimatch_container = document.getElementById("multimatch");
+var postload = function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    var id_param = urlParams.get('id');
+    const name_param = urlParams.get('name');
+    known_id_container.hidden = true;
+    error_id_container.hidden = true;
+    multimatch_container.hidden = true;
+    document.getElementById("searchform").setAttribute("action", page_route);
+    if ((!id_param) && (!name_param)) {
+        id_param = "93302"; // OTT ID for "cellular organisms"
+    }
+    if (id_param) {
+        var ott_int = parseInt(id_param, 10);
+        if (isNaN(ott_int) || ott_int < 1) {
+            alert("Expected id param to be a positive integer found \"" + id_param + "\"");
+        } else {
+            populate_by_id(ott_int);
+        }
+    } else {
+        if (name_param) {
+            match_by_name(name_param);
+        }
+    }
+};
+
+</script>
+</body>
+</html>
