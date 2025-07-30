@@ -127,6 +127,8 @@ var taxon_info_url = api_server + "/v3/taxonomy/taxon_info";
 var name_match_url = api_server + "/v3/tnrs/match_names";
 var about_taxon_url = tree_server + "/about/taxonomy-version/ott3.7";
 var page_route = "browse";
+var amendments_repo_number = "1";
+var amends_url_pref = "https://github.com/OpenTreeOfLife/amendments-" + amendments_repo_number + "/blob/master/amendments/";
 
 var get_link_for_taxsrc = function (taxsrc) {
     var tsurl;
@@ -150,6 +152,17 @@ var get_link_for_taxsrc = function (taxsrc) {
                 tsurl = "http://www.marinespecies.org/aphia.php?p=taxdetails&id=" + tsextid;
             } else if (tstag == 'silva') {
                 tsurl = "http://www.arb-silva.de/browser/ssu/silva/" + tsextid;
+            } else {
+                var id_parts = tstag.split("-");
+                if (id_parts.length > 1) {
+                    if (id_parts[0] == "additions") {
+                        var prefix = "addition";
+                        var amurl = amends_url_pref + tstag + ".json";
+                        var node_id = id_parts[1];
+                        tsurl = amurl;
+                        taxsrc = prefix + ":" + node_id;
+                    }
+                }
             }
         }
     }
