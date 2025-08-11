@@ -74,12 +74,17 @@
         font-family: monospace;
         color: #999;
     }
+    .spinner {
+        background-image: url('/static/images/spinner.gif');
+        background-repeat: no-repeat;
+        background-position: center 200px;
+    }
   </style>
 </head>
-<body class="" onload="postload()">
-    <form id="searchform" action="browse">
+<body id="spinner-container" class="spinner" onload="postload()">
+    <form id="searchform" action="browse" onsubmit="return set_name_or_id();">
         <p align="right">
-            <input type="text" name="name" placeholder="name or id"/>
+            <input id="name_or_id_field" type="text" name="name" placeholder="name or id"/>
         </p>
     </form>
   <span class="error" id="errorpanel"></span>
@@ -296,7 +301,7 @@ var by_name_response_cb = function(resp_obj, name_param) {
         for (let el of tn) {
             multimatch_container.removeChild(el);
         }
-        multimatch_container.textContent = "multiple matches found. Click on your choice to resolve.";
+        multimatch_container.textContent = "Multiple matches found. Click on your choice to resolve.";
         var mmul = document.createElement("ul");
         mmul.setAttribute("class", "mmul");
         for (let mi in res.matches) {
@@ -313,18 +318,21 @@ var by_name_response_cb = function(resp_obj, name_param) {
         
      } else {
         var the_match = res.matches[0];
-        error_id_container.textContent = "Match found loading taxon info...";
+        error_id_container.textContent = "Match found, loading taxon info...";
         error_id_container.hidden = false;
+        show_spinner();
         populate_by_id(the_match.taxon.ott_id);
      }
     } else {
         error_id_container.textContent = "No taxon found matching name \"" + name_param + "\"";
         error_id_container.hidden = false;
+        hide_spinner();
     }
     
 };
 
 var by_id_response_cb = function(resp_obj) {
+    hide_spinner();
     error_id_container.hidden = true;
     multimatch_container.hidden = true;
     known_id_container.hidden = false;
@@ -421,6 +429,7 @@ var by_id_response_cb = function(resp_obj) {
 };
 
 var match_by_name = function(name_param) {
+    show_spinner();
     error_id_container.hidden = true;
     multimatch_container.hidden = true;
     
@@ -461,6 +470,7 @@ var populate_by_id = function(ott_int) {
                 alert(errmsg);
                 error_id_container.textContent = errmsg;
                 error_id_container.hidden = false;
+                hide_spinner();
             }
         }
     }
@@ -473,6 +483,7 @@ var known_id_container = document.getElementById("knownidcontainer");
 var error_id_container = document.getElementById("errorpanel");
 var multimatch_container = document.getElementById("multimatch");
 var postload = function() {
+    show_spinner();
     const urlParams = new URLSearchParams(window.location.search);
     var id_param = urlParams.get('id');
     const name_param = urlParams.get('name');
@@ -487,7 +498,10 @@ var postload = function() {
         var ott_int = parseInt(id_param, 10);
         if (isNaN(ott_int) || ott_int < 1) {
             alert("Expected id param to be a positive integer found \"" + id_param + "\"");
+            hide_spinner();
         } else {
+            error_id_container.textContent = "ID found, loading taxon info...";
+            error_id_container.hidden = false;
             populate_by_id(ott_int);
         }
     } else {
@@ -496,6 +510,29 @@ var postload = function() {
         }
     }
 };
+
+var set_name_or_id = function() {
+    //var the_form = document.getElementById("searchform");
+    var name_or_id_field = document.getElementById("name_or_id_field");
+    if (isNaN(name_or_id_field.value)) {
+        // it's a name! submit the form as-is
+        return true;
+    } else {
+        // it's a plausible ID, tweak field name and submit form
+        name_or_id_field.setAttribute("name", "id");
+    }
+    return true;
+}
+
+/* a basic spinner to show during load+parse */
+var spinner_el = document.getElementById("spinner-container");
+var show_spinner = function() {
+    spinner_el.setAttribute("class", "spinner");
+}
+
+var hide_spinner = function() {
+    spinner_el.setAttribute("class", "");
+}
 
 </script>
 </body>
