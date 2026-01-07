@@ -459,7 +459,6 @@ var populate_by_id = function(ott_int) {
     var args = {"ott_id": ott_int, 
                 'include_children': true, 
                 'include_lineage': true};
-
     xmlhttp.onreadystatechange = function() {
         if (this.readyState == 4) {
             if (this.status == 200) {
