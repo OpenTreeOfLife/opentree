@@ -264,32 +264,45 @@ def get_data_deposit_message(raw_deposit_doi):
     return ('<a target="_blank" href="%s">Data deposit DOI/URL</a>' % raw_deposit_doi)
 
 def fetch_current_TNRS_context_names(request):
-    try:
-        # fetch the latest contextName values as JSON from remote site
-        import requests
+    return ['All life', 'Land plants', 'Hornworts', 'Mosses', 
+            'Liverworts', 'Vascular plants', 'Club mosses', 
+            'Ferns', 'Seed plants', 'Flowering plants', 
+            'Monocots', 'Eudicots', 'Rosids', 'Asterids', 
+            'Asterales', 'Asteraceae', 'Aster', 'Symphyotrichum', 
+            'Campanulaceae', 'Lobelia', 'Animals', 'Birds', 
+            'Tetrapods', 'Mammals', 'Amphibians', 'Vertebrates', 
+            'Arthropods', 'Molluscs', 'Nematodes', 'Platyhelminthes', 
+            'Annelids', 'Cnidarians', 'Arachnids', 'Insects', 
+            'Bacteria', 'SAR group', 'Archaea', 'Excavata', 
+            'Amoebozoa', 'Centrohelida', 'Haptophyta', 'Apusozoa', 
+            'Diatoms', 'Ciliates', 'Forams', 'Fungi', 'Basidiomycetes', 
+            'Ascomycetes']
+    # try:
+    #     # fetch the latest contextName values as JSON from remote site
+    #     import requests
 
-        method_dict = get_opentree_api_endpoints(request)
-        fetch_url = method_dict['getContextsJSON_url']
-        if fetch_url.startswith('//'):
-            # Prepend scheme to a scheme-relative URL
-            fetch_url = "https:%s" % fetch_url
+    #     method_dict = get_opentree_api_endpoints(request)
+    #     fetch_url = method_dict['getContextsJSON_url']
+    #     if fetch_url.startswith('//'):
+    #         # Prepend scheme to a scheme-relative URL
+    #         fetch_url = "https:%s" % fetch_url
 
-        # as usual, this needs to be a POST (pass empty fetch_args)
-        contextnames_json = requests.post(url=fetch_url, data='').json()
-        # start with LIFE group (incl. 'All life'), and add any other ordered suggestions
-        ordered_group_names = unique_ordered_list(['LIFE','PLANTS','ANIMALS'] + [g for g in contextnames_json])
-        context_names = [ ]
-        for gname in ordered_group_names:
-            # allow for eventual removal or renaming of expected groups
-            if gname in contextnames_json:
-                context_names += [n.encode('utf-8') for n in contextnames_json[gname] ]
+    #     # as usual, this needs to be a POST (pass empty fetch_args)
+    #     contextnames_json = requests.post(url=fetch_url, data='').json()
+    #     # start with LIFE group (incl. 'All life'), and add any other ordered suggestions
+    #     ordered_group_names = unique_ordered_list(['LIFE','PLANTS','ANIMALS'] + [g for g in contextnames_json])
+    #     context_names = [ ]
+    #     for gname in ordered_group_names:
+    #         # allow for eventual removal or renaming of expected groups
+    #         if gname in contextnames_json:
+    #             context_names += [n.encode('utf-8') for n in contextnames_json[gname] ]
 
-        # draftTreeName = str(ids_json['draftTreeName']).encode('utf-8')
-        return (context_names)
+    #     # draftTreeName = str(ids_json['draftTreeName']).encode('utf-8')
+    #     return (context_names)
 
-    except Exception, e:
-        # throw 403 or 500 or just leave it
-        return ('ERROR', e.message)
+    # except Exception, e:
+    #     # throw 403 or 500 or just leave it
+    #     return ('ERROR', e.message)
 
 def fetch_trees_queued_for_synthesis(request):
     try:
